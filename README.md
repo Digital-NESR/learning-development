@@ -16,8 +16,7 @@ Employees browse the training calendar and request sessions. Line managers appro
 | `app/actions.ts` | Server actions for every change (submit, approve, enroll, edit trainings, attendance…). Permissions are checked here. |
 | `lib/data.ts` | Loads what the signed-in person is allowed to see |
 | `auth.ts` | Entra ID sign-in. Syncs the person's profile and line manager from Microsoft Graph |
-| `prisma/schema.prisma` | Database schema used by the app |
-| `db/*.sql` | pgAdmin scripts to create the tables and load starting data |
+| `prisma/schema.prisma` | Database schema. `prisma/migrations/` holds the SQL |
 | `docs/SSO-Integration-Response.md` | Answers to NESR IT's SSO integration requirements |
 
 ### Updating the UI from Claude Design
@@ -54,18 +53,18 @@ Don't edit `components/PortalView.jsx` by hand. It is regenerated each time.
 
 ### Creating the tables
 
-The tables are created **by hand in pgAdmin**. The app never creates or changes tables itself, including on deploy.
+**This happens automatically on deploy.** Vercel's build runs `npm run vercel-build`, which runs `prisma migrate deploy` before building. That applies any migrations in [`prisma/migrations/`](prisma/migrations) that haven't run yet:
 
-1. In pgAdmin, open **Query Tool** on the target database and run [`db/01_create_tables.sql`](db/01_create_tables.sql). It creates the 7 tables, 2 enum types, indexes and foreign keys in one transaction. Requires PostgreSQL 13+.
-2. Run [`db/02_seed_data.sql`](db/02_seed_data.sql) to load the starting training calendar (14 sessions) and the 4 notification templates.
+| Migration | What it does |
+|---|---|
+| `0001_init` | Creates the 7 tables, enum types, indexes and foreign keys |
+| `0002_seed_data` | Loads the 4 notification templates and the 14-session starting calendar (trainings only if the table is empty) |
 
-The app's database user only needs `SELECT, INSERT, UPDATE, DELETE` on these tables, plus `USAGE` on the `audit_log_id_seq` sequence.
+Each migration runs once. Prisma records applied migrations in a `_prisma_migrations` table, so later deploys skip them. If a migration fails, the deploy fails and the live site keeps running the previous version.
 
-**If the schema changes later**, update `prisma/schema.prisma` and `db/01_create_tables.sql` together, and give the DBA the `ALTER` statements. To check that the database matches the app, run:
-```bash
-npm run prisma -- migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script
-```
-The only differences should be the `id`/`updated_at` defaults, which the SQL file adds so rows can be inserted by hand in pgAdmin.
+The database user in `DIRECT_URL` needs permission to create tables in the target schema. If the migration should run under a separate admin user, put that user in `DIRECT_URL` and a read/write-only user in `DATABASE_URL`.
+
+**Changing the schema later:** edit `prisma/schema.prisma`, then create a new migration against a dev database with `npm run prisma -- migrate dev --name <change>`. Commit it, and the next deploy applies it.
 
 > **Network access:** Vercel's servers run on the public internet. If the PostgreSQL server is inside the NESR network, IT must allow inbound connections from Vercel (or use Vercel Secure Compute / a static-IP egress add-on and allowlist those IPs). Use `sslmode=require`.
 
@@ -103,7 +102,7 @@ Requires Node.js 20+.
 
 ```bash
 npm install
-# create the tables: run db/01_create_tables.sql and db/02_seed_data.sql against your local database
+npm run db:migrate
 npm run db:seed -- --demo
 npm run dev
 ```
@@ -116,7 +115,7 @@ Open http://localhost:3000.
 
 1. Push this repo to GitHub (`digital-nesr` org).
 2. In Vercel: **Add New → Project → Import** the repo. The framework preset is detected as Next.js.
-3. The build command comes from `vercel.json` (`npm run build`). It does not touch the database, so create the tables in pgAdmin before the first deploy.
+3. The build command comes from `vercel.json` (`npm run vercel-build`). It runs the migrations, then builds.
 4. Add the environment variables above (Production and Preview).
 5. Deploy. Send the production URL to IT so they can register the redirect URI.
 
