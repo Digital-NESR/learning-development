@@ -1,0 +1,34 @@
+{
+  "name": "ld-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NESR Learning & Development Portal",
+  "scripts": {
+    "dev": "node node_modules/next/dist/bin/next dev",
+    "build": "node node_modules/prisma/build/index.js generate && node node_modules/next/dist/bin/next build",
+    "vercel-build": "node node_modules/prisma/build/index.js generate && node node_modules/prisma/build/index.js migrate deploy && node node_modules/next/dist/bin/next build",
+    "start": "node node_modules/next/dist/bin/next start",
+    "convert-design": "node scripts/convert-design.mjs",
+    "db:migrate": "node node_modules/prisma/build/index.js migrate deploy",
+    "db:seed": "node --env-file-if-exists=.env prisma/seed.mjs",
+    "prisma": "node node_modules/prisma/build/index.js",
+    "postinstall": "node node_modules/prisma/build/index.js generate"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "next": "^15.5.27",
+    "next-auth": "^5.0.0-beta.32",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "prisma": "^6.19.3",
+    "typescript": "^5.9.3"
+  }
+}

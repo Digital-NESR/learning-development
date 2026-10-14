@@ -1,0 +1,624 @@
+"use client";
+// Portal state + view-model. Ported from the logic block of design/LD Portal.dc.html;
+// data comes from the database (lib/data.ts) and changes go through server actions (app/actions.ts).
+import React from "react";
+import PortalView from "./PortalView";
+import * as actions from "@/app/actions";
+import { APPROVAL_LEVELS, CATEGORIES, DEPTS, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js";
+
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const STATE_STYLE = {
+  pending:   {label:"Awaiting Approval", bg:"#FDF2D9", fg:"#8A6100"},
+  lnd:       {label:"With L&D Team",     bg:"#E3EEFA", fg:"#1F4E79"},
+  enrolled:  {label:"Enrolled",          bg:"#C5E0D2", fg:"#1F5E3A"},
+  waitlist:  {label:"Waitlisted",        bg:"#EEF1EF", fg:"#4A4B4D"},
+  rejected:  {label:"Not Approved",      bg:"#F7DEDE", fg:"#8A2B2B"},
+  completed: {label:"Completed",         bg:"#C5E0D2", fg:"#1F5E3A"}
+};
+
+const RESOURCES = [
+  {title:"Training Calendar User Guide", desc:"How to search sessions, submit a request and track approvals end to end.", meta:"PDF · 1.4 MB"},
+  {title:"L&D Organization Chart", desc:"Who to contact in the Learning & Development team by region and discipline.", meta:"PDF · 620 KB"},
+  {title:"Training & Development Policy", desc:"Eligibility, cost coverage, travel rules and post-training commitments.", meta:"PDF · 880 KB"},
+  {title:"Competency Framework", desc:"Role-based learning paths for technical and non-technical career tracks.", meta:"Web page"}
+];
+
+function initialsOf(n){ return String(n||"?").split(" ").map(w => w[0]).slice(0,2).join(""); }
+const pad = n => String(n).padStart(2, "0");
+const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+const isoMs = s => Date.UTC(Number(s.slice(0,4)), Number(s.slice(5,7)) - 1, Number(s.slice(8,10)));
+const withOption = (opts, v) => v && !opts.includes(v) ? [v].concat(opts) : opts;
+
+export default class Portal extends React.Component {
+  constructor(props) {
+    super(props);
+    const d = props.initial;
+    const now = new Date();
+    this.state = Object.assign({
+      view: d.isAdmin ? "admin" : "employee",
+      screen: "dashboard",
+      calView: "table",
+      month: now.getMonth(), calYear: now.getFullYear(),
+      q: "", fType: "All", fCat: "All", fSeats: "All", fLoc: "All",
+      detailId: null,
+      form: null,
+      justification: "",
+      editor: null,
+      sessionId: null,
+      busy: false,
+      toast: null
+    }, this.fromSnapshot(d));
+  }
+
+  fromSnapshot(d) {
+    return {
+      meId: d.meId, isAdminUser: d.isAdmin, canManage: d.canManage, people: d.people,
+      trainings: d.trainings, requests: d.requests, attended: d.attended,
+      templatesOff: d.templatesOff, templateRows: d.templates
+    };
+  }
+
+  componentWillUnmount() { clearTimeout(this._tt); }
+
+  flash(title, body) {
+    clearTimeout(this._tt);
+    this.setState({toast: {title, body}});
+    this._tt = setTimeout(() => this.setState({toast: null}), 4200);
+  }
+
+  /** Calls a server action, swaps in the fresh data and shows a toast. */
+  async act(promiseFn, title, body, extra) {
+    if (this.state.busy) return;
+    this.setState({busy: true});
+    try {
+      const res = await promiseFn();
+      if (res.ok) {
+        this.setState(Object.assign(this.fromSnapshot(res.data), extra || {}, {busy: false}));
+        if (title) this.flash(title, body);
+      } else {
+        this.setState({busy: false});
+        this.flash("Couldn't save that change", res.error);
+      }
+    } catch {
+      this.setState({busy: false});
+      this.flash("Couldn't reach the server", "Check your connection and try again.");
+    }
+  }
+
+  P(id) { return this.state.people[id]; }
+  t(id) { return this.state.trainings.find(x => x.id === id); }
+  me() { return this.P(this.state.meId); }
+
+  chainFor(key) {
+    const out = []; let cur = (this.P(key) || {}).boss;
+    while (cur && this.P(cur) && out.length < APPROVAL_LEVELS && cur !== key) { out.push(cur); cur = this.P(cur).boss; }
+    return out;
+  }
+  reportsOf(key) { return Object.keys(this.state.people).filter(k => this.P(k).boss === key); }
+
+  dayNum(s) { return Number(s.slice(8, 10)); }
+  monNum(s) { return Number(s.slice(5, 7)) - 1; }
+  yearOf(s) { return Number(s.slice(0, 4)); }
+  range(t) {
+    const a = this.dayNum(t.start), b = this.dayNum(t.end);
+    const ma = this.monNum(t.start), mb = this.monNum(t.end);
+    return ma === mb ? a + "–" + b + " " + SHORT[mb] + " " + this.yearOf(t.end) : a + " " + SHORT[ma] + " – " + b + " " + SHORT[mb];
+  }
+  days(t) { return Math.round((isoMs(t.end) - isoMs(t.start)) / 86400000) + 1; }
+
+  ageDays(r) { return Math.max(0, Math.round((Date.now() - new Date(r.submittedAt).getTime()) / 86400000)); }
+
+  seatState(t) {
+    const left = t.seats - t.enrolled;
+    if (left <= 0) return {label:"Class Full", bg:"#EEF1EF", fg:"#4A4B4D", bar:"#58595B"};
+    if (left <= 4) return {label:"Filling Up", bg:"#DCEBE3", fg:"#1F5E3A", bar:"#6AAF8E"};
+    return {label:"Seats Open", bg:"#C5E0D2", fg:"#1F5E3A", bar:"#2A7E4F"};
+  }
+
+  filtered() {
+    const st = this.state, q = st.q.trim().toLowerCase();
+    return st.trainings.filter(t => {
+      if (q && (t.title + " " + t.code + " " + t.category).toLowerCase().indexOf(q) < 0) return false;
+      if (st.fType !== "All" && t.type !== st.fType) return false;
+      if (st.fCat !== "All" && t.category !== st.fCat) return false;
+      if (st.fLoc !== "All" && t.location !== st.fLoc) return false;
+      if (st.fSeats === "Seats available" && t.enrolled >= t.seats) return false;
+      if (st.fSeats === "Class full" && t.enrolled < t.seats) return false;
+      return true;
+    }).sort((a, b) => a.start < b.start ? -1 : 1);
+  }
+
+  photoFor(t) {
+    if (!t) return "/assets/photo-crew-walking.png";
+    if (t.type === "HSE") return "/assets/photo-toolbox-talk.png";
+    if (t.type === "Technical") return "/assets/photo-wellhead.png";
+    return "/assets/photo-crew-walking.png";
+  }
+
+  defaultForm() {
+    const p = this.me();
+    const boss = p.boss ? this.P(p.boss) : null;
+    return {nesrId: p.nesrId === "—" ? "" : p.nesrId, name: p.name, loc: p.loc || LOCATIONS[0], dept: p.dept || DEPTS[0],
+      nat: NATIONALITIES[0], mgr: boss ? boss.email : ""};
+  }
+
+  openDetail(id) { this.setState({detailId: id, justification: "", form: this.state.form || this.defaultForm()}); }
+
+  row(t, i) {
+    const s = this.seatState(t);
+    const left = Math.max(0, t.seats - t.enrolled);
+    return {
+      id: t.id, code: t.code, title: t.title, category: t.category, type: t.type,
+      dates: this.range(t), location: t.location, st: s, photo: this.photoFor(t),
+      seatsLabel: left > 0 ? left + " of " + t.seats + " left" : "Full (" + t.seats + ")",
+      fillPct: Math.min(100, Math.round(t.enrolled / Math.max(1, t.seats) * 100)),
+      zebra: i % 2 ? "#FAFBFA" : "#FFFFFF",
+      cta: left > 0 ? "Register →" : "Join waitlist →",
+      onClick: () => this.openDetail(t.id)
+    };
+  }
+
+  setForm(k) { return e => this.setState({form: Object.assign({}, this.state.form, {[k]: e.target.value})}); }
+  setEditor(k) { return e => this.setState({editor: Object.assign({}, this.state.editor, {[k]: e.target.value})}); }
+
+  submitRequest() {
+    const t = this.t(this.state.detailId);
+    if (!t) return;
+    const full = t.enrolled >= t.seats;
+    const chain = this.chainFor(this.state.meId);
+    const form = this.state.form || this.defaultForm();
+    const next = chain.length ? this.P(chain[0]) : null;
+    const viaForm = !next && form.mgr;
+    this.act(() => actions.submitRequest({trainingId: t.id, justification: this.state.justification, form}),
+      full ? "Added to the waitlist" : "Request submitted",
+      full ? t.code + " is at capacity. You keep your place in the queue and will be notified if a seat opens." :
+      next ? "Sent to " + next.name + (next.title ? " (" + next.title + ")" : "") + ". L&D is notified at each step." :
+      viaForm ? "Sent to " + form.mgr + " for approval. L&D is notified at each step." :
+                "You have no approver above you — routed straight to the L&D team for enrollment.",
+      {detailId: null, justification: ""});
+  }
+
+  saveTraining() {
+    const ed = this.state.editor;
+    this.act(() => actions.saveTraining(ed), ed.id ? "Training updated" : "Training published", ed.code + " — " + ed.title, {editor: null});
+  }
+
+  renderVals() {
+    const st = this.state;
+    const scr = st.screen;
+    const mk = (k, v, d) => ({k, v, d});
+    const YEAR = new Date().getFullYear();
+    const TODAY = todayIso();
+
+    const meP = this.me();
+    const isAdmin = st.view === "admin";
+    const myReports = this.reportsOf(meP.key);
+    const hasReports = st.view === "manager";
+
+    const views = [["employee","Employee"]]
+      .concat(st.canManage ? [["manager","Manager"]] : [])
+      .concat(st.isAdminUser ? [["admin","L&D Team"]] : []);
+    const roleTabs = views.map(([k, label]) => ({
+      label,
+      bg: st.view === k ? "#FFFFFF" : "transparent", fg: st.view === k ? "#2A7E4F" : "#DCEAE2",
+      onClick: () => this.setState({view: k, screen: k === "manager" ? "approvals" : "dashboard", detailId: null})
+    }));
+
+    const navItems = isAdmin
+      ? [["dashboard","Dashboard"],["trainings","Manage Trainings"],["queue","Approval Queue"],["attendance","Attendance"],["templates","Notifications"]]
+      : [["dashboard","My Dashboard"]]
+          .concat(hasReports ? [["approvals","Team Approvals"]] : [])
+          .concat([["calendar","Training Calendar"],["requests","My Requests"]])
+          .concat(hasReports ? [["team","Team Development"]] : [])
+          .concat([["resources","Resources"]]);
+
+    const pendingAll = st.requests.filter(r => r.state === "pending").length;
+    const pendingLnd = st.requests.filter(r => r.state === "lnd").length;
+    const onMe = st.requests.filter(r => r.state === "pending" && (r.chain || [])[r.step] === meP.key).length;
+    const mineOpen = st.requests.filter(r => r.who === meP.key && (r.state === "pending" || r.state === "lnd")).length;
+    const badges = {approvals: onMe, queue: pendingLnd, requests: mineOpen};
+
+    const nav = navItems.map(([k, label]) => {
+      const on = scr === k || (k === "trainings" && scr === "session");
+      return {
+        label, weight: on ? "bold" : "normal",
+        bg: on ? "#F2F7F4" : "transparent", fg: on ? "#1F5E3A" : "#3E403E",
+        edge: on ? "#2A7E4F" : "transparent",
+        badge: badges[k] || 0,
+        badgeBg: on ? "#2A7E4F" : "#E7EBE9", badgeFg: on ? "#FFFFFF" : "#58595B",
+        onClick: () => this.setState({screen: k, detailId: null})
+      };
+    });
+
+    const s = {
+      empDash: !isAdmin && scr === "dashboard",
+      cal: scr === "calendar",
+      myReq: !isAdmin && scr === "requests",
+      res: !isAdmin && scr === "resources",
+      mgrApp: !isAdmin && hasReports && scr === "approvals",
+      mgrTeam: !isAdmin && hasReports && scr === "team",
+      aDash: isAdmin && scr === "dashboard",
+      aTrain: isAdmin && scr === "trainings",
+      aSession: isAdmin && scr === "session",
+      aApp: isAdmin && scr === "queue",
+      aAtt: isAdmin && scr === "attendance",
+      aNotify: isAdmin && scr === "templates"
+    };
+
+    const list = this.filtered();
+    const rows = list.map((t, i) => this.row(t, i));
+
+    const viewTabs = [["table","Table"],["month","Month"],["cards","Catalog"]].map(([k, label]) => ({
+      label, bg: st.calView === k ? "#FFFFFF" : "transparent", fg: st.calView === k ? "#2A7E4F" : "#58595B",
+      onClick: () => this.setState({calView: k})
+    }));
+
+    const filters = [
+      {label:"Type", value: st.fType, options:["All"].concat(TYPES), onChange: e => this.setState({fType: e.target.value})},
+      {label:"Category", value: st.fCat, options:["All"].concat(CATEGORIES), onChange: e => this.setState({fCat: e.target.value})},
+      {label:"Location", value: st.fLoc, options:["All"].concat(LOCATIONS), onChange: e => this.setState({fLoc: e.target.value})},
+      {label:"Availability", value: st.fSeats, options:["All","Seats available","Class full"], onChange: e => this.setState({fSeats: e.target.value})}
+    ];
+
+    const first = new Date(st.calYear, st.month, 1).getDay();
+    const dim = new Date(st.calYear, st.month + 1, 0).getDate();
+    const monthCells = [];
+    for (let i = 0; i < first; i++) monthCells.push({day:"", items:[], bg:"#FAFBFA", numFg:"#C9CDCB"});
+    for (let d = 1; d <= dim; d++) {
+      const items = st.trainings.filter(t => this.yearOf(t.start) === st.calYear && this.monNum(t.start) === st.month && this.dayNum(t.start) === d).map(t => {
+        const ss = this.seatState(t);
+        return {label: t.code + " · " + t.title, bg: ss.bar, onClick: () => this.openDetail(t.id)};
+      });
+      monthCells.push({day: String(d), items, bg:"#FFFFFF", numFg:"#1F1F1D"});
+    }
+    while (monthCells.length % 7 !== 0) monthCells.push({day:"", items:[], bg:"#FAFBFA", numFg:"#C9CDCB"});
+
+    const decorate = r => {
+      const t = this.t(r.tid) || {code:"—", title:"Removed session", location:"", start:"2026-01-01", end:"2026-01-01"};
+      const person = this.P(r.who) || {name:"Unknown", title:"", dept:"", loc:"", nesrId:"—"};
+      const form = r.form || {};
+      const name = form.name || person.name;
+      const chainPeople = (r.chain || []).map(k => this.P(k)).filter(Boolean);
+      const cur = r.state === "pending" ? chainPeople[r.step] : null;
+      const base = STATE_STYLE[r.state] || STATE_STYLE.pending;
+      const stepDefs = [{label:"Submitted", note: r.submitted}]
+        .concat(chainPeople.map(p => ({label: p.first, note: p.title})))
+        .concat([{label:"L&D Review", note:"Enrollment"}, {label:"Confirmed", note: r.state === "completed" ? "Completed" : "Seat held"}]);
+      const failIdx = r.state === "rejected" ? 1 + r.step : -1;
+      const prog = r.state === "rejected" ? 1 + r.step
+        : r.state === "pending" ? 1 + r.step
+        : r.state === "waitlist" ? 1
+        : r.state === "lnd" ? 1 + chainPeople.length
+        : stepDefs.length;
+      const steps = stepDefs.map((d, i) => {
+        const failed = i === failIdx;
+        const active = i < prog;
+        return {
+          label: d.label,
+          note: failed ? "Declined" : i === 0 ? r.submitted : active ? "Done" : (i === prog && r.state === "pending" ? "Awaiting" : d.note),
+          bar: failed ? "#8A2B2B" : active ? "#2A7E4F" : "#E1E5E3",
+          fg: failed ? "#8A2B2B" : active ? "#1F5E3A" : "#A8ACAA"
+        };
+      });
+      const nextIdx = r.step + 1;
+      return {
+        id: r.id, code: t.code, title: t.title, employee: name, initials: initialsOf(name),
+        empMeta: "NESR ID " + (form.nesrId || person.nesrId) + " · " + person.title + " · " + (form.loc || person.loc),
+        manager: cur ? cur.name + (cur.title ? " (" + cur.title + ")" : "") : chainPeople.length ? chainPeople[chainPeople.length - 1].name : "—",
+        chainNote: chainPeople.map(p => p.first).join(" → ") + (chainPeople.length ? " → " : "") + "L&D Team",
+        justification: r.justification,
+        meta: this.range(t) + " · " + t.location + " · submitted " + r.submitted,
+        st: {label: r.state === "pending" ? (cur ? "Awaiting " + cur.first : "Awaiting Approval") : base.label, bg: base.bg, fg: base.fg},
+        state: r.state, stage: r.state, steps,
+        actionable: r.state === "pending" && (r.chain || [])[r.step] === meP.key,
+        onApprove: () => {
+          const done = nextIdx >= chainPeople.length;
+          this.act(() => actions.approveRequest(r.id), "Approved",
+            done ? name + " approved for " + t.code + ". Now with the L&D team for enrollment."
+                 : name + " approved — routed to " + chainPeople[nextIdx].name + " for the next approval.");
+        },
+        onReject: () => this.act(() => actions.rejectRequest(r.id), "Request declined", name + " and the L&D team have been notified."),
+        onEnroll: () => this.act(() => actions.enrollRequest(r.id), "Participant enrolled", name + " confirmed for " + t.code + "."),
+        onWaitlist: () => this.act(() => actions.waitlistRequest(r.id), "Moved to waitlist", name + " will be offered the next available seat."),
+        onDeclineLnd: () => this.act(() => actions.rejectRequest(r.id), "Request declined", name + " has been notified by the L&D team.")
+      };
+    };
+
+    const myRequests = st.requests.filter(r => r.who === meP.key).map(decorate);
+    const teamRequests = st.requests.filter(r => (r.chain || []).indexOf(meP.key) >= 0).map(decorate)
+      .sort((a, b) => (b.actionable ? 1 : 0) - (a.actionable ? 1 : 0));
+    const queueRows = st.requests.filter(r => r.state === "lnd" || r.state === "waitlist" || r.state === "pending")
+      .map((r, i) => { const d = decorate(r); return Object.assign(d, {zebra: i % 2 ? "#FAFBFA" : "#FFFFFF", onReject: d.onDeclineLnd}); });
+
+    const upcoming = st.trainings.slice().sort((a, b) => a.start < b.start ? -1 : 1);
+    const recommended = upcoming.filter(t => t.enrolled < t.seats && t.start >= TODAY).slice(0, 4).map(t => {
+      const ss = this.seatState(t);
+      return {
+        title: t.title, sub: t.category + " · " + t.location, day: String(this.dayNum(t.start)),
+        mon: SHORT[this.monNum(t.start)], tint: ss.bg, tintFg: ss.fg,
+        seatsLabel: (t.seats - t.enrolled) + " seats",
+        onClick: () => this.openDetail(t.id)
+      };
+    });
+
+    const myForm = st.form || this.defaultForm();
+    const detailT = st.detailId ? this.t(st.detailId) : null;
+    let detail = null, formFields = [];
+    if (detailT) {
+      const ss = this.seatState(detailT);
+      const left = Math.max(0, detailT.seats - detailT.enrolled);
+      const already = st.requests.some(r => r.who === meP.key && r.tid === detailT.id);
+      const canApply = !isAdmin && !already;
+      const myChain = this.chainFor(meP.key).map(k => this.P(k));
+      const chainNote = myChain.length
+        ? myChain.map(p => p.first + (p.title ? " (" + p.title + ")" : "")).join(" → ") + " → L&D Team"
+        : myForm.mgr ? myForm.mgr + " → L&D Team" : "L&D Team";
+      detail = {
+        code: detailT.code, type: detailT.type, title: detailT.title, desc: detailT.desc, photo: this.photoFor(detailT),
+        canApply,
+        width: canApply ? "900px" : "600px",
+        railBg: canApply ? "#FAFBFA" : "#FFFFFF",
+        railBorder: canApply ? "1px solid #EAEEEC" : "0",
+        ctaLabel: st.busy ? "Submitting…" : left > 0 ? "Submit Request" : "Join Waitlist",
+        chainNote,
+        footNote: already ? "You already have a request on file for this session." :
+          isAdmin ? "Switch to the Employee view to register for this session." :
+          left > 0 ? left + " of " + detailT.seats + " seats remaining." : "This class is full — waitlist requests are still accepted.",
+        facts: [
+          mk("Dates", this.range(detailT), "M7 3v3M17 3v3M4 9.5h16M5.5 6h13a1.5 1.5 0 011.5 1.5v11A1.5 1.5 0 0118.5 20h-13A1.5 1.5 0 014 18.5v-11A1.5 1.5 0 015.5 6z"),
+          mk("Duration", this.days(detailT) + " days", "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5V12l3 2"),
+          mk("Location", detailT.location, "M12 21s7-5.686 7-11a7 7 0 10-14 0c0 5.314 7 11 7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"),
+          mk("Category", detailT.category, "M4 6.5h5l2 2h9v9.5a1 1 0 01-1 1H5a1 1 0 01-1-1z"),
+          mk("Instructor", detailT.instructor || "TBC", "M12 12a4 4 0 100-8 4 4 0 000 8zM4.5 20c0-3.3 3.4-5.5 7.5-5.5s7.5 2.2 7.5 5.5"),
+          mk("Availability", ss.label, "M8.5 11a3 3 0 100-6 3 3 0 000 6zM2.5 19.5c0-2.8 2.7-4.5 6-4.5s6 1.7 6 4.5M16.5 11a3 3 0 100-6M16 15c3 0 5.5 1.8 5.5 4.5"),
+          mk("Approval steps", String(Math.max(myChain.length, myForm.mgr ? 1 : 0) + 1), "M20 6.5L9.5 17 4.5 12")
+        ]
+      };
+      formFields = [
+        {label:"NESR ID", isText:true, value: myForm.nesrId, placeholder:"e.g. 10428", onChange: this.setForm("nesrId")},
+        {label:"Full name", isText:true, value: myForm.name, placeholder:"Full name", onChange: this.setForm("name")},
+        {label:"Work location", isSelect:true, value: myForm.loc, options: withOption(LOCATIONS, myForm.loc), onChange: this.setForm("loc")},
+        {label:"Department", isSelect:true, value: myForm.dept, options: withOption(DEPTS, myForm.dept), onChange: this.setForm("dept")},
+        {label:"Nationality (visa)", isSelect:true, value: myForm.nat, options: NATIONALITIES, onChange: this.setForm("nat")},
+        {label:"Approver email", isText:true, value: myForm.mgr, placeholder:"name@nesr.com", onChange: this.setForm("mgr")}
+      ];
+    }
+
+    const ed = st.editor;
+    const editorFields = ed ? [
+      {label:"Session code", isText:true, span:"auto", value: ed.code, placeholder:"TNT-04", onChange: this.setEditor("code")},
+      {label:"Instructor", isText:true, span:"auto", value: ed.instructor, placeholder:"Lead instructor", onChange: this.setEditor("instructor")},
+      {label:"Training title", isText:true, span:"1 / -1", value: ed.title, placeholder:"Session title", onChange: this.setEditor("title")},
+      {label:"Category", isSelect:true, span:"auto", value: ed.category, options: CATEGORIES, onChange: this.setEditor("category")},
+      {label:"Type", isSelect:true, span:"auto", value: ed.type, options: TYPES, onChange: this.setEditor("type")},
+      {label:"Start date", isText:true, span:"auto", value: ed.start, placeholder: YEAR + "-10-18", onChange: this.setEditor("start")},
+      {label:"End date", isText:true, span:"auto", value: ed.end, placeholder: YEAR + "-10-22", onChange: this.setEditor("end")},
+      {label:"Location", isSelect:true, span:"auto", value: ed.location, options: LOCATIONS, onChange: this.setEditor("location")},
+      {label:"Seat capacity", isText:true, span:"auto", value: String(ed.seats), placeholder:"20", onChange: this.setEditor("seats")},
+      {label:"Description", isText:true, span:"1 / -1", value: ed.desc, placeholder:"What participants will learn", onChange: this.setEditor("desc")}
+    ] : [];
+
+    const adminRows = list.map((t, i) => {
+      const r = this.row(t, i);
+      r.onClick = () => this.setState({screen:"session", sessionId: t.id});
+      r.onView = () => this.setState({screen:"session", sessionId: t.id});
+      r.onEdit = () => this.setState({editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})});
+      r.onDelete = () => {
+        if (!window.confirm("Withdraw " + t.code + " — " + t.title + " from the calendar?")) return;
+        this.act(() => actions.deleteTraining(t.id), "Training removed", t.code + " was withdrawn from the calendar.");
+      };
+      return r;
+    });
+
+    const openReqs = st.requests.filter(r => r.state === "pending" || r.state === "lnd");
+    const ages = openReqs.map(r => this.ageDays(r));
+    const avgWait = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
+    const oldestWait = ages.length ? Math.max.apply(null, ages) : 0;
+    const slaColor = d => d >= 7 ? "#8A2B2B" : d >= 4 ? "#B07A00" : "#2A7E4F";
+
+    const groups = {};
+    openReqs.forEach(r => {
+      const k = r.state === "lnd" ? "lnd" : ((r.chain || [])[r.step] || "lnd");
+      const who = k === "lnd" ? {name:"L&D Team", title:"Enrollment desk"} : (this.P(k) || {name:"Unknown", title:""});
+      if (!groups[k]) groups[k] = {key:k, name: who.name, title: who.title, ages: []};
+      groups[k].ages.push(this.ageDays(r));
+    });
+    const ageingRows = Object.keys(groups).map(k => {
+      const g = groups[k];
+      const oldest = Math.max.apply(null, g.ages);
+      const avg = Math.round(g.ages.reduce((a, b) => a + b, 0) / g.ages.length);
+      return {name: g.name, title: g.title, initials: initialsOf(g.name), count: String(g.ages.length),
+        oldest: oldest + "d", avg: "avg " + avg + "d", oldestN: oldest,
+        pct: String(Math.min(100, Math.round(oldest / 14 * 100))), color: slaColor(oldest),
+        flag: oldest >= 7 ? "Overdue" : oldest >= 4 ? "Ageing" : "On track",
+        flagBg: oldest >= 7 ? "#F7DEDE" : oldest >= 4 ? "#FDF2D9" : "#C5E0D2",
+        flagFg: oldest >= 7 ? "#8A2B2B" : oldest >= 4 ? "#7A5400" : "#1F5E3A"};
+    }).sort((a, b) => b.oldestN - a.oldestN);
+
+    const stageAvg = keys => {
+      const rs = st.requests.filter(r => keys.indexOf(r.state) >= 0);
+      if (!rs.length) return {n:"0", avg:"—", pct:"0"};
+      const a = Math.round(rs.reduce((x, r) => x + this.ageDays(r), 0) / rs.length);
+      return {n: String(rs.length), avg: a + "d avg in system", pct: String(Math.min(100, Math.round(a / 14 * 100)))};
+    };
+    const timelineRows = [
+      Object.assign({label:"Awaiting manager", color:"#B07A00"}, stageAvg(["pending"])),
+      Object.assign({label:"With L&D team", color:"#1F4E79"}, stageAvg(["lnd"])),
+      Object.assign({label:"Enrolled", color:"#2A7E4F"}, stageAvg(["enrolled"])),
+      Object.assign({label:"Waitlisted", color:"#58595B"}, stageAvg(["waitlist"])),
+      Object.assign({label:"Declined", color:"#8A2B2B"}, stageAvg(["rejected"]))
+    ];
+
+    const totalSeats = st.trainings.reduce((a, t) => a + t.seats, 0);
+    const totalEnrolled = st.trainings.reduce((a, t) => a + t.enrolled, 0);
+    const adminKpis = [
+      {label:"Active Sessions", value: String(st.trainings.length), note: YEAR + " calendar"},
+      {label:"Seat Utilization", value: Math.round(totalEnrolled / Math.max(1, totalSeats) * 100) + "%", note: totalEnrolled + " of " + totalSeats + " seats"},
+      {label:"Pending Approvals", value: String(pendingAll + pendingLnd), note: pendingAll + " with managers, " + pendingLnd + " with L&D"},
+      {label:"Enrolled", value: String(st.requests.filter(r => r.state === "enrolled").length), note:"Confirmed participants"},
+      {label:"Avg Wait", value: avgWait + "d", note:"Time in approval chain"},
+      {label:"Oldest Pending", value: oldestWait + "d", note: ageingRows.length ? "with " + ageingRows[0].name : "nothing pending"}
+    ];
+
+    const fillRows = upcoming.filter(t => t.end >= TODAY).slice(0, 6).map(t => {
+      const pct = Math.round(t.enrolled / Math.max(1, t.seats) * 100);
+      return {title: t.code + " · " + t.title, seatsLabel: t.enrolled + "/" + t.seats, pct,
+        color: pct >= 100 ? "#58595B" : pct >= 80 ? "#6AAF8E" : "#2A7E4F"};
+    });
+
+    const catTotals = {};
+    st.trainings.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.enrolled; });
+    const catMax = Math.max.apply(null, [1].concat(Object.keys(catTotals).map(k => catTotals[k])));
+    const catRows = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a]).map((k, i) => ({
+      label: k, n: catTotals[k], pct: Math.round(catTotals[k] / catMax * 100),
+      color: ["#2A7E4F","#3C8E60","#4E9E72","#6AAF8E","#8CC3A8","#A9D3BF","#C5E0D2","#D6E9DF","#E3F0E9"][i] || "#C5E0D2"
+    }));
+
+    const attendee = (t, pk) => {
+      const p = this.P(pk) || {name:"Unknown", nesrId:"—", title:"", dept:""};
+      const key = t.id + ":" + pk;
+      const on = st.attended[key] !== false;
+      return {
+        name: p.name, initials: initialsOf(p.name),
+        meta: "NESR ID " + p.nesrId + " · " + p.title + " · " + p.dept,
+        label: on ? "Attended" : "No show",
+        bg: on ? "#C5E0D2" : "#FFFFFF", fg: on ? "#1F5E3A" : "#8A2B2B", border: on ? "#2A7E4F" : "#D1D3D4",
+        onToggle: () => this.act(() => actions.setAttendance(t.id, pk, !on))
+      };
+    };
+
+    const delivered = st.trainings.filter(t => t.start <= TODAY);
+    const attendanceSessions = delivered.map(t => {
+      const booked = st.requests.filter(r => r.tid === t.id && (r.state === "enrolled" || r.state === "completed")).map(r => r.who);
+      const people = booked.map(pk => attendee(t, pk));
+      const n = people.filter(p => p.label === "Attended").length;
+      return {code: t.code, title: t.title, meta: this.range(t) + " · " + t.location,
+        completionLabel: n + " of " + people.length + " completed", people};
+    });
+
+    const templates = (st.templateRows || []).map(t => {
+      const off = st.templatesOff[t.id];
+      return Object.assign({}, t, {
+        state: off ? "Paused" : "Active", stBg: off ? "#EEF1EF" : "#C5E0D2", stFg: off ? "#58595B" : "#1F5E3A",
+        toggleLabel: off ? "Activate" : "Pause",
+        onEdit: () => this.flash("Template editor", "Editing templates in the portal is coming soon. Ask IT to update " + t.name + "."),
+        onToggle: () => this.act(() => actions.setTemplateActive(t.id, !!off), off ? "Template activated" : "Template paused", t.name)
+      });
+    });
+
+    const teamStats = myReports.map(k => {
+      const p = this.P(k);
+      const d = st.requests.filter(r => r.who === k && (r.state === "enrolled" || r.state === "completed"))
+        .reduce((a, r) => { const tt = this.t(r.tid); return a + (tt ? this.days(tt) : 0); }, 0);
+      return {name: p.name, role: [p.title, (p.loc || "").split(",")[0]].filter(Boolean).join(" · "), initials: initialsOf(p.name),
+        pct: Math.min(100, Math.round(d / 15 * 100)), label: d + " of 15 days"};
+    });
+
+    const myUpcoming = myRequests.filter(r => r.state === "enrolled").length;
+    const myDays = st.requests.filter(r => r.who === meP.key && (r.state === "enrolled" || r.state === "completed"))
+      .reduce((a, r) => { const tt = this.t(r.tid); return a + (tt ? this.days(tt) : 0); }, 0);
+    const empKpis = [
+      {label:"Enrolled", value: String(myUpcoming), note:"Confirmed sessions"},
+      {label:"Awaiting Approval", value: String(mineOpen), note:"In the approval chain"},
+      {label:"Completed", value: String(st.requests.filter(r => r.who === meP.key && r.state === "completed").length), note: YEAR + " cycle"},
+      {label:"Training Days", value: String(myDays), note:"Target 10 days"}
+    ];
+
+    let session = null;
+    if (s.aSession) {
+      const t = this.t(st.sessionId);
+      if (t) {
+        const reqs = st.requests.filter(r => r.tid === t.id);
+        const by = k => reqs.filter(r => r.state === k);
+        const ss = this.seatState(t);
+        const startMs = isoMs(t.start), endMs = isoMs(t.end), todayMs = isoMs(TODAY);
+        const dleft = Math.round((startMs - todayMs) / 86400000);
+        const dsince = Math.round((todayMs - endMs) / 86400000);
+        const isDelivered = todayMs > endMs;
+        const live = !isDelivered && dleft <= 0;
+        const countBig = isDelivered ? "Delivered" : live ? "In progress" : String(dleft);
+        const countUnit = isDelivered ? (dsince === 0 ? "ended today" : dsince + " days ago") : live ? "running now" : (dleft === 1 ? "day to go" : "days to go");
+        const reqEnrolled = by("enrolled").length + by("completed").length;
+        const enrolledN = Math.max(t.enrolled, reqEnrolled);
+        const inApproval = by("pending").length + by("lnd").length;
+        const applied = enrolledN + inApproval + by("waitlist").length + by("rejected").length;
+        const fillPct = Math.round(t.enrolled / Math.max(1, t.seats) * 100);
+        const bar = (label, n, color) => ({label, n: String(n), pct: Math.round(n / Math.max(1, applied) * 100), color});
+        const roster = by("enrolled").concat(by("completed")).map(r => attendee(t, r.who));
+        const attendedN = roster.filter(p => p.label === "Attended").length;
+        session = {
+          code: t.code, title: t.title, photo: this.photoFor(t),
+          meta: [t.category, t.type, t.instructor].filter(Boolean).join(" · "),
+          dates: this.range(t), location: t.location, duration: this.days(t) + " days",
+          desc: t.desc, statusLabel: ss.label, statusBg: ss.bg, statusFg: ss.fg,
+          countBig, countUnit,
+          kpis: [
+            {label:"Applications", value: String(applied), note:"All time"},
+            {label:"In Approval", value: String(inApproval), note: by("pending").length + " with managers"},
+            {label:"Enrolled", value: String(enrolledN), note:"Confirmed seats"},
+            {label:"Waitlisted", value: String(by("waitlist").length), note:"Next in line"},
+            {label:"Declined", value: String(by("rejected").length), note:"Not approved"},
+            {label:"Seat Fill", value: fillPct + "%", note: t.enrolled + " of " + t.seats + " seats"}
+          ],
+          fillPct: String(Math.min(100, fillPct)), fillColor: fillPct >= 100 ? "#58595B" : fillPct >= 80 ? "#6AAF8E" : "#2A7E4F",
+          fillLabel: t.enrolled + " of " + t.seats + " seats taken",
+          funnel: [
+            bar("Applied", applied, "#2A7E4F"),
+            bar("Manager approved", by("lnd").length + enrolledN, "#3C8E60"),
+            bar("Awaiting manager", by("pending").length, "#B07A00"),
+            bar("Enrolled", enrolledN, "#6AAF8E"),
+            bar("Waitlisted", by("waitlist").length, "#A9D3BF"),
+            bar("Declined", by("rejected").length, "#C9CDCB")
+          ],
+          pending: by("pending").concat(by("lnd")).map(decorate),
+          hasPending: inApproval > 0, noPending: inApproval === 0,
+          roster, hasRoster: roster.length > 0, noRoster: roster.length === 0 && roster.length >= enrolledN,
+          rosterNote: roster.length < enrolledN ? (enrolledN - roster.length) + " further seats were enrolled directly by the L&D team" : "",
+          hasRosterNote: roster.length < enrolledN,
+          showAttendance: isDelivered || live,
+          completionLabel: attendedN + " of " + roster.length + " marked attended",
+          onBack: () => this.setState({screen:"trainings", sessionId: null}),
+          onEdit: () => this.setState({editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})}),
+          onExport: () => this.flash("Export coming soon", t.code + " participant export is not wired up yet.")
+        };
+      }
+    }
+
+    return {
+      session,
+      user: {name: meP.name, first: meP.first, initials: initialsOf(meP.name),
+        sub: [meP.title, meP.nesrId && meP.nesrId !== "—" ? "NESR ID " + meP.nesrId : ""].filter(Boolean).join(" · ")},
+      onSignOut: () => actions.logout(),
+      year: YEAR, roleTabs, nav, s,
+      roleLabel: isAdmin ? "L&D Administration" : hasReports ? "Manager Workspace" : "My Learning",
+      rows, adminRows, viewTabs, filters, q: st.q,
+      onSearch: e => this.setState({q: e.target.value}),
+      clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All", fSeats:"All"}),
+      isTable: st.calView === "table", isMonth: st.calView === "month", isCards: st.calView === "cards",
+      noResults: rows.length === 0,
+      resultLabel: rows.length + " of " + st.trainings.length + " sessions in the calendar",
+      catalogLabel: st.trainings.length + " sessions published",
+      pendingLabel: onMe + " request" + (onMe === 1 ? "" : "s") + " waiting on you · once you approve, each request moves to the next approver in the chain, then the L&D team",
+      dayNames: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+      monthCells, monthLabel: MONTHS[st.month] + " " + st.calYear,
+      prevMonth: () => this.setState(st.month === 0 ? {month: 11, calYear: st.calYear - 1} : {month: st.month - 1}),
+      nextMonth: () => this.setState(st.month === 11 ? {month: 0, calYear: st.calYear + 1} : {month: st.month + 1}),
+      myRequests, teamRequests, queueRows, recommended, teamStats,
+      empKpis, adminKpis, fillRows, catRows, attendanceSessions, templates, ageingRows, timelineRows,
+      resources: RESOURCES,
+      detail, formFields, justification: st.justification,
+      onJustification: e => this.setState({justification: e.target.value}),
+      submitRequest: () => this.submitRequest(),
+      editor: st.editor, editorFields, saveTraining: () => this.saveTraining(),
+      onNewTraining: () => this.setState({editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category: CATEGORIES[0], type: TYPES[0], start:"", end:"", location: LOCATIONS[0], seats:"20", instructor:"", desc:""}}),
+      onExport: () => this.flash("Export coming soon", "The registration report export is not wired up yet."),
+      closeModal: () => this.setState({detailId: null, editor: null}),
+      stop: e => e.stopPropagation(),
+      toast: st.toast
+    };
+  }
+
+  render() { return <PortalView v={this.renderVals()} />; }
+}

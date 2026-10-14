@@ -1,0 +1,152 @@
+// NESR L&D Portal — PostgreSQL schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RequestState {
+  pending   // awaiting a manager in the approval chain
+  lnd       // approved by managers, with the L&D team
+  enrolled
+  waitlist
+  rejected
+  completed
+}
+
+enum StepStatus {
+  waiting
+  approved
+  rejected
+}
+
+/// People in the portal. Created/updated on SSO sign-in (and as placeholders for approvers).
+model Employee {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  entraOid    String?   @unique @map("entra_oid")
+  name        String
+  firstName   String    @map("first_name")
+  nesrId      String?   @map("nesr_id")
+  title       String?
+  department  String?
+  location    String?
+  country     String?
+  isAdmin     Boolean   @default(false) @map("is_admin")
+  managerId   String?   @map("manager_id")
+  manager     Employee? @relation("Reports", fields: [managerId], references: [id], onDelete: SetNull)
+  reports     Employee[] @relation("Reports")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  requests    TrainingRequest[]
+  approvals   ApprovalStep[]
+  attendance  Attendance[]
+
+  @@map("employees")
+}
+
+model Training {
+  id          String   @id @default(cuid())
+  code        String
+  title       String
+  category    String
+  type        String
+  startDate   DateTime @db.Date @map("start_date")
+  endDate     DateTime @db.Date @map("end_date")
+  location    String
+  seats       Int
+  enrolled    Int      @default(0)
+  instructor  String?
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  requests    TrainingRequest[]
+  attendance  Attendance[]
+
+  @@index([startDate])
+  @@map("trainings")
+}
+
+model TrainingRequest {
+  id            String       @id @default(cuid())
+  employeeId    String       @map("employee_id")
+  employee      Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  trainingId    String       @map("training_id")
+  training      Training     @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  state         RequestState @default(pending)
+  currentStep   Int          @default(0) @map("current_step")
+  justification String?
+  /// Registration form snapshot: nesrId, name, loc, dept, nat, mgr
+  form          Json?
+  submittedAt   DateTime     @default(now()) @map("submitted_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  steps         ApprovalStep[]
+
+  @@unique([employeeId, trainingId])
+  @@index([state])
+  @@map("training_requests")
+}
+
+/// Ordered approval chain for a request (manager, then manager's manager, ...).
+model ApprovalStep {
+  id         String          @id @default(cuid())
+  requestId  String          @map("request_id")
+  request    TrainingRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  stepNo     Int             @map("step_no")
+  approverId String          @map("approver_id")
+  approver   Employee        @relation(fields: [approverId], references: [id], onDelete: Cascade)
+  status     StepStatus      @default(waiting)
+  decidedAt  DateTime?       @map("decided_at")
+
+  @@unique([requestId, stepNo])
+  @@index([approverId])
+  @@map("approval_steps")
+}
+
+model Attendance {
+  trainingId String   @map("training_id")
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  employeeId String   @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  attended   Boolean
+  markedById String?  @map("marked_by_id")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@id([trainingId, employeeId])
+  @@map("attendance")
+}
+
+model NotificationTemplate {
+  id        String   @id
+  name      String
+  trigger   String
+  subject   String
+  body      String
+  isActive  Boolean  @default(true) @map("is_active")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_templates")
+}
+
+/// Who changed what — approvals, enrollments, training edits.
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  actorId   String?  @map("actor_id")
+  action    String
+  entity    String
+  entityId  String   @map("entity_id")
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([entity, entityId])
+  @@map("audit_log")
+}

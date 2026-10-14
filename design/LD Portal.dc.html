@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#F2F4F3;font-family:Arial,Calibri,Helvetica,sans-serif;color:#1F1F1D;-webkit-font-smoothing:antialiased}
+  a{color:#2A7E4F;text-decoration:none}
+  a:hover{color:#1F5E3A;text-decoration:underline}
+  input,select,textarea,button{font-family:inherit;font-size:13px;color:#1F1F1D}
+  @keyframes popIn{from{transform:translateY(10px) scale(.99);opacity:0}to{transform:none;opacity:1}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;background:#F2F4F3;position:relative">
+
+  <div style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0">
+    <div style="position:absolute;top:-180px;right:-140px;width:520px;height:260px;border-radius:260px 260px 0 0;background:rgba(42,126,79,.07)"></div>
+    <div style="position:absolute;top:90px;right:-90px;width:300px;height:150px;border-radius:0 0 300px 300px;background:rgba(106,175,142,.12)"></div>
+    <div style="position:absolute;bottom:-120px;left:180px;width:440px;height:220px;border-radius:220px 220px 0 0;background:rgba(42,126,79,.06)"></div>
+    <div style="position:absolute;bottom:60px;right:120px;width:180px;height:90px;border-radius:90px 90px 0 0;background:rgba(197,224,210,.45)"></div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:20px;background:#2A7E4F;padding:0 20px;height:60px;flex:0 0 auto;position:relative;overflow:hidden;z-index:1">
+    <div style="position:absolute;inset:0;pointer-events:none">
+      <div style="position:absolute;top:-58px;left:300px;width:200px;height:100px;border-radius:0 0 200px 200px;background:rgba(255,255,255,.07)"></div>
+      <div style="position:absolute;bottom:-40px;left:520px;width:150px;height:75px;border-radius:150px 150px 0 0;background:rgba(255,255,255,.06)"></div>
+      <div style="position:absolute;top:-30px;right:230px;width:120px;height:60px;border-radius:0 0 120px 120px;background:rgba(255,255,255,.05)"></div>
+    </div>
+    <img src="assets/nesr-logo-white.png" alt="NESR" style="height:34px;width:auto;display:block" />
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.35)"></div>
+    <div style="color:#fff;font-size:15px;font-weight:bold;letter-spacing:.2px">Learning &amp; Development Portal</div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:2px;background:rgba(0,0,0,.18);padding:3px;border-radius:4px">
+      <sc-for list="{{ roleTabs }}" as="rt" hint-placeholder-count="3">
+        <button onClick="{{ rt.onClick }}" style="border:0;cursor:pointer;padding:6px 14px;border-radius:3px;font-size:12px;font-weight:bold;background:{{ rt.bg }};color:{{ rt.fg }}">{{ rt.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding-left:6px">
+      <div style="text-align:right;line-height:1.25">
+        <div style="color:#fff;font-size:12px;font-weight:bold">{{ user.name }}</div>
+        <div style="color:#C5E0D2;font-size:11px">{{ user.sub }}</div>
+      </div>
+      <div style="width:34px;height:34px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">{{ user.initials }}</div>
+      <button onClick="{{ onSignOut }}" title="Sign out" style="border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;cursor:pointer;padding:5px 10px;border-radius:3px;font-size:11px;font-weight:bold">Sign out</button>
+    </div>
+  </div>
+
+  <div style="display:flex;flex:1;min-height:0;position:relative;z-index:1">
+
+    <div style="width:226px;flex:0 0 226px;background:#fff;border-right:1px solid #E1E5E3;padding:16px 0;display:flex;flex-direction:column">
+      <div style="padding:0 16px 10px;font-size:10px;font-weight:bold;letter-spacing:1.2px;color:#8A8F8C;text-transform:uppercase">{{ roleLabel }}</div>
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.onClick }}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;border-left:3px solid {{ n.edge }};cursor:pointer;padding:11px 16px;font-size:13px;font-weight:{{ n.weight }};background:{{ n.bg }};color:{{ n.fg }}">
+          <span style="flex:1">{{ n.label }}</span>
+          <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ true }}">
+            <span style="background:{{ n.badgeBg }};color:{{ n.badgeFg }};font-size:11px;font-weight:bold;padding:1px 7px;border-radius:9px">{{ n.badge }}</span>
+          </sc-if>
+        </button>
+      </sc-for>
+      <div style="flex:1"></div>
+      <div style="margin:0 16px;padding:12px;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px">
+        <div style="font-size:11px;font-weight:bold;color:#1F5E3A;margin-bottom:4px">Need help?</div>
+        <div style="font-size:11px;color:#58595B;line-height:1.5">Contact the L&amp;D team at <a href="mailto:learning@nesr.com">learning@nesr.com</a></div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0;overflow:auto;padding:22px 26px 40px">
+
+      <sc-if value="{{ s.empDash }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="position:relative;overflow:hidden;border-radius:7px;padding:30px 28px;margin-bottom:18px;background-color:#1F5E3A;background-image:linear-gradient(100deg,rgba(31,94,58,.96) 0%,rgba(42,126,79,.88) 46%,rgba(31,31,29,.6) 100%),url(assets/photo-crew-walking.png);background-size:cover,cover;background-position:center,center 34%">
+            <div style="position:absolute;inset:0;pointer-events:none">
+              <div style="position:absolute;top:-120px;right:40px;width:300px;height:150px;border-radius:0 0 300px 300px;background:rgba(255,255,255,.08)"></div>
+              <div style="position:absolute;bottom:-80px;right:230px;width:220px;height:110px;border-radius:220px 220px 0 0;background:rgba(255,255,255,.07)"></div>
+              <div style="position:absolute;top:-40px;right:-60px;width:180px;height:90px;border-radius:0 0 180px 180px;background:rgba(197,224,210,.18)"></div>
+            </div>
+            <div style="position:relative">
+              <div style="font-size:11px;font-weight:bold;letter-spacing:1.3px;text-transform:uppercase;color:#C5E0D2">{{ year }} Training Cycle</div>
+              <div style="font-size:26px;font-weight:bold;color:#fff;margin-top:5px">Welcome back, {{ user.first }}</div>
+              <div style="font-size:13px;color:#DCEAE2;margin-top:4px">Here is where your learning stands this year.</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px">
+            <sc-for list="{{ empKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid #2A7E4F;border-radius:5px;padding:14px 16px">
+                <div style="font-size:11px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#58595B">{{ k.label }}</div>
+                <div style="font-size:30px;font-weight:bold;color:#2A7E4F;line-height:1.2;margin-top:4px">{{ k.value }}</div>
+                <div style="font-size:11px;color:#8A8F8C">{{ k.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Your Requests</div>
+              <sc-for list="{{ myRequests }}" as="r" hint-placeholder-count="3">
+                <div style="padding:14px 16px;border-bottom:1px solid #F0F2F1">
+                  <div style="display:flex;gap:10px;align-items:flex-start">
+                    <div style="flex:1">
+                      <div style="font-size:13px;font-weight:bold">{{ r.title }}</div>
+                      <div style="font-size:11px;color:#58595B;margin-top:2px">{{ r.meta }}</div>
+                    </div>
+                    <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ r.st.label }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;margin-top:11px">
+                    <sc-for list="{{ r.steps }}" as="stp" hint-placeholder-count="4">
+                      <div style="flex:1;min-width:0">
+                        <div style="height:4px;border-radius:2px;background:{{ stp.bar }}"></div>
+                        <div style="font-size:9.5px;color:{{ stp.fg }};margin-top:4px;font-weight:bold;letter-spacing:.3px">{{ stp.label }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Recommended For You</div>
+              <sc-for list="{{ recommended }}" as="t" hint-placeholder-count="3">
+                <div onClick="{{ t.onClick }}" style="padding:13px 16px;border-bottom:1px solid #F0F2F1;cursor:pointer;display:flex;gap:12px;align-items:center" style-hover="background:#F7F9F8">
+                  <div style="width:42px;height:42px;border-radius:4px;background:{{ t.tint }};color:{{ t.tintFg }};display:flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 auto">
+                    <div style="font-size:14px;font-weight:bold;line-height:1">{{ t.day }}</div>
+                    <div style="font-size:9px;letter-spacing:.5px;text-transform:uppercase">{{ t.mon }}</div>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:bold">{{ t.title }}</div>
+                    <div style="font-size:11px;color:#58595B;margin-top:2px">{{ t.sub }}</div>
+                  </div>
+                  <div style="font-size:11px;color:#2A7E4F;font-weight:bold;white-space:nowrap">{{ t.seatsLabel }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.cal }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+            <div>
+              <div style="font-size:22px;font-weight:bold">Training Calendar</div>
+              <div style="font-size:13px;color:#58595B;margin-top:3px">{{ resultLabel }}</div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="display:flex;gap:2px;background:#E7EBE9;padding:3px;border-radius:4px">
+              <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="3">
+                <button onClick="{{ v.onClick }}" style="border:0;cursor:pointer;padding:7px 15px;border-radius:3px;font-size:12px;font-weight:bold;background:{{ v.bg }};color:{{ v.fg }}">{{ v.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+            <div style="flex:1;min-width:190px">
+              <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Search</div>
+              <input value="{{ q }}" onChange="{{ onSearch }}" placeholder="Title, code or keyword" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px" />
+            </div>
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+              <div style="min-width:150px">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 8px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                  <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3">
+                    <option value="{{ o }}">{{ o }}</option>
+                  </sc-for>
+                </select>
+              </div>
+            </sc-for>
+            <button onClick="{{ clearFilters }}" style="padding:9px 14px;border:1px solid #D1D3D4;background:#fff;border-radius:4px;cursor:pointer;font-weight:bold;color:#58595B">Clear</button>
+          </div>
+
+          <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
+              <div style="display:grid;min-width:880px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,.85fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr);background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
+                <div style="padding:11px 12px">Code</div>
+                <div style="padding:11px 12px">Training Title</div>
+                <div style="padding:11px 12px">Category</div>
+                <div style="padding:11px 12px">Type</div>
+                <div style="padding:11px 12px">Dates</div>
+                <div style="padding:11px 12px">Location</div>
+                <div style="padding:11px 12px">Seats</div>
+              </div>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+                <div onClick="{{ r.onClick }}" style="display:grid;min-width:880px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,.85fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr);border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
+                  <div style="padding:11px 12px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
+                  <div style="padding:11px 12px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
+                  <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.category }}</div>
+                  <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.type }}</div>
+                  <div style="padding:11px 12px;font-size:12px">{{ r.dates }}</div>
+                  <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.location }}</div>
+                  <div style="padding:9px 12px">
+                    <div style="font-size:11px;font-weight:bold;color:{{ r.st.fg }}">{{ r.seatsLabel }}</div>
+                    <div style="height:4px;background:#E7EBE9;border-radius:2px;margin-top:4px;overflow:hidden">
+                      <div style="height:4px;background:{{ r.st.bar }};width:{{ r.fillPct }}%"></div>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No sessions match these filters.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isMonth }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #E1E5E3">
+                <button onClick="{{ prevMonth }}" style="width:30px;height:30px;border:1px solid #D1D3D4;background:#fff;border-radius:4px;cursor:pointer;font-weight:bold">&#8592;</button>
+                <div style="font-size:15px;font-weight:bold;min-width:170px;text-align:center">{{ monthLabel }}</div>
+                <button onClick="{{ nextMonth }}" style="width:30px;height:30px;border:1px solid #D1D3D4;background:#fff;border-radius:4px;cursor:pointer;font-weight:bold">&#8594;</button>
+                <div style="flex:1"></div>
+                <div style="display:flex;gap:14px;font-size:11px;color:#58595B;align-items:center">
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#2A7E4F;display:inline-block"></span>Seats open</span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#6AAF8E;display:inline-block"></span>Filling up</span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#58595B;display:inline-block"></span>Class full</span>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#F7F9F8;border-bottom:1px solid #E1E5E3">
+                <sc-for list="{{ dayNames }}" as="d" hint-placeholder-count="7">
+                  <div style="padding:8px;font-size:10.5px;font-weight:bold;letter-spacing:.6px;color:#58595B;text-align:center">{{ d }}</div>
+                </sc-for>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr)">
+                <sc-for list="{{ monthCells }}" as="c" hint-placeholder-count="35">
+                  <div style="min-height:104px;border-right:1px solid #F0F2F1;border-bottom:1px solid #F0F2F1;padding:6px;background:{{ c.bg }};display:flex;flex-direction:column;gap:4px">
+                    <div style="font-size:11px;font-weight:bold;color:{{ c.numFg }}">{{ c.day }}</div>
+                    <sc-for list="{{ c.items }}" as="ev" hint-placeholder-count="0">
+                      <div onClick="{{ ev.onClick }}" style="cursor:pointer;background:{{ ev.bg }};color:#fff;border-radius:3px;padding:4px 6px;font-size:10.5px;font-weight:bold;line-height:1.3">{{ ev.label }}</div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isCards }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+                <div onClick="{{ r.onClick }}" style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;cursor:pointer;overflow:hidden;display:flex;flex-direction:column" style-hover="border-color:#2A7E4F">
+                  <div style="height:118px;background-color:#24503C;background-image:linear-gradient(0deg,rgba(31,31,29,.45) 0%,rgba(31,31,29,0) 55%),url({{ r.photo }});background-size:cover,cover;background-position:center,center"></div>
+                  <div style="height:5px;background:{{ r.st.fg }}"></div>
+                  <div style="padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:8px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                      <span style="font-size:11px;font-weight:bold;color:#2A7E4F;letter-spacing:.5px">{{ r.code }}</span>
+                      <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ r.st.label }}</span>
+                    </div>
+                    <div style="font-size:14.5px;font-weight:bold;line-height:1.3;text-wrap:pretty">{{ r.title }}</div>
+                    <div style="font-size:11.5px;color:#58595B">{{ r.category }} &middot; {{ r.type }}</div>
+                    <div style="flex:1"></div>
+                    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#1F1F1D;border-top:1px solid #F0F2F1;padding-top:9px">
+                      <span>{{ r.dates }}</span>
+                      <span style="color:#58595B">{{ r.location }}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                      <span style="font-size:11px;color:#58595B">{{ r.seatsLabel }}</span>
+                      <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.cta }}</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.myReq }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">My Requests</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:18px">Every registration you have submitted, and where it sits in the approval chain.</div>
+          <sc-for list="{{ myRequests }}" as="r" hint-placeholder-count="3">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:16px 18px;margin-bottom:12px">
+              <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+                <div style="flex:1;min-width:220px">
+                  <div style="font-size:11px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
+                  <div style="font-size:15px;font-weight:bold;margin-top:2px">{{ r.title }}</div>
+                  <div style="font-size:12px;color:#58595B;margin-top:3px">{{ r.meta }}</div>
+                </div>
+                <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:11px;font-weight:bold;padding:5px 11px;border-radius:3px">{{ r.st.label }}</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:16px">
+                <sc-for list="{{ r.steps }}" as="stp" hint-placeholder-count="4">
+                  <div style="flex:1">
+                    <div style="height:5px;border-radius:3px;background:{{ stp.bar }}"></div>
+                    <div style="font-size:10.5px;font-weight:bold;color:{{ stp.fg }};margin-top:5px">{{ stp.label }}</div>
+                    <div style="font-size:10.5px;color:#8A8F8C">{{ stp.note }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.res }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="position:relative;overflow:hidden;border-radius:7px;padding:28px;margin-bottom:18px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;background-color:#1F5E3A;background-image:linear-gradient(90deg,rgba(31,94,58,.95) 0%,rgba(42,126,79,.7) 55%,rgba(31,31,29,.35) 100%),url(assets/photo-toolbox-talk.png);background-size:cover,cover;background-position:center,center 32%">
+            <div style="font-size:11px;font-weight:bold;letter-spacing:1.3px;text-transform:uppercase;color:#C5E0D2">Learning &amp; Development</div>
+            <div style="font-size:24px;font-weight:bold;color:#fff;margin-top:5px">Resources</div>
+            <div style="font-size:13px;color:#DCEAE2;margin-top:4px">Guides, policies and contacts for the {{ year }} training cycle.</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px">
+            <sc-for list="{{ resources }}" as="rs" hint-placeholder-count="4">
+              <a href="#" style="background:#fff;border:1px solid #E1E5E3;border-left:4px solid #2A7E4F;border-radius:5px;padding:16px;display:block;text-decoration:none" style-hover="border-color:#2A7E4F;text-decoration:none">
+                <div style="font-size:14px;font-weight:bold;color:#1F1F1D">{{ rs.title }}</div>
+                <div style="font-size:12px;color:#58595B;margin-top:5px;line-height:1.5">{{ rs.desc }}</div>
+                <div style="font-size:11px;font-weight:bold;color:#2A7E4F;margin-top:10px">{{ rs.meta }}</div>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.mgrApp }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Approvals</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:18px">{{ pendingLabel }}</div>
+          <sc-for list="{{ teamRequests }}" as="r" hint-placeholder-count="4">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:16px 18px;margin-bottom:12px;border-left:4px solid {{ r.st.fg }}">
+              <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+                <div style="width:40px;height:40px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;flex:0 0 auto">{{ r.initials }}</div>
+                <div style="flex:1;min-width:230px">
+                  <div style="font-size:14px;font-weight:bold">{{ r.employee }}</div>
+                  <div style="font-size:11.5px;color:#58595B">{{ r.empMeta }}</div>
+                  <div style="font-size:13.5px;font-weight:bold;margin-top:9px">{{ r.title }}</div>
+                  <div style="font-size:11.5px;color:#58595B;margin-top:2px">{{ r.meta }}</div>
+                  <div style="font-size:11px;color:#1F5E3A;font-weight:bold;margin-top:5px">Chain: {{ r.chainNote }}</div>
+                  <div style="font-size:12px;color:#1F1F1D;margin-top:9px;background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:9px 11px;line-height:1.55">{{ r.justification }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:150px">
+                  <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:11px;font-weight:bold;padding:5px 11px;border-radius:3px;text-align:center">{{ r.st.label }}</span>
+                  <sc-if value="{{ r.actionable }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;flex-direction:column;gap:7px">
+                      <button onClick="{{ r.onApprove }}" style="padding:9px 14px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">Approve</button>
+                      <button onClick="{{ r.onReject }}" style="padding:9px 14px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Reject</button>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.mgrTeam }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Development</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:18px">Training days completed per direct report, {{ year }} cycle.</div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:6px 18px 18px">
+            <sc-for list="{{ teamStats }}" as="t" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #F0F2F1">
+                <div style="width:34px;height:34px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">{{ t.initials }}</div>
+                <div style="width:180px;min-width:120px">
+                  <div style="font-size:13px;font-weight:bold">{{ t.name }}</div>
+                  <div style="font-size:11px;color:#58595B">{{ t.role }}</div>
+                </div>
+                <div style="flex:1;height:10px;background:#EEF1EF;border-radius:5px;overflow:hidden">
+                  <div style="height:10px;background:#2A7E4F;width:{{ t.pct }}%"></div>
+                </div>
+                <div style="width:110px;text-align:right;font-size:12px;font-weight:bold;color:#2A7E4F">{{ t.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aDash }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="position:relative;overflow:hidden;border-radius:7px;padding:28px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;background-color:#1F1F1D;background-image:linear-gradient(100deg,rgba(31,31,29,.95) 0%,rgba(36,80,60,.9) 52%,rgba(42,126,79,.7) 100%),url(assets/photo-wellhead.png);background-size:cover,cover;background-position:center,center 40%">
+            <div style="position:absolute;inset:0;pointer-events:none">
+              <div style="position:absolute;top:-110px;right:80px;width:280px;height:140px;border-radius:0 0 280px 280px;background:rgba(255,255,255,.07)"></div>
+              <div style="position:absolute;bottom:-70px;right:300px;width:200px;height:100px;border-radius:200px 200px 0 0;background:rgba(106,175,142,.22)"></div>
+              <div style="position:absolute;top:-30px;right:-50px;width:160px;height:80px;border-radius:0 0 160px 160px;background:rgba(197,224,210,.16)"></div>
+            </div>
+            <div style="position:relative;flex:1;min-width:230px">
+              <div style="font-size:11px;font-weight:bold;letter-spacing:1.3px;text-transform:uppercase;color:#C5E0D2">Learning &amp; Development</div>
+              <div style="font-size:24px;font-weight:bold;color:#fff;margin-top:5px">Operations Dashboard</div>
+              <div style="font-size:13px;color:#DCEAE2;margin-top:4px">{{ year }} training cycle &middot; all regions</div>
+            </div>
+            <button onClick="{{ onExport }}" style="position:relative;padding:11px 18px;border:0;background:#fff;color:#1F5E3A;border-radius:4px;cursor:pointer;font-weight:bold">Export to Excel</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px">
+            <sc-for list="{{ adminKpis }}" as="k" hint-placeholder-count="5">
+              <div style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid #2A7E4F;border-radius:5px;padding:14px 16px">
+                <div style="font-size:10.5px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#58595B">{{ k.label }}</div>
+                <div style="font-size:30px;font-weight:bold;color:#2A7E4F;line-height:1.2;margin-top:4px">{{ k.value }}</div>
+                <div style="font-size:11px;color:#8A8F8C">{{ k.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Seat Fill &mdash; Next Sessions</div>
+              <div style="padding:14px 16px">
+                <sc-for list="{{ fillRows }}" as="f" hint-placeholder-count="5">
+                  <div style="margin-bottom:13px">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+                      <span style="font-weight:bold">{{ f.title }}</span>
+                      <span style="color:#58595B">{{ f.seatsLabel }}</span>
+                    </div>
+                    <div style="height:9px;background:#EEF1EF;border-radius:5px;overflow:hidden">
+                      <div style="height:9px;background:{{ f.color }};width:{{ f.pct }}%"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Registrations By Category</div>
+              <div style="padding:14px 16px">
+                <sc-for list="{{ catRows }}" as="c" hint-placeholder-count="6">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                    <div style="width:150px;font-size:11.5px;color:#1F1F1D">{{ c.label }}</div>
+                    <div style="flex:1;height:16px;background:#F3F5F4;border-radius:3px;overflow:hidden">
+                      <div style="height:16px;background:{{ c.color }};width:{{ c.pct }}%"></div>
+                    </div>
+                    <div style="width:30px;text-align:right;font-size:11.5px;font-weight:bold">{{ c.n }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;margin-top:18px">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px">
+                <div style="font-size:13px;font-weight:bold;flex:1">Longest Waiting Approvals</div>
+                <div style="font-size:11px;color:#58595B">sorted by oldest request</div>
+              </div>
+              <sc-for list="{{ ageingRows }}" as="a" hint-placeholder-count="3">
+                <div style="padding:12px 16px;border-bottom:1px solid #F0F2F1;display:flex;align-items:center;gap:12px">
+                  <div style="width:32px;height:32px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:bold;flex:0 0 auto">{{ a.initials }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span style="font-size:12.5px;font-weight:bold">{{ a.name }}</span>
+                      <span style="background:{{ a.flagBg }};color:{{ a.flagFg }};font-size:10px;font-weight:bold;padding:2px 7px;border-radius:3px">{{ a.flag }}</span>
+                    </div>
+                    <div style="font-size:11px;color:#58595B;margin-top:1px">{{ a.title }} &middot; {{ a.count }} pending &middot; {{ a.avg }}</div>
+                    <div style="height:6px;background:#EEF1EF;border-radius:3px;margin-top:6px;overflow:hidden">
+                      <div style="height:6px;background:{{ a.color }};width:{{ a.pct }}%"></div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;min-width:52px">
+                    <div style="font-size:17px;font-weight:bold;color:{{ a.color }};line-height:1.1">{{ a.oldest }}</div>
+                    <div style="font-size:10px;color:#8A8F8C">oldest</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Approval Timeline</div>
+              <div style="padding:14px 16px">
+                <sc-for list="{{ timelineRows }}" as="s2" hint-placeholder-count="5">
+                  <div style="display:flex;gap:12px;align-items:flex-start;padding-bottom:14px">
+                    <div style="width:9px;height:9px;border-radius:50%;background:{{ s2.color }};margin-top:4px;flex:0 0 auto"></div>
+                    <div style="flex:1;min-width:0">
+                      <div style="display:flex;justify-content:space-between;gap:10px">
+                        <span style="font-size:12.5px;font-weight:bold">{{ s2.label }}</span>
+                        <span style="font-size:12px;font-weight:bold;color:{{ s2.color }}">{{ s2.n }}</span>
+                      </div>
+                      <div style="height:6px;background:#EEF1EF;border-radius:3px;margin-top:6px;overflow:hidden">
+                        <div style="height:6px;background:{{ s2.color }};width:{{ s2.pct }}%"></div>
+                      </div>
+                      <div style="font-size:10.5px;color:#8A8F8C;margin-top:4px">{{ s2.avg }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aTrain }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+            <div>
+              <div style="font-size:22px;font-weight:bold">Manage Trainings</div>
+              <div style="font-size:13px;color:#58595B;margin-top:3px">{{ catalogLabel }}</div>
+            </div>
+            <div style="flex:1"></div>
+            <input value="{{ q }}" onChange="{{ onSearch }}" placeholder="Search catalog" style="padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;min-width:200px" />
+            <button onClick="{{ onNewTraining }}" style="padding:10px 16px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">+ Add Training</button>
+          </div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
+            <div style="display:grid;min-width:960px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,.9fr) 200px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
+              <div style="padding:11px 12px">Code</div>
+              <div style="padding:11px 12px">Title</div>
+              <div style="padding:11px 12px">Category</div>
+              <div style="padding:11px 12px">Dates</div>
+              <div style="padding:11px 12px">Location</div>
+              <div style="padding:11px 12px">Seats</div>
+              <div style="padding:11px 12px">Actions</div>
+            </div>
+            <sc-for list="{{ adminRows }}" as="r" hint-placeholder-count="8">
+              <div style="display:grid;min-width:960px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,.9fr) 200px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
+                <div style="padding:10px 12px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
+                <div style="padding:10px 12px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
+                <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.category }}</div>
+                <div style="padding:10px 12px;font-size:12px">{{ r.dates }}</div>
+                <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.location }}</div>
+                <div style="padding:10px 12px;font-size:12px;font-weight:bold;color:{{ r.st.fg }}">{{ r.seatsLabel }}</div>
+                <div style="padding:8px 12px;display:flex;gap:6px">
+                  <button onClick="{{ r.onView }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">View</button>
+                  <button onClick="{{ r.onEdit }}" style="padding:6px 11px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Edit</button>
+                  <button onClick="{{ r.onDelete }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Delete</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aSession }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <button onClick="{{ session.onBack }}" style="border:0;background:transparent;color:#2A7E4F;font-weight:bold;font-size:12px;cursor:pointer;padding:0 0 12px;display:flex;align-items:center;gap:6px">&#8592; All trainings</button>
+
+          <div style="position:relative;overflow:hidden;border-radius:7px;padding:26px 28px;margin-bottom:18px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;background-color:#1F5E3A;background-image:linear-gradient(100deg,rgba(31,94,58,.96) 0%,rgba(42,126,79,.88) 52%,rgba(31,31,29,.55) 100%),url({{ session.photo }});background-size:cover,cover;background-position:center,center 38%">
+            <div style="position:relative;flex:1;min-width:250px">
+              <div style="font-size:11px;font-weight:bold;letter-spacing:1.2px;color:#C5E0D2">{{ session.code }}</div>
+              <div style="font-size:25px;font-weight:bold;color:#fff;margin-top:4px;text-wrap:pretty">{{ session.title }}</div>
+              <div style="font-size:12.5px;color:#DCEAE2;margin-top:5px">{{ session.meta }}</div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">
+                <span style="font-size:12.5px;font-weight:bold;color:#fff">{{ session.dates }}</span>
+                <span style="font-size:12.5px;color:#DCEAE2">{{ session.location }}</span>
+                <span style="font-size:12.5px;color:#DCEAE2">{{ session.duration }}</span>
+                <span style="background:{{ session.statusBg }};color:{{ session.statusFg }};font-size:11px;font-weight:bold;padding:3px 9px;border-radius:3px">{{ session.statusLabel }}</span>
+              </div>
+            </div>
+            <div style="position:relative;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:6px;padding:16px 22px;text-align:center;min-width:150px">
+              <div style="font-size:30px;font-weight:bold;color:#fff;line-height:1.1">{{ session.countBig }}</div>
+              <div style="font-size:11px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#C5E0D2;margin-top:4px">{{ session.countUnit }}</div>
+            </div>
+            <div style="position:relative;display:flex;flex-direction:column;gap:8px">
+              <button onClick="{{ session.onEdit }}" style="padding:9px 15px;border:0;background:#fff;color:#1F5E3A;border-radius:4px;cursor:pointer;font-weight:bold">Edit Session</button>
+              <button onClick="{{ session.onExport }}" style="padding:9px 15px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">Export List</button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px">
+            <sc-for list="{{ session.kpis }}" as="k" hint-placeholder-count="6">
+              <div style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid #2A7E4F;border-radius:5px;padding:13px 15px">
+                <div style="font-size:10.5px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#58595B">{{ k.label }}</div>
+                <div style="font-size:27px;font-weight:bold;color:#2A7E4F;line-height:1.2;margin-top:3px">{{ k.value }}</div>
+                <div style="font-size:11px;color:#8A8F8C">{{ k.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;margin-bottom:18px">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Registration Funnel</div>
+              <div style="padding:14px 16px">
+                <sc-for list="{{ session.funnel }}" as="b" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">
+                    <div style="width:130px;font-size:11.5px">{{ b.label }}</div>
+                    <div style="flex:1;height:16px;background:#F3F5F4;border-radius:3px;overflow:hidden">
+                      <div style="height:16px;background:{{ b.color }};width:{{ b.pct }}%"></div>
+                    </div>
+                    <div style="width:26px;text-align:right;font-size:12px;font-weight:bold">{{ b.n }}</div>
+                  </div>
+                </sc-for>
+                <div style="border-top:1px solid #F0F2F1;margin-top:6px;padding-top:12px">
+                  <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px">
+                    <span style="font-weight:bold">Seat capacity</span>
+                    <span style="color:#58595B">{{ session.fillLabel }}</span>
+                  </div>
+                  <div style="height:10px;background:#EEF1EF;border-radius:5px;overflow:hidden">
+                    <div style="height:10px;background:{{ session.fillColor }};width:{{ session.fillPct }}%"></div>
+                  </div>
+                </div>
+                <div style="font-size:12px;line-height:1.6;color:#58595B;margin-top:14px">{{ session.desc }}</div>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Pending Approvals</div>
+              <sc-for list="{{ session.pending }}" as="r" hint-placeholder-count="2">
+                <div style="padding:13px 16px;border-bottom:1px solid #F0F2F1">
+                  <div style="display:flex;gap:11px;align-items:flex-start">
+                    <div style="width:32px;height:32px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:bold;flex:0 0 auto">{{ r.initials }}</div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:12.5px;font-weight:bold">{{ r.employee }}</div>
+                      <div style="font-size:11px;color:#58595B">{{ r.empMeta }}</div>
+                      <div style="font-size:11px;color:#1F5E3A;font-weight:bold;margin-top:4px">With {{ r.manager }}</div>
+                    </div>
+                    <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10px;font-weight:bold;padding:3px 8px;border-radius:3px;white-space:nowrap">{{ r.st.label }}</span>
+                  </div>
+                  <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+                    <button onClick="{{ r.onEnroll }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Enroll</button>
+                    <button onClick="{{ r.onWaitlist }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Waitlist</button>
+                    <button onClick="{{ r.onDeclineLnd }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ session.hasPending }}" hint-placeholder-val="{{ true }}">
+                <div style="padding:10px 16px;font-size:11px;color:#8A8F8C">Enrolling overrides the remaining approval steps and notifies the requester and their manager.</div>
+              </sc-if>
+              <sc-if value="{{ session.noPending }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:30px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">Nothing waiting on an approver for this session.</div>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="font-size:13px;font-weight:bold;flex:1">Participants</div>
+              <sc-if value="{{ session.showAttendance }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ session.completionLabel }}</div>
+              </sc-if>
+            </div>
+            <sc-for list="{{ session.roster }}" as="p" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid #F4F6F5">
+                <div style="width:32px;height:32px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:bold">{{ p.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12.5px;font-weight:bold">{{ p.name }}</div>
+                  <div style="font-size:11px;color:#58595B">{{ p.meta }}</div>
+                </div>
+                <sc-if value="{{ session.showAttendance }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ p.onToggle }}" style="padding:6px 13px;border:1px solid {{ p.border }};background:{{ p.bg }};color:{{ p.fg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ p.label }}</button>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ session.hasRosterNote }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:11px 16px;font-size:11.5px;color:#58595B">{{ session.rosterNote }}</div>
+            </sc-if>
+            <sc-if value="{{ session.noRoster }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:30px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">No participant records yet &mdash; approved requests will appear here.</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aApp }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Approval Queue</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Manager-approved requests awaiting L&amp;D enrollment, plus overrides.</div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
+            <div style="display:grid;min-width:880px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
+              <div style="padding:11px 12px">Employee</div>
+              <div style="padding:11px 12px">Training</div>
+              <div style="padding:11px 12px">Current Approver</div>
+              <div style="padding:11px 12px">Stage</div>
+              <div style="padding:11px 12px">L&amp;D Action</div>
+            </div>
+            <sc-for list="{{ queueRows }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;min-width:880px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
+                <div style="padding:10px 12px">
+                  <div style="font-size:12.5px;font-weight:bold">{{ r.employee }}</div>
+                  <div style="font-size:11px;color:#58595B">{{ r.empMeta }}</div>
+                </div>
+                <div style="padding:10px 12px">
+                  <div style="font-size:12.5px;font-weight:bold">{{ r.title }}</div>
+                  <div style="font-size:11px;color:#58595B">{{ r.meta }}</div>
+                </div>
+                <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.manager }}</div>
+                <div style="padding:10px 12px"><span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ r.st.label }}</span></div>
+                <div style="padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap">
+                  <button onClick="{{ r.onEnroll }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Enroll</button>
+                  <button onClick="{{ r.onWaitlist }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Waitlist</button>
+                  <button onClick="{{ r.onReject }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aAtt }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Attendance &amp; Completion</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Mark attendance for delivered sessions. Completion feeds the training-days KPI.</div>
+          <sc-for list="{{ attendanceSessions }}" as="sess" hint-placeholder-count="2">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-bottom:16px;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid #E1E5E3;flex-wrap:wrap">
+                <div style="font-size:11px;font-weight:bold;color:#2A7E4F">{{ sess.code }}</div>
+                <div style="font-size:13.5px;font-weight:bold">{{ sess.title }}</div>
+                <div style="font-size:11.5px;color:#58595B">{{ sess.meta }}</div>
+                <div style="flex:1"></div>
+                <div style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ sess.completionLabel }}</div>
+              </div>
+              <sc-for list="{{ sess.people }}" as="p" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #F4F6F5">
+                  <div style="width:30px;height:30px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold">{{ p.initials }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12.5px;font-weight:bold">{{ p.name }}</div>
+                    <div style="font-size:11px;color:#58595B">{{ p.meta }}</div>
+                  </div>
+                  <button onClick="{{ p.onToggle }}" style="padding:6px 13px;border:1px solid {{ p.border }};background:{{ p.bg }};color:{{ p.fg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ p.label }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aNotify }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Notification Templates</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Emails sent automatically at each stage of the approval chain.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+            <sc-for list="{{ templates }}" as="t" hint-placeholder-count="4">
+              <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden">
+                <div style="padding:12px 16px;border-bottom:1px solid #E1E5E3;display:flex;align-items:center;gap:10px">
+                  <div style="width:8px;height:8px;border-radius:50%;background:#2A7E4F"></div>
+                  <div style="font-size:13px;font-weight:bold;flex:1">{{ t.name }}</div>
+                  <div style="font-size:10.5px;font-weight:bold;color:{{ t.stFg }};background:{{ t.stBg }};padding:3px 8px;border-radius:3px">{{ t.state }}</div>
+                </div>
+                <div style="padding:14px 16px">
+                  <div style="font-size:10.5px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B">Trigger</div>
+                  <div style="font-size:12px;margin:3px 0 10px">{{ t.trigger }}</div>
+                  <div style="font-size:10.5px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B">Subject</div>
+                  <div style="font-size:12px;margin:3px 0 10px;font-weight:bold">{{ t.subject }}</div>
+                  <div style="background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:11px 12px;font-size:11.5px;line-height:1.6;color:#1F1F1D">{{ t.body }}</div>
+                  <div style="display:flex;gap:8px;margin-top:12px">
+                    <button onClick="{{ t.onEdit }}" style="padding:7px 13px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Edit</button>
+                    <button onClick="{{ t.onToggle }}" style="padding:7px 13px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ t.toggleLabel }}</button>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <div style="background:#1F1F1D;color:#fff;font-size:11px;padding:11px 22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;position:relative;z-index:1;overflow:hidden">
+    <div style="position:absolute;top:-24px;right:60px;width:140px;height:70px;border-radius:0 0 140px 140px;background:rgba(42,126,79,.35);pointer-events:none"></div>
+    <img src="assets/nesr-logo-white.png" alt="NESR" style="height:18px;width:auto;opacity:.9" />
+    <span>National Energy Services Reunited Corp.</span>
+    <span style="color:#8A8F8C">|</span>
+    <a href="https://www.nesr.com" style="color:#C5E0D2">www.nesr.com</a>
+    <div style="flex:1"></div>
+    <span style="color:#8A8F8C">NESR Internal &middot; Learning &amp; Development</span>
+  </div>
+
+  <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(31,31,29,.55);display:flex;align-items:flex-start;justify-content:center;padding:44px 20px;z-index:50;overflow:auto;animation:fadeIn .15s ease">
+      <div onClick="{{ stop }}" style="width:100%;max-width:{{ detail.width }};background:#fff;border-radius:7px;overflow:hidden;animation:popIn .18s ease;box-shadow:0 22px 60px rgba(0,0,0,.3)">
+        <div style="padding:20px;display:flex;align-items:flex-start;gap:14px;background-color:#2A7E4F;background-image:linear-gradient(100deg,rgba(31,94,58,.95) 0%,rgba(42,126,79,.86) 55%,rgba(31,31,29,.55) 100%),url({{ detail.photo }});background-size:cover,cover;background-position:center,center 38%">
+          <div style="flex:1">
+            <div style="color:#C5E0D2;font-size:11px;font-weight:bold;letter-spacing:.7px">{{ detail.code }} &middot; {{ detail.type }}</div>
+            <div style="color:#fff;font-size:18px;font-weight:bold;margin-top:3px;text-wrap:pretty">{{ detail.title }}</div>
+          </div>
+          <img src="assets/nesr-logo-white.png" alt="NESR" style="height:26px;width:auto;opacity:.9;align-self:center" />
+          <button onClick="{{ closeModal }}" style="border:0;background:rgba(255,255,255,.18);color:#fff;width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:15px;font-weight:bold">&times;</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(288px,1fr))">
+
+          <div style="padding:20px 22px;background:{{ detail.railBg }};border-right:{{ detail.railBorder }};display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ detail.facts }}" as="f" hint-placeholder-count="6">
+                <div style="display:flex;gap:11px;align-items:center">
+                  <div style="width:30px;height:30px;flex:0 0 30px;border-radius:5px;background:#EDF5F0;border:1px solid #DCEAE2;display:flex;align-items:center;justify-content:center">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2A7E4F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ f.d }}"></path></svg>
+                  </div>
+                  <div style="min-width:0;display:flex;flex-direction:column">
+                    <span style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C">{{ f.k }}</span>
+                    <span style="font-size:13px;font-weight:bold;text-wrap:pretty">{{ f.v }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="border-top:1px solid #EAEEEC;padding-top:14px">
+              <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;margin-bottom:5px">About this session</div>
+              <div style="font-size:12.5px;line-height:1.65;color:#3E403E">{{ detail.desc }}</div>
+            </div>
+          </div>
+
+          <sc-if value="{{ detail.canApply }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+              <div>
+                <div style="font-size:14px;font-weight:bold">Registration</div>
+                <div style="font-size:11.5px;color:#58595B;margin-top:3px;line-height:1.55">Your request goes to your own line manager &mdash; managers included &mdash; then to L&amp;D for enrollment.</div>
+              </div>
+              <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px;padding:10px 12px">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>
+                <span style="font-size:12px;font-weight:bold;color:#1F5E3A">{{ detail.chainNote }}</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px">
+                <sc-for list="{{ formFields }}" as="fl" hint-placeholder-count="6">
+                  <div>
+                    <div style="font-size:10px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;color:#8A8F8C;margin-bottom:4px">{{ fl.label }}</div>
+                    <sc-if value="{{ fl.isSelect }}" hint-placeholder-val="{{ false }}">
+                      <select value="{{ fl.value }}" onChange="{{ fl.onChange }}" style="width:100%;padding:9px 8px;border:1px solid #D9DDDB;border-radius:4px;background:#fff">
+                        <sc-for list="{{ fl.options }}" as="o" hint-placeholder-count="3">
+                          <option value="{{ o }}">{{ o }}</option>
+                        </sc-for>
+                      </select>
+                    </sc-if>
+                    <sc-if value="{{ fl.isText }}" hint-placeholder-val="{{ true }}">
+                      <input value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" style="width:100%;padding:9px 10px;border:1px solid #D9DDDB;border-radius:4px" />
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;color:#8A8F8C;margin-bottom:4px">Business justification</div>
+                <textarea value="{{ justification }}" onChange="{{ onJustification }}" placeholder="Why this training supports your role and objectives" style="width:100%;min-height:82px;padding:9px 10px;border:1px solid #D9DDDB;border-radius:4px;resize:vertical"></textarea>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+        <div style="padding:14px 20px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div style="font-size:11.5px;color:#58595B;flex:1;min-width:150px">{{ detail.footNote }}</div>
+          <button onClick="{{ closeModal }}" style="padding:10px 16px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Close</button>
+          <sc-if value="{{ detail.canApply }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ submitRequest }}" style="padding:10px 20px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">{{ detail.ctaLabel }}</button>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ editor }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(31,31,29,.55);display:flex;align-items:flex-start;justify-content:center;padding:44px 20px;z-index:50;overflow:auto;animation:fadeIn .15s ease">
+      <div onClick="{{ stop }}" style="width:100%;max-width:620px;background:#fff;border-radius:6px;overflow:hidden;animation:popIn .18s ease;box-shadow:0 22px 60px rgba(0,0,0,.3)">
+        <div style="background:#2A7E4F;padding:15px 20px;display:flex;align-items:center;gap:12px">
+          <div style="color:#fff;font-size:16px;font-weight:bold;flex:1">{{ editor.heading }}</div>
+          <img src="assets/nesr-logo-white.png" alt="NESR" style="height:26px;width:auto;opacity:.9;align-self:center" />
+          <button onClick="{{ closeModal }}" style="border:0;background:rgba(255,255,255,.18);color:#fff;width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:15px;font-weight:bold">&times;</button>
+        </div>
+        <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px">
+          <sc-for list="{{ editorFields }}" as="fl" hint-placeholder-count="9">
+            <div style="grid-column:{{ fl.span }}">
+              <div style="font-size:10.5px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ fl.label }}</div>
+              <sc-if value="{{ fl.isSelect }}" hint-placeholder-val="{{ false }}">
+                <select value="{{ fl.value }}" onChange="{{ fl.onChange }}" style="width:100%;padding:9px 8px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                  <sc-for list="{{ fl.options }}" as="o" hint-placeholder-count="3">
+                    <option value="{{ o }}">{{ o }}</option>
+                  </sc-for>
+                </select>
+              </sc-if>
+              <sc-if value="{{ fl.isText }}" hint-placeholder-val="{{ true }}">
+                <input value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" style="width:100%;padding:9px 10px;border:1px solid #D1D3D4;border-radius:4px" />
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:14px 20px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;gap:10px;justify-content:flex-end">
+          <button onClick="{{ closeModal }}" style="padding:10px 16px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Cancel</button>
+          <button onClick="{{ saveTraining }}" style="padding:10px 20px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">{{ editor.cta }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;right:22px;bottom:22px;z-index:60;background:#1F1F1D;color:#fff;border-left:4px solid #6AAF8E;border-radius:5px;padding:13px 18px;max-width:380px;box-shadow:0 12px 34px rgba(0,0,0,.28);animation:popIn .2s ease">
+      <div style="font-size:12.5px;font-weight:bold;margin-bottom:3px">{{ toast.title }}</div>
+      <div style="font-size:11.5px;color:#C5E0D2;line-height:1.5">{{ toast.body }}</div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultRole&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;employee&quot;,&quot;manager&quot;,&quot;director&quot;,&quot;admin&quot;],&quot;default&quot;:&quot;employee&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;defaultCalendarView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;table&quot;,&quot;month&quot;,&quot;cards&quot;],&quot;default&quot;:&quot;table&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;}}">
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const YEAR = 2026;
+
+const CATEGORIES = ["Finance","General Technical Awareness","HSE","Management","Operation Management","Sales, Contracting & Tendering","Soft Skills","Supervisory","Technical Operations"];
+const TYPES = ["Technical","Non Technical","HSE"];
+const LOCATIONS = ["Al Khobar, KSA","Dammam, KSA","Abu Dhabi, UAE","Dubai, UAE","Cairo, Egypt","Houston, USA","Virtual Classroom"];
+const DEPTS = ["Operations","Engineering","Finance","HSE","Supply Chain","Human Resources","Sales & Commercial","IT"];
+const NATIONALITIES = ["Saudi Arabia","United Arab Emirates","Egypt","India","Pakistan","United Kingdom","United States","Other"];
+
+const SEED_TRAININGS = [
+  {id:"t1", code:"TNT-01", title:"Technical For Non Technical (UAE Staff)", category:"General Technical Awareness", type:"Non Technical", start:"2026-09-21", end:"2026-09-24", location:"Abu Dhabi, UAE", seats:20, enrolled:20, instructor:"A. Rahman", desc:"Four-day immersion giving non-technical staff a working vocabulary of NESR service lines, well construction and field operations."},
+  {id:"t2", code:"LDR-04", title:"Leadership Essentials for New Managers", category:"Supervisory", type:"Non Technical", start:"2026-09-28", end:"2026-09-30", location:"Dubai, UAE", seats:25, enrolled:18, instructor:"K. Mansour", desc:"Practical toolkit for first-time people managers: delegation, feedback conversations, and performance planning the NESR way."},
+  {id:"t3", code:"SFT-02", title:"Presentation Skills Masterclass", category:"Soft Skills", type:"Non Technical", start:"2026-09-07", end:"2026-09-08", location:"Virtual Classroom", seats:25, enrolled:23, instructor:"L. Brennan", desc:"Structure, deliver and defend a business presentation to client and executive audiences."},
+  {id:"t4", code:"FIN-02", title:"Financial Acumen for Non-Finance", category:"Finance", type:"Non Technical", start:"2026-10-05", end:"2026-10-07", location:"Cairo, Egypt", seats:20, enrolled:11, instructor:"M. Fahmy", desc:"Read a P&L, understand cost drivers of a service line, and build a defensible budget request."},
+  {id:"t5", code:"OPS-07", title:"Well Intervention Fundamentals", category:"Operation Management", type:"Technical", start:"2026-10-12", end:"2026-10-16", location:"Dammam, KSA", seats:16, enrolled:9, instructor:"R. Delgado", desc:"Intervention techniques, tool strings, and job-planning workflows with hands-on yard exercises."},
+  {id:"t6", code:"TNT-02", title:"Technical For Non Technical (KSA Staff)", category:"General Technical Awareness", type:"Non Technical", start:"2026-10-18", end:"2026-10-22", location:"Al Khobar, KSA", seats:24, enrolled:21, instructor:"A. Rahman", desc:"Five-day KSA cohort of the flagship technical awareness program, including a field visit."},
+  {id:"t7", code:"HSE-03", title:"Defensive Driving (Desert Operations)", category:"HSE", type:"HSE", start:"2026-10-26", end:"2026-10-27", location:"Al Khobar, KSA", seats:20, enrolled:14, instructor:"S. Alotaibi", desc:"Mandatory certification for all staff driving company vehicles in remote and desert terrain."},
+  {id:"t8", code:"SCT-05", title:"Contract Negotiation & Tendering", category:"Sales, Contracting & Tendering", type:"Non Technical", start:"2026-11-02", end:"2026-11-04", location:"Houston, USA", seats:18, enrolled:6, instructor:"J. Whitfield", desc:"Bid strategy, commercial terms and negotiation practice using real NESR tender scenarios."},
+  {id:"t9", code:"SFT-09", title:"Effective Business Writing", category:"Soft Skills", type:"Non Technical", start:"2026-11-09", end:"2026-11-10", location:"Virtual Classroom", seats:30, enrolled:12, instructor:"L. Brennan", desc:"Write clear reports, emails and client updates in plain US English."},
+  {id:"t10", code:"TNT-03", title:"Technical For Non Technical (Egypt & Libya Staff)", category:"General Technical Awareness", type:"Non Technical", start:"2026-11-15", end:"2026-11-18", location:"Cairo, Egypt", seats:24, enrolled:20, instructor:"A. Rahman", desc:"Regional cohort covering service lines, HSE basics and operational terminology."},
+  {id:"t11", code:"TEC-12", title:"Coiled Tubing Level II", category:"Technical Operations", type:"Technical", start:"2026-11-23", end:"2026-11-27", location:"Dammam, KSA", seats:12, enrolled:8, instructor:"R. Delgado", desc:"Advanced coiled tubing operations, fatigue management and job design. Level I certification required."},
+  {id:"t12", code:"OPS-03", title:"Supply Chain & Inventory Control", category:"Operation Management", type:"Non Technical", start:"2026-12-01", end:"2026-12-02", location:"Al Khobar, KSA", seats:20, enrolled:7, instructor:"N. Iyer", desc:"Stock policy, demand planning and warehouse KPIs across NESR bases."},
+  {id:"t13", code:"MGT-06", title:"Project Management Fundamentals", category:"Management", type:"Non Technical", start:"2026-12-07", end:"2026-12-10", location:"Dubai, UAE", seats:20, enrolled:4, instructor:"K. Mansour", desc:"Scope, schedule and risk management for service delivery and internal improvement projects."},
+  {id:"t14", code:"HSE-08", title:"Incident Investigation & Root Cause", category:"HSE", type:"HSE", start:"2026-12-14", end:"2026-12-16", location:"Al Khobar, KSA", seats:16, enrolled:10, instructor:"S. Alotaibi", desc:"Structured investigation method, evidence handling and corrective action design."}
+];
+
+const PEOPLE = {
+  mohammed:{key:"mohammed",name:"Mohammed Al-Harbi",first:"Mohammed",nesrId:"10428",title:"Field Engineer II",dept:"Operations",loc:"Al Khobar, KSA",email:"mohammed.alharbi@nesr.com",boss:"yousef"},
+  sara:{key:"sara",name:"Sara Okonkwo",first:"Sara",nesrId:"11290",title:"Wireline Engineer",dept:"Engineering",loc:"Dubai, UAE",email:"sara.okonkwo@nesr.com",boss:"yousef"},
+  rakesh:{key:"rakesh",name:"Rakesh Menon",first:"Rakesh",nesrId:"10877",title:"Field Supervisor",dept:"Operations",loc:"Dammam, KSA",email:"rakesh.menon@nesr.com",boss:"yousef"},
+  layla:{key:"layla",name:"Layla Nasser",first:"Layla",nesrId:"12044",title:"HR Business Partner",dept:"Human Resources",loc:"Al Khobar, KSA",email:"layla.nasser@nesr.com",boss:"yousef"},
+  omar:{key:"omar",name:"Omar Haddad",first:"Omar",nesrId:"10593",title:"Commercial Analyst",dept:"Sales & Commercial",loc:"Cairo, Egypt",email:"omar.haddad@nesr.com",boss:"yousef"},
+  faisal:{key:"faisal",name:"Faisal Al-Dosari",first:"Faisal",nesrId:"10311",title:"Coiled Tubing Operator",dept:"Operations",loc:"Dammam, KSA",email:"faisal.aldosari@nesr.com",boss:"yousef"},
+  yousef:{key:"yousef",name:"Yousef Al-Qahtani",first:"Yousef",nesrId:"10182",title:"Operations Manager",dept:"Operations",loc:"Al Khobar, KSA",email:"yousef.alqahtani@nesr.com",boss:"nadia"},
+  nadia:{key:"nadia",name:"Nadia Farouk",first:"Nadia",nesrId:"10044",title:"Regional Director, MENA",dept:"Operations",loc:"Dubai, UAE",email:"nadia.farouk@nesr.com",boss:"tarek"},
+  tarek:{key:"tarek",name:"Tarek Boutros",first:"Tarek",nesrId:"10007",title:"VP Operations",dept:"Executive",loc:"Houston, USA",email:"tarek.boutros@nesr.com",boss:null},
+  huda:{key:"huda",name:"Huda Al-Sayegh",first:"Huda",nesrId:"10310",title:"L&D Administrator",dept:"Human Resources",loc:"Al Khobar, KSA",email:"huda.alsayegh@nesr.com",boss:"nadia",admin:true}
+};
+
+function initialsOf(n){ return String(n||"?").split(" ").map(w => w[0]).slice(0,2).join(""); }
+function countryOf(loc){ const p = String(loc||"").split(", "); return p.length > 1 ? p[1] : p[0]; }
+function reportsOf(key){ return Object.keys(PEOPLE).filter(k => PEOPLE[k].boss === key && !PEOPLE[k].admin); }
+function levelsFor(){ return 1; }
+function chainFor(key, t){
+  const p = PEOPLE[key]; if (!p) return [];
+  const need = levelsFor(p, t); const out = []; let cur = p.boss;
+  while (cur && out.length < need) { out.push(cur); cur = PEOPLE[cur].boss; }
+  return out;
+}
+function defaultForms(){
+  const out = {};
+  Object.keys(PEOPLE).forEach(k => {
+    const p = PEOPLE[k];
+    out[k] = {nesrId:p.nesrId, name:p.name, loc:p.loc, dept:p.dept, nat:"Saudi Arabia", mgr: p.boss ? PEOPLE[p.boss].email : "learning@nesr.com"};
+  });
+  return out;
+}
+
+const T_BY_ID = {};
+SEED_TRAININGS.forEach(t => { T_BY_ID[t.id] = t; });
+function seedReq(id, who, tid, step, state, submitted, justification){
+  const chain = chainFor(who, T_BY_ID[tid]);
+  const cap = state === "pending" ? Math.max(0, chain.length - 1) : chain.length;
+  return {id, who, tid, chain, step: Math.min(step, cap), state, submitted, justification};
+}
+
+const SEED_REQUESTS = [
+  seedReq("r1","mohammed","t6",0,"pending","15 Sep 2026","Moving into a client-facing planning role and need the service-line grounding to speak credibly with operations."),
+  seedReq("r2","mohammed","t7",1,"enrolled","02 Sep 2026","Annual recertification required for site travel."),
+  seedReq("r3","mohammed","t3",1,"completed","11 Aug 2026","Preparing for quarterly business reviews."),
+  seedReq("r4","sara","t2",0,"pending","16 Sep 2026","Taking over the wireline engineering team in Q4 and want a structured start on people management."),
+  seedReq("r5","rakesh","t5",1,"lnd","14 Sep 2026","Supporting intervention jobs from Q1 and need the fundamentals before field assignment."),
+  seedReq("r6","omar","t8",0,"rejected","09 Sep 2026","Preparing the North Africa tender cycle."),
+  seedReq("r7","layla","t9",1,"enrolled","12 Sep 2026","Policy documentation is a core part of my role this year."),
+  seedReq("r8","faisal","t11",1,"lnd","17 Sep 2026","Level I certified since 2024, ready for Level II crew lead duties."),
+  seedReq("r9","yousef","t13",0,"pending","18 Sep 2026","Leading the base-consolidation program in Q1 and need a common project framework with the PMO."),
+  seedReq("r10","sara","t8",0,"pending","19 Sep 2026","Supporting the Gulf tender desk from January and need the commercial grounding before the bid cycle.")
+];
+
+const STATE_STYLE = {
+  pending:   {label:"Awaiting Approval", bg:"#FDF2D9", fg:"#8A6100"},
+  lnd:       {label:"With L&D Team",     bg:"#E3EEFA", fg:"#1F4E79"},
+  enrolled:  {label:"Enrolled",          bg:"#C5E0D2", fg:"#1F5E3A"},
+  waitlist:  {label:"Waitlisted",        bg:"#EEF1EF", fg:"#4A4B4D"},
+  rejected:  {label:"Not Approved",      bg:"#F7DEDE", fg:"#8A2B2B"},
+  completed: {label:"Completed",         bg:"#C5E0D2", fg:"#1F5E3A"}
+};
+
+class Component extends DCLogic {
+  state = {
+    role: "mohammed",
+    screen: "dashboard",
+    calView: "table",
+    month: 8,
+    q: "", fType: "All", fCat: "All", fSeats: "All", fLoc: "All",
+    detailId: null, applied: false,
+    forms: defaultForms(),
+    justification: "",
+    editor: null,
+    sessionId: null,
+    trainings: SEED_TRAININGS.map(t => Object.assign({}, t)),
+    requests: SEED_REQUESTS.map(r => Object.assign({}, r)),
+    attended: {},
+    templatesOff: {},
+    toast: null
+  };
+
+  componentDidMount() {
+    const r = this.props.defaultRole;
+    const v = this.props.defaultCalendarView;
+    const patch = {};
+    const ROLE_MAP = {employee:"mohammed", manager:"yousef", admin:"huda"};
+    if (r && ROLE_MAP[r] && r !== "employee") { patch.role = ROLE_MAP[r]; patch.screen = r === "manager" ? "approvals" : "dashboard"; }
+    if (v) patch.calView = v;
+    if (Object.keys(patch).length) this.setState(patch);
+  }
+
+  componentWillUnmount() { clearTimeout(this._tt); }
+
+  flash(title, body) {
+    clearTimeout(this._tt);
+    this.setState({toast: {title, body}});
+    this._tt = setTimeout(() => this.setState({toast: null}), 4200);
+  }
+
+  t(id) { return this.state.trainings.find(x => x.id === id); }
+
+  me() { return PEOPLE[this.state.role] || PEOPLE.mohammed; }
+
+  dayNum(s) { return Number(s.slice(8, 10)); }
+  monNum(s) { return Number(s.slice(5, 7)) - 1; }
+  range(t) {
+    const a = this.dayNum(t.start), b = this.dayNum(t.end);
+    const ma = this.monNum(t.start), mb = this.monNum(t.end);
+    return ma === mb ? a + "\u2013" + b + " " + SHORT[mb] + " " + YEAR : a + " " + SHORT[ma] + " \u2013 " + b + " " + SHORT[mb];
+  }
+  days(t) { return this.dayNum(t.end) - this.dayNum(t.start) + 1; }
+
+  ageDays(submitted) {
+    const p = String(submitted || "").split(" ");
+    const m = SHORT.indexOf(p[1]);
+    if (m < 0) return 0;
+    return Math.max(0, Math.round((new Date(2026, 8, 21) - new Date(Number(p[2]), m, Number(p[0]))) / 86400000));
+  }
+
+  seatState(t) {
+    const left = t.seats - t.enrolled;
+    if (left <= 0) return {label:"Class Full", bg:"#EEF1EF", fg:"#4A4B4D", bar:"#58595B"};
+    if (left <= 4) return {label:"Filling Up", bg:"#DCEBE3", fg:"#1F5E3A", bar:"#6AAF8E"};
+    return {label:"Seats Open", bg:"#C5E0D2", fg:"#1F5E3A", bar:"#2A7E4F"};
+  }
+
+  filtered() {
+    const st = this.state, q = st.q.trim().toLowerCase();
+    return st.trainings.filter(t => {
+      if (q && (t.title + " " + t.code + " " + t.category).toLowerCase().indexOf(q) < 0) return false;
+      if (st.fType !== "All" && t.type !== st.fType) return false;
+      if (st.fCat !== "All" && t.category !== st.fCat) return false;
+      if (st.fLoc !== "All" && t.location !== st.fLoc) return false;
+      if (st.fSeats === "Seats available" && t.enrolled >= t.seats) return false;
+      if (st.fSeats === "Class full" && t.enrolled < t.seats) return false;
+      return true;
+    }).sort((a, b) => a.start < b.start ? -1 : 1);
+  }
+
+  photoFor(t) {
+    if (!t) return "assets/photo-crew-walking.png";
+    if (t.type === "HSE") return "assets/photo-toolbox-talk.png";
+    if (t.type === "Technical") return "assets/photo-wellhead.png";
+    return "assets/photo-crew-walking.png";
+  }
+
+  row(t, i) {
+    const s = this.seatState(t);
+    const left = Math.max(0, t.seats - t.enrolled);
+    return {
+      id: t.id, code: t.code, title: t.title, category: t.category, type: t.type,
+      dates: this.range(t), location: t.location, st: s, photo: this.photoFor(t),
+      seatsLabel: left > 0 ? left + " of " + t.seats + " left" : "Full (" + t.seats + ")",
+      fillPct: Math.round(t.enrolled / t.seats * 100),
+      zebra: i % 2 ? "#FAFBFA" : "#FFFFFF",
+      cta: left > 0 ? "Register \u2192" : "Join waitlist \u2192",
+      onClick: () => this.setState({detailId: t.id, applied: false, justification: ""})
+    };
+  }
+
+  setForm(k) { return e => { const who = this.me().key; const forms = Object.assign({}, this.state.forms); forms[who] = Object.assign({}, forms[who]); forms[who][k] = e.target.value; this.setState({forms}); }; }
+  setEditor(k) { return e => { const ed = Object.assign({}, this.state.editor); ed[k] = e.target.value; this.setState({editor: ed}); }; }
+
+  submitRequest() {
+    const t = this.t(this.state.detailId);
+    if (!t) return;
+    const me = this.me();
+    const form = Object.assign({}, this.state.forms[me.key] || {});
+    const full = t.enrolled >= t.seats;
+    const chain = chainFor(me.key, t);
+    const req = {
+      id: "r" + Date.now(), who: me.key, tid: t.id, chain, step: 0, form,
+      state: full ? "waitlist" : (chain.length ? "pending" : "lnd"),
+      submitted: "21 Sep 2026", justification: this.state.justification || "\u2014"
+    };
+    this.setState({requests: [req].concat(this.state.requests), detailId: null, justification: ""});
+    const next = chain.length ? PEOPLE[chain[0]] : null;
+    this.flash(full ? "Added to the waitlist" : "Request submitted",
+      full ? t.code + " is at capacity. You keep your place in the queue and will be notified if a seat opens." :
+      next ? "Sent to " + next.name + " (" + next.title + ")" + (chain.length > 1 ? ", then " + PEOPLE[chain[1]].name + "." : ".") + " L&D is notified at each step." :
+             "You have no approver above you \u2014 routed straight to the L&D team for enrollment.");
+  }
+
+  patchReq(id, patch, title, body) {
+    this.setState({requests: this.state.requests.map(r => r.id === id ? Object.assign({}, r, patch) : r)});
+    this.flash(title, body);
+  }
+
+  saveTraining() {
+    const ed = this.state.editor;
+    const rec = {
+      id: ed.id || "t" + Date.now(), code: ed.code, title: ed.title, category: ed.category, type: ed.type,
+      start: ed.start, end: ed.end, location: ed.location,
+      seats: Number(ed.seats) || 0, enrolled: Number(ed.enrolled) || 0,
+      instructor: ed.instructor, desc: ed.desc || "Session details to be published by the L&D team."
+    };
+    const exists = this.state.trainings.some(t => t.id === rec.id);
+    this.setState({
+      trainings: exists ? this.state.trainings.map(t => t.id === rec.id ? rec : t) : this.state.trainings.concat([rec]),
+      editor: null
+    });
+    this.flash(exists ? "Training updated" : "Training published", rec.code + " \u2014 " + rec.title);
+  }
+
+  renderVals() {
+    const st = this.state;
+    const role = st.role, scr = st.screen;
+    const mk = (k, v, d) => ({k, v, d});
+
+    const meP = this.me();
+    const isAdmin = !!meP.admin;
+    const myReports = reportsOf(meP.key);
+    const hasReports = myReports.length > 0;
+
+    const roleTabs = [["mohammed","Employee"],["yousef","Manager"],["huda","L&D Team"]].map(([k, label]) => ({
+      label,
+      bg: role === k ? "#FFFFFF" : "transparent", fg: role === k ? "#2A7E4F" : "#DCEAE2",
+      onClick: () => this.setState({role: k, screen: PEOPLE[k].admin ? "dashboard" : (reportsOf(k).length ? "approvals" : "dashboard"), detailId: null})
+    }));
+
+    const navItems = isAdmin
+      ? [["dashboard","Dashboard"],["trainings","Manage Trainings"],["queue","Approval Queue"],["attendance","Attendance"],["templates","Notifications"]]
+      : [["dashboard","My Dashboard"]]
+          .concat(hasReports ? [["approvals","Team Approvals"]] : [])
+          .concat([["calendar","Training Calendar"],["requests","My Requests"]])
+          .concat(hasReports ? [["team","Team Development"]] : [])
+          .concat([["resources","Resources"]]);
+
+    const pendingAll = st.requests.filter(r => r.state === "pending").length;
+    const pendingLnd = st.requests.filter(r => r.state === "lnd").length;
+    const onMe = st.requests.filter(r => r.state === "pending" && (r.chain || [])[r.step] === meP.key).length;
+    const mineOpen = st.requests.filter(r => r.who === meP.key && (r.state === "pending" || r.state === "lnd")).length;
+    const badges = {approvals: onMe, queue: pendingLnd, requests: mineOpen};
+
+    const nav = navItems.map(([k, label]) => {
+      const on = scr === k || (k === "trainings" && scr === "session");
+      return {
+        label, weight: on ? "bold" : "normal",
+        bg: on ? "#F2F7F4" : "transparent", fg: on ? "#1F5E3A" : "#3E403E",
+        edge: on ? "#2A7E4F" : "transparent",
+        badge: badges[k] || 0,
+        badgeBg: on ? "#2A7E4F" : "#E7EBE9", badgeFg: on ? "#FFFFFF" : "#58595B",
+        onClick: () => this.setState({screen: k, detailId: null})
+      };
+    });
+
+    const s = {
+      empDash: !isAdmin && scr === "dashboard",
+      cal: scr === "calendar",
+      myReq: !isAdmin && scr === "requests",
+      res: !isAdmin && scr === "resources",
+      mgrApp: !isAdmin && hasReports && scr === "approvals",
+      mgrTeam: !isAdmin && hasReports && scr === "team",
+      aDash: isAdmin && scr === "dashboard",
+      aTrain: isAdmin && scr === "trainings",
+      aSession: isAdmin && scr === "session",
+      aApp: isAdmin && scr === "queue",
+      aAtt: isAdmin && scr === "attendance",
+      aNotify: isAdmin && scr === "templates"
+    };
+
+    const list = this.filtered();
+    const rows = list.map((t, i) => this.row(t, i));
+
+    const viewTabs = [["table","Table"],["month","Month"],["cards","Catalog"]].map(([k, label]) => ({
+      label, bg: st.calView === k ? "#FFFFFF" : "transparent", fg: st.calView === k ? "#2A7E4F" : "#58595B",
+      onClick: () => this.setState({calView: k})
+    }));
+
+    const filters = [
+      {label:"Type", value: st.fType, options:["All"].concat(TYPES), onChange: e => this.setState({fType: e.target.value})},
+      {label:"Category", value: st.fCat, options:["All"].concat(CATEGORIES), onChange: e => this.setState({fCat: e.target.value})},
+      {label:"Location", value: st.fLoc, options:["All"].concat(LOCATIONS), onChange: e => this.setState({fLoc: e.target.value})},
+      {label:"Availability", value: st.fSeats, options:["All","Seats available","Class full"], onChange: e => this.setState({fSeats: e.target.value})}
+    ];
+
+    const first = new Date(YEAR, st.month, 1).getDay();
+    const dim = new Date(YEAR, st.month + 1, 0).getDate();
+    const monthCells = [];
+    for (let i = 0; i < first; i++) monthCells.push({day:"", items:[], bg:"#FAFBFA", numFg:"#C9CDCB"});
+    for (let d = 1; d <= dim; d++) {
+      const items = st.trainings.filter(t => this.monNum(t.start) === st.month && this.dayNum(t.start) === d).map(t => {
+        const ss = this.seatState(t);
+        return {label: t.code + " \u00b7 " + t.title, bg: ss.bar,
+          onClick: () => this.setState({detailId: t.id, applied: false, justification: ""})};
+      });
+      monthCells.push({day: String(d), items, bg:"#FFFFFF", numFg:"#1F1F1D"});
+    }
+    while (monthCells.length % 7 !== 0) monthCells.push({day:"", items:[], bg:"#FAFBFA", numFg:"#C9CDCB"});
+
+
+    const decorate = r => {
+      const t = this.t(r.tid) || {code:"\u2014", title:"Removed session", location:"", start:"2026-01-01", end:"2026-01-01"};
+      const person = PEOPLE[r.who] || {name:"Unknown", title:"", dept:"", loc:"", nesrId:"\u2014"};
+      const form = r.form || {};
+      const name = form.name || person.name;
+      const chainPeople = (r.chain || []).map(k => PEOPLE[k]).filter(Boolean);
+      const cur = r.state === "pending" ? chainPeople[r.step] : null;
+      const base = STATE_STYLE[r.state] || STATE_STYLE.pending;
+      const stepDefs = [{label:"Submitted", note: r.submitted}]
+        .concat(chainPeople.map(p => ({label: p.first, note: p.title})))
+        .concat([{label:"L&D Review", note:"Enrollment"}, {label:"Confirmed", note: r.state === "completed" ? "Completed" : "Seat held"}]);
+      const failIdx = r.state === "rejected" ? 1 + r.step : -1;
+      const prog = r.state === "rejected" ? 1 + r.step
+        : r.state === "pending" ? 1 + r.step
+        : r.state === "waitlist" ? 1
+        : r.state === "lnd" ? 1 + chainPeople.length
+        : stepDefs.length;
+      const steps = stepDefs.map((d, i) => {
+        const failed = i === failIdx;
+        const active = i < prog;
+        return {
+          label: d.label,
+          note: failed ? "Declined" : i === 0 ? r.submitted : active ? "Done" : (i === prog && r.state === "pending" ? "Awaiting" : d.note),
+          bar: failed ? "#8A2B2B" : active ? "#2A7E4F" : "#E1E5E3",
+          fg: failed ? "#8A2B2B" : active ? "#1F5E3A" : "#A8ACAA"
+        };
+      });
+      const nextIdx = r.step + 1;
+      return {
+        id: r.id, code: t.code, title: t.title, employee: name, initials: initialsOf(name),
+        empMeta: "NESR ID " + (form.nesrId || person.nesrId) + " \u00b7 " + person.title + " \u00b7 " + (form.loc || person.loc),
+        manager: cur ? cur.name + " (" + cur.title + ")" : chainPeople.length ? chainPeople[chainPeople.length - 1].name : "\u2014",
+        chainNote: chainPeople.map(p => p.first).join(" \u2192 ") + (chainPeople.length ? " \u2192 " : "") + "L&D Team",
+        justification: r.justification,
+        meta: this.range(t) + " \u00b7 " + t.location + " \u00b7 submitted " + r.submitted,
+        st: {label: r.state === "pending" ? (cur ? "Awaiting " + cur.first : "Awaiting Approval") : base.label, bg: base.bg, fg: base.fg},
+        state: r.state, stage: r.state, steps,
+        actionable: r.state === "pending" && (r.chain || [])[r.step] === meP.key,
+        onApprove: () => {
+          const done = nextIdx >= chainPeople.length;
+          this.patchReq(r.id, {step: nextIdx, state: done ? "lnd" : "pending"}, "Approved",
+            done ? name + " approved for " + t.code + ". Now with the L&D team for enrollment."
+                 : name + " approved \u2014 routed to " + chainPeople[nextIdx].name + " (" + chainPeople[nextIdx].title + ") for the next approval.");
+        },
+        onReject: () => this.patchReq(r.id, {state:"rejected"}, "Request declined", name + " and the L&D team have been notified."),
+        onEnroll: () => this.patchReq(r.id, {state:"enrolled"}, "Participant enrolled", name + " confirmed for " + t.code + ". Joining instructions sent."),
+        onWaitlist: () => this.patchReq(r.id, {state:"waitlist"}, "Moved to waitlist", name + " will be offered the next available seat."),
+        onDeclineLnd: () => this.patchReq(r.id, {state:"rejected"}, "Request declined", name + " has been notified by the L&D team.")
+      };
+    };
+
+    const myRequests = st.requests.filter(r => r.who === meP.key).map(decorate);
+    const teamRequests = st.requests.filter(r => (r.chain || []).indexOf(meP.key) >= 0).map(decorate)
+      .sort((a, b) => (b.actionable ? 1 : 0) - (a.actionable ? 1 : 0));
+    const queueRows = st.requests.filter(r => r.state === "lnd" || r.state === "waitlist" || r.state === "pending")
+      .map((r, i) => { const d = decorate(r); return Object.assign(d, {zebra: i % 2 ? "#FAFBFA" : "#FFFFFF", onReject: d.onDeclineLnd}); });
+
+    const upcoming = st.trainings.slice().sort((a, b) => a.start < b.start ? -1 : 1);
+    const recommended = upcoming.filter(t => t.enrolled < t.seats).slice(0, 4).map(t => {
+      const ss = this.seatState(t);
+      return {
+        title: t.title, sub: t.category + " \u00b7 " + t.location, day: String(this.dayNum(t.start)),
+        mon: SHORT[this.monNum(t.start)], tint: ss.bg, tintFg: ss.fg,
+        seatsLabel: (t.seats - t.enrolled) + " seats",
+        onClick: () => this.setState({detailId: t.id, applied: false, justification: ""})
+      };
+    });
+
+    const myForm = st.forms[meP.key] || st.forms.employee;
+    const detailT = st.detailId ? this.t(st.detailId) : null;
+    let detail = null, formFields = [];
+    if (detailT) {
+      const ss = this.seatState(detailT);
+      const left = Math.max(0, detailT.seats - detailT.enrolled);
+      const already = st.requests.some(r => r.who === meP.key && r.tid === detailT.id);
+      const canApply = !isAdmin && !already;
+      const myChain = chainFor(meP.key, detailT).map(k => PEOPLE[k]);
+      const chainNote = myChain.map(p => p.first + " (" + p.title + ")").join(" \u2192 ") + (myChain.length ? " \u2192 " : "") + "L&D Team";
+      detail = {
+        code: detailT.code, type: detailT.type, title: detailT.title, desc: detailT.desc, photo: this.photoFor(detailT),
+        canApply,
+        width: canApply ? "900px" : "600px",
+        railBg: canApply ? "#FAFBFA" : "#FFFFFF",
+        railBorder: canApply ? "1px solid #EAEEEC" : "0",
+        ctaLabel: left > 0 ? "Submit Request" : "Join Waitlist",
+        chainNote,
+        footNote: already ? "You already have a request on file for this session." :
+          isAdmin ? "Switch to a person view to register for this session." :
+          left > 0 ? left + " of " + detailT.seats + " seats remaining." : "This class is full \u2014 waitlist requests are still accepted.",
+        facts: [
+          mk("Dates", this.range(detailT), "M7 3v3M17 3v3M4 9.5h16M5.5 6h13a1.5 1.5 0 011.5 1.5v11A1.5 1.5 0 0118.5 20h-13A1.5 1.5 0 014 18.5v-11A1.5 1.5 0 015.5 6z"),
+          mk("Duration", this.days(detailT) + " days", "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5V12l3 2"),
+          mk("Location", detailT.location, "M12 21s7-5.686 7-11a7 7 0 10-14 0c0 5.314 7 11 7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"),
+          mk("Category", detailT.category, "M4 6.5h5l2 2h9v9.5a1 1 0 01-1 1H5a1 1 0 01-1-1z"),
+          mk("Instructor", detailT.instructor, "M12 12a4 4 0 100-8 4 4 0 000 8zM4.5 20c0-3.3 3.4-5.5 7.5-5.5s7.5 2.2 7.5 5.5"),
+          mk("Availability", ss.label, "M8.5 11a3 3 0 100-6 3 3 0 000 6zM2.5 19.5c0-2.8 2.7-4.5 6-4.5s6 1.7 6 4.5M16.5 11a3 3 0 100-6M16 15c3 0 5.5 1.8 5.5 4.5"),
+          mk("Approval steps", String(myChain.length + 1), "M20 6.5L9.5 17 4.5 12")
+        ]
+      };
+      formFields = [
+        {label:"NESR ID", isText:true, value: myForm.nesrId, placeholder:"e.g. 10428", onChange: this.setForm("nesrId")},
+        {label:"Full name", isText:true, value: myForm.name, placeholder:"Full name", onChange: this.setForm("name")},
+        {label:"Work location", isSelect:true, value: myForm.loc, options: LOCATIONS, onChange: this.setForm("loc")},
+        {label:"Department", isSelect:true, value: myForm.dept, options: DEPTS, onChange: this.setForm("dept")},
+        {label:"Nationality (visa)", isSelect:true, value: myForm.nat, options: NATIONALITIES, onChange: this.setForm("nat")},
+        {label:"Approver email", isText:true, value: myForm.mgr, placeholder:"name@nesr.com", onChange: this.setForm("mgr")}
+      ];
+    }
+
+    const ed = st.editor;
+    const editorFields = ed ? [
+      {label:"Session code", isText:true, span:"auto", value: ed.code, placeholder:"TNT-04", onChange: this.setEditor("code")},
+      {label:"Instructor", isText:true, span:"auto", value: ed.instructor, placeholder:"Lead instructor", onChange: this.setEditor("instructor")},
+      {label:"Training title", isText:true, span:"1 / -1", value: ed.title, placeholder:"Session title", onChange: this.setEditor("title")},
+      {label:"Category", isSelect:true, span:"auto", value: ed.category, options: CATEGORIES, onChange: this.setEditor("category")},
+      {label:"Type", isSelect:true, span:"auto", value: ed.type, options: TYPES, onChange: this.setEditor("type")},
+      {label:"Start date", isText:true, span:"auto", value: ed.start, placeholder:"2026-10-18", onChange: this.setEditor("start")},
+      {label:"End date", isText:true, span:"auto", value: ed.end, placeholder:"2026-10-22", onChange: this.setEditor("end")},
+      {label:"Location", isSelect:true, span:"auto", value: ed.location, options: LOCATIONS, onChange: this.setEditor("location")},
+      {label:"Seat capacity", isText:true, span:"auto", value: String(ed.seats), placeholder:"20", onChange: this.setEditor("seats")},
+      {label:"Description", isText:true, span:"1 / -1", value: ed.desc, placeholder:"What participants will learn", onChange: this.setEditor("desc")}
+    ] : [];
+
+    const adminRows = list.map((t, i) => {
+      const r = this.row(t, i);
+      r.onClick = () => this.setState({screen:"session", sessionId: t.id});
+      r.onView = () => this.setState({screen:"session", sessionId: t.id});
+      r.onEdit = () => this.setState({editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})});
+      r.onDelete = () => {
+        this.setState({trainings: st.trainings.filter(x => x.id !== t.id)});
+        this.flash("Training removed", t.code + " was withdrawn from the " + YEAR + " calendar.");
+      };
+      return r;
+    });
+
+    const openReqs = st.requests.filter(r => r.state === "pending" || r.state === "lnd");
+    const ages = openReqs.map(r => this.ageDays(r.submitted));
+    const avgWait = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
+    const oldestWait = ages.length ? Math.max.apply(null, ages) : 0;
+    const slaColor = d => d >= 7 ? "#8A2B2B" : d >= 4 ? "#B07A00" : "#2A7E4F";
+
+    const groups = {};
+    openReqs.forEach(r => {
+      const k = r.state === "lnd" ? "lnd" : ((r.chain || [])[r.step] || "lnd");
+      const who = k === "lnd" ? {name:"L&D Team", title:"Enrollment desk"} : PEOPLE[k];
+      if (!groups[k]) groups[k] = {key:k, name: who.name, title: who.title, ages: []};
+      groups[k].ages.push(this.ageDays(r.submitted));
+    });
+    const ageingRows = Object.keys(groups).map(k => {
+      const g = groups[k];
+      const oldest = Math.max.apply(null, g.ages);
+      const avg = Math.round(g.ages.reduce((a, b) => a + b, 0) / g.ages.length);
+      return {name: g.name, title: g.title, initials: initialsOf(g.name), count: String(g.ages.length),
+        oldest: oldest + "d", avg: "avg " + avg + "d", oldestN: oldest,
+        pct: String(Math.min(100, Math.round(oldest / 14 * 100))), color: slaColor(oldest),
+        flag: oldest >= 7 ? "Overdue" : oldest >= 4 ? "Ageing" : "On track",
+        flagBg: oldest >= 7 ? "#F7DEDE" : oldest >= 4 ? "#FDF2D9" : "#C5E0D2",
+        flagFg: oldest >= 7 ? "#8A2B2B" : oldest >= 4 ? "#7A5400" : "#1F5E3A"};
+    }).sort((a, b) => b.oldestN - a.oldestN);
+
+    const stageAvg = keys => {
+      const rs = st.requests.filter(r => keys.indexOf(r.state) >= 0);
+      if (!rs.length) return {n:"0", avg:"\u2014", pct:"0"};
+      const a = Math.round(rs.reduce((x, r) => x + this.ageDays(r.submitted), 0) / rs.length);
+      return {n: String(rs.length), avg: a + "d avg in system", pct: String(Math.min(100, Math.round(a / 14 * 100)))};
+    };
+    const timelineRows = [
+      Object.assign({label:"Awaiting manager", color:"#B07A00"}, stageAvg(["pending"])),
+      Object.assign({label:"With L&D team", color:"#1F4E79"}, stageAvg(["lnd"])),
+      Object.assign({label:"Enrolled", color:"#2A7E4F"}, stageAvg(["enrolled"])),
+      Object.assign({label:"Waitlisted", color:"#58595B"}, stageAvg(["waitlist"])),
+      Object.assign({label:"Declined", color:"#8A2B2B"}, stageAvg(["rejected"]))
+    ];
+
+    const totalSeats = st.trainings.reduce((a, t) => a + t.seats, 0);
+    const totalEnrolled = st.trainings.reduce((a, t) => a + t.enrolled, 0);
+    const adminKpis = [
+      {label:"Active Sessions", value: String(st.trainings.length), note: YEAR + " calendar"},
+      {label:"Seat Utilization", value: Math.round(totalEnrolled / Math.max(1, totalSeats) * 100) + "%", note: totalEnrolled + " of " + totalSeats + " seats"},
+      {label:"Pending Approvals", value: String(pendingAll + pendingLnd), note: pendingAll + " with managers, " + pendingLnd + " with L&D"},
+      {label:"Enrolled", value: String(st.requests.filter(r => r.state === "enrolled").length), note:"Confirmed participants"},
+      {label:"Avg Wait", value: avgWait + "d", note:"Time in approval chain"},
+      {label:"Oldest Pending", value: oldestWait + "d", note: ageingRows.length ? "with " + ageingRows[0].name : "nothing pending"}
+    ];
+
+    const fillRows = upcoming.slice(0, 6).map(t => {
+      const pct = Math.round(t.enrolled / t.seats * 100);
+      return {title: t.code + " \u00b7 " + t.title, seatsLabel: t.enrolled + "/" + t.seats, pct,
+        color: pct >= 100 ? "#58595B" : pct >= 80 ? "#6AAF8E" : "#2A7E4F"};
+    });
+
+    const catTotals = {};
+    st.trainings.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.enrolled; });
+    const catMax = Math.max.apply(null, [1].concat(Object.keys(catTotals).map(k => catTotals[k])));
+    const catRows = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a]).map((k, i) => ({
+      label: k, n: catTotals[k], pct: Math.round(catTotals[k] / catMax * 100),
+      color: ["#2A7E4F","#3C8E60","#4E9E72","#6AAF8E","#8CC3A8","#A9D3BF","#C5E0D2","#D6E9DF","#E3F0E9"][i] || "#C5E0D2"
+    }));
+
+    const delivered = st.trainings.filter(t => t.start < "2026-09-21");
+    const staff = Object.keys(PEOPLE).filter(k => !PEOPLE[k].admin);
+    const attendanceSessions = delivered.map((t, si) => {
+      const booked = st.requests.filter(r => r.tid === t.id && (r.state === "enrolled" || r.state === "completed")).map(r => r.who);
+      const extras = staff.filter(k => booked.indexOf(k) < 0);
+      const keys = booked.concat(extras).slice(0, Math.max(3, Math.min(5, booked.length + 3 + si % 2)));
+      const people = keys.map(pk => {
+        const p = PEOPLE[pk];
+        const key = t.id + ":" + pk;
+        const on = st.attended[key] !== false;
+        return {
+          name: p.name, initials: initialsOf(p.name),
+          meta: "NESR ID " + p.nesrId + " \u00b7 " + p.title + " \u00b7 " + p.dept,
+          label: on ? "Attended" : "No show",
+          bg: on ? "#C5E0D2" : "#FFFFFF", fg: on ? "#1F5E3A" : "#8A2B2B", border: on ? "#2A7E4F" : "#D1D3D4",
+          onToggle: () => { const a = Object.assign({}, st.attended); a[key] = !on; this.setState({attended: a}); }
+        };
+      });
+      const n = people.filter(p => p.label === "Attended").length;
+      return {code: t.code, title: t.title, meta: this.range(t) + " \u00b7 " + t.location,
+        completionLabel: n + " of " + people.length + " completed", people};
+    });
+
+    const tplDefs = [
+      {id:"submitted", name:"Request Submitted", trigger:"Employee submits a registration", subject:"Your training request has been received",
+       body:"Hi {{first_name}}, we received your request for {{session_code}} \u2014 {{training_title}} on {{dates}}. It is now with {{manager_name}} for approval."},
+      {id:"manager", name:"Manager Approval Needed", trigger:"Request enters the manager stage", subject:"Action needed: training approval for {{employee_name}}",
+       body:"{{employee_name}} has requested {{training_title}} ({{dates}}, {{location}}). Review and approve or decline in the L&D Portal."},
+      {id:"enrolled", name:"Enrollment Confirmed", trigger:"L&D confirms a seat", subject:"You are enrolled: {{training_title}}",
+       body:"Your seat is confirmed for {{session_code}} on {{dates}} at {{location}}. Joining instructions and pre-work are attached."},
+      {id:"declined", name:"Request Not Approved", trigger:"Manager or L&D declines", subject:"Update on your training request",
+       body:"Your request for {{training_title}} was not approved for this cycle. Talk with {{manager_name}} about alternative sessions."}
+    ];
+    const templates = tplDefs.map(t => {
+      const off = st.templatesOff[t.id];
+      return Object.assign({}, t, {
+        state: off ? "Paused" : "Active", stBg: off ? "#EEF1EF" : "#C5E0D2", stFg: off ? "#58595B" : "#1F5E3A",
+        toggleLabel: off ? "Activate" : "Pause",
+        onEdit: () => this.flash("Template editor", t.name + " opened for editing."),
+        onToggle: () => { const o = Object.assign({}, st.templatesOff); o[t.id] = !off; this.setState({templatesOff: o}); this.flash(off ? "Template activated" : "Template paused", t.name); }
+      });
+    });
+
+    const teamStats = myReports.map(k => {
+      const p = PEOPLE[k];
+      const d = st.requests.filter(r => r.who === k && (r.state === "enrolled" || r.state === "completed"))
+        .reduce((a, r) => { const tt = this.t(r.tid); return a + (tt ? this.days(tt) : 0); }, 0);
+      return {name: p.name, role: p.title + " \u00b7 " + p.loc.split(",")[0], initials: initialsOf(p.name),
+        pct: Math.min(100, Math.round(d / 15 * 100)), label: d + " of 15 days"};
+    });
+
+    const myUpcoming = myRequests.filter(r => r.state === "enrolled").length;
+    const myDays = st.requests.filter(r => r.who === meP.key && (r.state === "enrolled" || r.state === "completed"))
+      .reduce((a, r) => { const tt = this.t(r.tid); return a + (tt ? this.days(tt) : 0); }, 0);
+    const empKpis = [
+      {label:"Enrolled", value: String(myUpcoming), note:"Confirmed sessions"},
+      {label:"Awaiting Approval", value: String(mineOpen), note:"In the approval chain"},
+      {label:"Completed", value: String(st.requests.filter(r => r.who === meP.key && r.state === "completed").length), note: YEAR + " cycle"},
+      {label:"Training Days", value: String(myDays), note:"Target 10 days"}
+    ];
+
+    let session = null;
+    if (s.aSession) {
+      const t = this.t(st.sessionId);
+      if (!t) { session = null; }
+      else {
+        const reqs = st.requests.filter(r => r.tid === t.id);
+        const by = k => reqs.filter(r => r.state === k);
+        const ss = this.seatState(t);
+        const startMs = new Date(Number(t.start.slice(0,4)), Number(t.start.slice(5,7)) - 1, Number(t.start.slice(8,10))).getTime();
+        const endMs = new Date(Number(t.end.slice(0,4)), Number(t.end.slice(5,7)) - 1, Number(t.end.slice(8,10))).getTime();
+        const todayMs = new Date(2026, 8, 21).getTime();
+        const dleft = Math.round((startMs - todayMs) / 86400000);
+        const dsince = Math.round((todayMs - endMs) / 86400000);
+        const delivered = todayMs > endMs;
+        const live = !delivered && dleft <= 0;
+        const countBig = delivered ? "Delivered" : live ? "In progress" : String(dleft);
+        const countUnit = delivered ? (dsince === 0 ? "ended today" : dsince + " days ago") : live ? "running now" : (dleft === 1 ? "day to go" : "days to go");
+        const reqEnrolled = by("enrolled").length + by("completed").length;
+        const enrolledN = Math.max(t.enrolled, reqEnrolled);
+        const inApproval = by("pending").length + by("lnd").length;
+        const applied = enrolledN + inApproval + by("waitlist").length + by("rejected").length;
+        const fillPct = Math.round(t.enrolled / Math.max(1, t.seats) * 100);
+        const bar = (label, n, color) => ({label, n: String(n), pct: Math.round(n / Math.max(1, applied) * 100), color});
+        const roster = by("enrolled").concat(by("completed")).map(r => {
+          const p = PEOPLE[r.who] || {name:(r.form && r.form.name) || "Unknown", nesrId:"\u2014", title:"", dept:"", loc:""};
+          const key = t.id + ":" + r.who;
+          const on = st.attended[key] !== false;
+          return {
+            name: p.name, initials: initialsOf(p.name),
+            meta: "NESR ID " + p.nesrId + " \u00b7 " + p.title + " \u00b7 " + p.dept,
+            label: on ? "Attended" : "No show",
+            bg: on ? "#C5E0D2" : "#FFFFFF", fg: on ? "#1F5E3A" : "#8A2B2B", border: on ? "#2A7E4F" : "#D1D3D4",
+            onToggle: () => { const a = Object.assign({}, st.attended); a[key] = !on; this.setState({attended: a}); }
+          };
+        });
+        const attendedN = roster.filter(p => p.label === "Attended").length;
+        session = {
+          code: t.code, title: t.title, photo: this.photoFor(t),
+          meta: t.category + " \u00b7 " + t.type + " \u00b7 " + t.instructor,
+          dates: this.range(t), location: t.location, duration: this.days(t) + " days",
+          desc: t.desc, statusLabel: ss.label, statusBg: ss.bg, statusFg: ss.fg,
+          countBig, countUnit,
+          kpis: [
+            {label:"Applications", value: String(applied), note:"All time"},
+            {label:"In Approval", value: String(inApproval), note: by("pending").length + " with managers"},
+            {label:"Enrolled", value: String(enrolledN), note:"Confirmed seats"},
+            {label:"Waitlisted", value: String(by("waitlist").length), note:"Next in line"},
+            {label:"Declined", value: String(by("rejected").length), note:"Not approved"},
+            {label:"Seat Fill", value: fillPct + "%", note: t.enrolled + " of " + t.seats + " seats"}
+          ],
+          fillPct: String(fillPct), fillColor: fillPct >= 100 ? "#58595B" : fillPct >= 80 ? "#6AAF8E" : "#2A7E4F",
+          fillLabel: t.enrolled + " of " + t.seats + " seats taken",
+          funnel: [
+            bar("Applied", applied, "#2A7E4F"),
+            bar("Manager approved", by("lnd").length + enrolledN, "#3C8E60"),
+            bar("Awaiting manager", by("pending").length, "#B07A00"),
+            bar("Enrolled", enrolledN, "#6AAF8E"),
+            bar("Waitlisted", by("waitlist").length, "#A9D3BF"),
+            bar("Declined", by("rejected").length, "#C9CDCB")
+          ],
+          pending: by("pending").concat(by("lnd")).map(decorate),
+          hasPending: inApproval > 0, noPending: inApproval === 0,
+          roster, hasRoster: roster.length > 0, noRoster: roster.length === 0 && roster.length >= enrolledN,
+          rosterNote: roster.length < enrolledN ? (enrolledN - roster.length) + " further seats were enrolled directly by the L&D team" : "",
+          hasRosterNote: roster.length < enrolledN,
+          showAttendance: delivered || live,
+          completionLabel: attendedN + " of " + roster.length + " marked attended",
+          onBack: () => this.setState({screen:"trainings", sessionId: null}),
+          onEdit: () => this.setState({editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})}),
+          onExport: () => this.flash("Export queued", t.code + " participant list is being generated as an Excel workbook.")
+        };
+      }
+    }
+
+    return {
+      session,
+      user: {name: meP.name, first: meP.first, initials: initialsOf(meP.name),
+        sub: isAdmin ? meP.title : meP.title + " \u00b7 NESR ID " + meP.nesrId},
+      year: YEAR, roleTabs, nav, s,
+      roleLabel: isAdmin ? "L&D Administration" : hasReports ? "Manager Workspace" : "My Learning",
+      rows, adminRows, viewTabs, filters, q: st.q,
+      onSearch: e => this.setState({q: e.target.value}),
+      clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All", fSeats:"All"}),
+      isTable: st.calView === "table", isMonth: st.calView === "month", isCards: st.calView === "cards",
+      noResults: rows.length === 0,
+      resultLabel: rows.length + " of " + st.trainings.length + " sessions in the " + YEAR + " calendar",
+      catalogLabel: st.trainings.length + " sessions published for " + YEAR,
+      pendingLabel: onMe + " request" + (onMe === 1 ? "" : "s") + " waiting on you \u00b7 once you approve, each request moves to the next approver in the chain, then the L&D team",
+      dayNames: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+      monthCells, monthLabel: MONTHS[st.month] + " " + YEAR,
+      prevMonth: () => this.setState({month: (st.month + 11) % 12}),
+      nextMonth: () => this.setState({month: (st.month + 1) % 12}),
+      myRequests, teamRequests, queueRows, recommended, teamStats,
+      empKpis, adminKpis, fillRows, catRows, attendanceSessions, templates, ageingRows, timelineRows,
+      resources: [
+        {title:"Training Calendar User Guide", desc:"How to search sessions, submit a request and track approvals end to end.", meta:"PDF \u00b7 1.4 MB"},
+        {title:"L&D Organization Chart", desc:"Who to contact in the Learning & Development team by region and discipline.", meta:"PDF \u00b7 620 KB"},
+        {title:"Training & Development Policy", desc:"Eligibility, cost coverage, travel rules and post-training commitments.", meta:"PDF \u00b7 880 KB"},
+        {title:"Competency Framework", desc:"Role-based learning paths for technical and non-technical career tracks.", meta:"Web page"}
+      ],
+      detail, formFields, justification: st.justification,
+      onJustification: e => this.setState({justification: e.target.value}),
+      submitRequest: () => this.submitRequest(),
+      editor: st.editor, editorFields, saveTraining: () => this.saveTraining(),
+      onNewTraining: () => this.setState({editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category: CATEGORIES[0], type: TYPES[0], start:"", end:"", location: LOCATIONS[0], seats:"20", enrolled:0, instructor:"", desc:""}}),
+      onExport: () => this.flash("Export queued", "The " + YEAR + " registration report is being generated as an Excel workbook."),
+      closeModal: () => this.setState({detailId: null, editor: null}),
+      stop: e => e.stopPropagation(),
+      toast: st.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
