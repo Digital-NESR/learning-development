@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
-import { auth, signIn, demoLoginEnabled } from "@/auth";
+import { currentEmployee, signIn, demoLoginEnabled } from "@/auth";
 import { DEMO_PEOPLE } from "@/lib/constants.js";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 const green = "#2A7E4F";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const session = await auth();
-  if ((session?.user as { employeeId?: string } | undefined)?.employeeId) redirect("/");
+  // Check the employee record, not just the session: a session for a deleted employee must still see this page.
+  if (await currentEmployee()) redirect("/");
   const { error } = await searchParams;
 
   async function microsoft() {

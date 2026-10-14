@@ -16,7 +16,8 @@ Employees browse the training calendar and request sessions. Line managers appro
 | `app/actions.ts` | Server actions for every change (submit, approve, enroll, edit trainings, attendance…). Permissions are checked here. |
 | `lib/data.ts` | Loads what the signed-in person is allowed to see |
 | `auth.ts` | Entra ID sign-in. Syncs the person's profile and line manager from Microsoft Graph |
-| `prisma/schema.prisma` | Database schema. `prisma/migrations/` holds the SQL |
+| `prisma/schema.prisma` | Database schema used by the app |
+| `db/*.sql` | pgAdmin scripts to create the tables and load starting data |
 | `docs/SSO-Integration-Response.md` | Answers to NESR IT's SSO integration requirements |
 
 ### Updating the UI from Claude Design
@@ -53,24 +54,18 @@ Don't edit `components/PortalView.jsx` by hand. It is regenerated each time.
 
 ### Creating the tables
 
-The SQL is in [`prisma/migrations/0001_init/migration.sql`](prisma/migrations/0001_init/migration.sql). Pick one of these:
+The tables are created **by hand in pgAdmin**. The app never creates or changes tables itself, including on deploy.
 
-- **Let the app do it (recommended).** On every Vercel deploy, `npm run vercel-build` runs `prisma migrate deploy`, which applies any new migrations.
-- **Run it from your machine.** Set `DATABASE_URL` and `DIRECT_URL` in `.env`, then:
-  ```bash
-  npm run db:migrate
-  ```
-- **Have the DBA run the SQL file by hand.** Afterwards, mark it as applied so later deploys don't try to run it again:
-  ```bash
-  npm run prisma -- migrate resolve --applied 0001_init
-  ```
+1. In pgAdmin, open **Query Tool** on the target database and run [`db/01_create_tables.sql`](db/01_create_tables.sql). It creates the 7 tables, 2 enum types, indexes and foreign keys in one transaction. Requires PostgreSQL 13+.
+2. Run [`db/02_seed_data.sql`](db/02_seed_data.sql) to load the starting training calendar (14 sessions) and the 4 notification templates.
 
-Then load the starting training calendar and notification templates:
+The app's database user only needs `SELECT, INSERT, UPDATE, DELETE` on these tables, plus `USAGE` on the `audit_log_id_seq` sequence.
+
+**If the schema changes later**, update `prisma/schema.prisma` and `db/01_create_tables.sql` together, and give the DBA the `ALTER` statements. To check that the database matches the app, run:
 ```bash
-npm run db:seed
+npm run prisma -- migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script
 ```
-
-The database user needs permission to create tables in the target schema (for migrations). The app itself only needs read/write access.
+The only differences should be the `id`/`updated_at` defaults, which the SQL file adds so rows can be inserted by hand in pgAdmin.
 
 > **Network access:** Vercel's servers run on the public internet. If the PostgreSQL server is inside the NESR network, IT must allow inbound connections from Vercel (or use Vercel Secure Compute / a static-IP egress add-on and allowlist those IPs). Use `sslmode=require`.
 
@@ -108,7 +103,7 @@ Requires Node.js 20+.
 
 ```bash
 npm install
-npm run db:migrate
+# create the tables: run db/01_create_tables.sql and db/02_seed_data.sql against your local database
 npm run db:seed -- --demo
 npm run dev
 ```
@@ -121,7 +116,7 @@ Open http://localhost:3000.
 
 1. Push this repo to GitHub (`digital-nesr` org).
 2. In Vercel: **Add New → Project → Import** the repo. The framework preset is detected as Next.js.
-3. The build command comes from `vercel.json` (`npm run vercel-build`). It runs the migrations, then builds.
+3. The build command comes from `vercel.json` (`npm run build`). It does not touch the database, so create the tables in pgAdmin before the first deploy.
 4. Add the environment variables above (Production and Preview).
 5. Deploy. Send the production URL to IT so they can register the redirect URI.
 
