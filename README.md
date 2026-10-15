@@ -62,7 +62,7 @@ Don't edit `components/PortalView.jsx` by hand. It is regenerated each time.
 
 Each migration runs once. Prisma records applied migrations in a `_prisma_migrations` table, so later deploys skip them. If a migration fails, the deploy fails and the live site keeps running the previous version.
 
-The database user (`DB_USER`) needs permission to create tables in the `LD_DB_NAME` database.
+The database user (`DB_USER`) needs permission to create tables in the `LD_DB_NAME` database (`lnd_trainings`).
 
 **Changing the schema later:** edit `prisma/schema.prisma`, then create a new migration against a dev database with `npm run prisma -- migrate dev --name <change>`. Commit it, and the next deploy applies it.
 
@@ -75,7 +75,7 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 | Variable | Status | Notes |
 |---|---|---|
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_SSL` | Shared (already exists) | The PostgreSQL server. `DB_SSL` = `true`/`require` → `sslmode=require`; `false` → no SSL |
-| `LD_DB_NAME` | **New** | The L&D database on that server, e.g. `ld_portal`. Create it empty first; deploys create the tables |
+| `LD_DB_NAME` | **New** | The L&D database on that server, `lnd_trainings`. Create it empty first; deploys create the tables |
 | `NEXTAUTH_SECRET` | Shared | Signs session cookies |
 | `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID` | Shared | Entra ID app registration. IT must add the L&D redirect URI to it |
 | `LD_AZURE_AD_CLIENT_ID` / `_SECRET` / `_TENANT_ID` | Optional | Only if IT gives L&D its own app registration. They override the shared ones |
