@@ -5,8 +5,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // Set at runtime from lib/db-url.js (DATABASE_URL, or DB_* + LD_DB_NAME)
+  url      = env("DATABASE_URL")
 }
 
 enum RequestState {

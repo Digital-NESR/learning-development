@@ -6,9 +6,9 @@ import { authConfig } from "./auth.config";
 import { prisma } from "@/lib/prisma";
 
 /** Entra ID App Role value that grants the L&D Team (admin) workspace. */
-export const ADMIN_ROLE = process.env.AUTH_ADMIN_ROLE || "LD.Admin";
+export const ADMIN_ROLE = process.env.LD_ADMIN_ROLE || "LD.Admin";
 
-export const demoLoginEnabled = process.env.DEMO_LOGIN === "true";
+export const demoLoginEnabled = process.env.LD_DEMO_LOGIN === "true";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
 const USER_FIELDS = "id,displayName,givenName,surname,mail,userPrincipalName,jobTitle,department,employeeId,country,officeLocation,city";
@@ -39,7 +39,7 @@ async function syncEmployee(claims: Record<string, unknown>, accessToken?: strin
   if (!email) throw new Error("Entra ID did not return an email for this user");
 
   const roles = Array.isArray(claims.roles) ? (claims.roles as string[]) : [];
-  const bootstrapAdmins = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+  const bootstrapAdmins = (process.env.LD_ADMIN_EMAILS || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
   const isAdmin = roles.includes(ADMIN_ROLE) || bootstrapAdmins.includes(email);
 
   const name = me?.displayName || String(claims.name || email);
@@ -76,9 +76,14 @@ async function syncEmployee(claims: Record<string, unknown>, accessToken?: strin
   return prisma.employee.upsert({ where: { email }, update: data, create: { email, ...data } });
 }
 
+const env = process.env;
+
 const providers: Provider[] = [
   MicrosoftEntraID({
-    // Reads AUTH_MICROSOFT_ENTRA_ID_ID / _SECRET / _ISSUER from the environment.
+    // Digital-NESR shared AZURE_AD_* variables; LD_AZURE_AD_* override them if L&D gets its own app registration.
+    clientId: env.LD_AZURE_AD_CLIENT_ID || env.AZURE_AD_CLIENT_ID,
+    clientSecret: env.LD_AZURE_AD_CLIENT_SECRET || env.AZURE_AD_CLIENT_SECRET,
+    issuer: `https://login.microsoftonline.com/${env.LD_AZURE_AD_TENANT_ID || env.AZURE_AD_TENANT_ID || "common"}/v2.0`,
     authorization: { params: { scope: "openid profile email User.Read" } }
   })
 ];

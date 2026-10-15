@@ -1,10 +1,11 @@
 // Seeds the training calendar and notification templates. Safe to run more than once.
 // Usage: npm run db:seed            (trainings + templates)
-//        npm run db:seed -- --demo  (also the demo people used by DEMO_LOGIN)
+//        npm run db:seed -- --demo  (also the demo people used by LD_DEMO_LOGIN)
 import { PrismaClient } from "@prisma/client";
+import { databaseUrl } from "../lib/db-url.js";
 import { SEED_TRAININGS, DEFAULT_TEMPLATES, DEMO_PEOPLE } from "../lib/constants.js";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ datasourceUrl: databaseUrl() });
 
 async function main() {
   for (const t of DEFAULT_TEMPLATES) {

@@ -33,7 +33,7 @@ Don't edit `components/PortalView.jsx` by hand. It is regenerated each time.
 |---|---|
 | Employee | Everyone who signs in |
 | Manager | People with direct reports in Entra ID, or who are the approver on a request |
-| L&D Team | Users with the Entra App Role `LD.Admin` (or listed in `ADMIN_EMAILS`) |
+| L&D Team | Users with the Entra App Role `LD.Admin` (or listed in `LD_ADMIN_EMAILS`) |
 
 **Approval chain:** employee → line manager (from Entra ID) → L&D team. If Entra ID has no manager for a person, they can enter an approver email on the form. To require more levels, change `APPROVAL_LEVELS` in `lib/constants.js`.
 
@@ -62,7 +62,7 @@ Don't edit `components/PortalView.jsx` by hand. It is regenerated each time.
 
 Each migration runs once. Prisma records applied migrations in a `_prisma_migrations` table, so later deploys skip them. If a migration fails, the deploy fails and the live site keeps running the previous version.
 
-The database user in `DIRECT_URL` needs permission to create tables in the target schema. If the migration should run under a separate admin user, put that user in `DIRECT_URL` and a read/write-only user in `DATABASE_URL`.
+The database user (`DB_USER`) needs permission to create tables in the `LD_DB_NAME` database.
 
 **Changing the schema later:** edit `prisma/schema.prisma`, then create a new migration against a dev database with `npm run prisma -- migrate dev --name <change>`. Commit it, and the next deploy applies it.
 
@@ -70,19 +70,21 @@ The database user in `DIRECT_URL` needs permission to create tables in the targe
 
 ## Environment variables
 
-Copy `.env.example` to `.env` for local work. On Vercel, add the same variables under **Project → Settings → Environment Variables**.
+The names match the **Digital-NESR** Vercel project, so the shared database and Azure AD settings are reused. L&D-specific settings start with `LD_`, so they can't clash with the other apps' variables (for example, the existing `ADMIN_EMAILS`).
 
-| Variable | Required | Notes |
+| Variable | Status | Notes |
 |---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string (add `sslmode=require`) |
-| `DIRECT_URL` | Yes | Same as `DATABASE_URL` unless you use a connection pooler |
-| `AUTH_SECRET` | Yes | Random 32+ bytes. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
-| `AUTH_MICROSOFT_ENTRA_ID_ID` | Yes | Application (client) ID from IT |
-| `AUTH_MICROSOFT_ENTRA_ID_SECRET` | Yes | Client secret from IT |
-| `AUTH_MICROSOFT_ENTRA_ID_ISSUER` | Yes | `https://login.microsoftonline.com/<TENANT_ID>/v2.0` |
-| `AUTH_ADMIN_ROLE` | No | App Role value for the L&D team (default `LD.Admin`) |
-| `ADMIN_EMAILS` | No | Comma-separated emails that always get L&D admin. Useful before IT creates the App Role |
-| `DEMO_LOGIN` | No | `true` shows a demo login with sample people. **Testing only — remove before go-live.** |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_SSL` | Shared (already exists) | The PostgreSQL server. `DB_SSL` = `true`/`require` → `sslmode=require`; `false` → no SSL |
+| `LD_DB_NAME` | **New** | The L&D database on that server, e.g. `ld_portal`. Create it empty first; deploys create the tables |
+| `NEXTAUTH_SECRET` | Shared | Signs session cookies |
+| `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID` | Shared | Entra ID app registration. IT must add the L&D redirect URI to it |
+| `LD_AZURE_AD_CLIENT_ID` / `_SECRET` / `_TENANT_ID` | Optional | Only if IT gives L&D its own app registration. They override the shared ones |
+| `LD_ADMIN_EMAILS` | **New** (optional) | Comma-separated emails that always get the L&D Team workspace. Useful before the `LD.Admin` App Role exists |
+| `LD_ADMIN_ROLE` | Optional | Entra App Role value for the L&D Team (default `LD.Admin`) |
+| `LD_DEMO_LOGIN` | Optional | `true` shows a demo login with sample people. **Testing only — remove before go-live** |
+| `DATABASE_URL` | Optional | A full connection string. Overrides the `DB_*` parts if set |
+
+**Where the variables live in Vercel:** if the shared ones are defined on another *project*, Vercel won't pass them to this one automatically. Either add them to this project too, or move them to **Team Settings → Environment Variables** (shared variables) and link them to each project.
 
 ## Single Sign-On
 
@@ -94,7 +96,7 @@ See [`docs/SSO-Integration-Response.md`](docs/SSO-Integration-Response.md) for t
 
 IT then sends back the tenant ID, client ID and client secret.
 
-**Testing before SSO is ready:** set `DEMO_LOGIN=true` and run `npm run db:seed -- --demo`. The login page then shows a picker with the sample people from the design (an employee, a manager and an L&D admin).
+**Testing before SSO is ready:** set `LD_DEMO_LOGIN=true` and run `npm run db:seed -- --demo`. The login page then shows a picker with the sample people from the design (an employee, a manager and an L&D admin).
 
 ## Local development
 

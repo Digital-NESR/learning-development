@@ -59,7 +59,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 </select>
                 <button type="submit" style={{ padding: "8px 14px", border: "1px solid #D1D3D4", background: "#fff", borderRadius: 4, fontWeight: "bold", cursor: "pointer" }}>Enter</button>
               </form>
-              <div style={{ fontSize: 11, color: "#8A8F8C", marginTop: 8 }}>Turn off by removing DEMO_LOGIN before go-live.</div>
+              <div style={{ fontSize: 11, color: "#8A8F8C", marginTop: 8 }}>Turn off by removing LD_DEMO_LOGIN before go-live.</div>
             </div>
           )}
 

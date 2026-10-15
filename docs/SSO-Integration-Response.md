@@ -53,9 +53,13 @@ Response to **"SSO Integration Requirements"** (NESR IT, Identity Provider: Micr
 
 | Item | Goes into app setting |
 |---|---|
-| Directory (tenant) ID | `AUTH_MICROSOFT_ENTRA_ID_ISSUER` = `https://login.microsoftonline.com/<TENANT_ID>/v2.0` |
-| Application (client) ID | `AUTH_MICROSOFT_ENTRA_ID_ID` |
-| Client secret **value** (and its expiry date) | `AUTH_MICROSOFT_ENTRA_ID_SECRET` |
+| Directory (tenant) ID | `AZURE_AD_TENANT_ID` (or `LD_AZURE_AD_TENANT_ID`) |
+| Application (client) ID | `AZURE_AD_CLIENT_ID` (or `LD_AZURE_AD_CLIENT_ID`) |
+| Client secret **value** (and its expiry date) | `AZURE_AD_CLIENT_SECRET` (or `LD_AZURE_AD_CLIENT_SECRET`) |
+
+**Existing Digital-NESR registration or a new one:** the Digital-NESR apps on Vercel already share one Entra app registration (`AZURE_AD_*`). IT can choose either option:
+- **Reuse it:** add the L&D redirect URIs below and the `LD.Admin` App Role to the existing registration. No new credentials are needed.
+- **Create a dedicated "NESR L&D Portal" registration:** the portal then reads it from the `LD_AZURE_AD_*` variables, which take priority over the shared ones.
 
 The secret is stored only as an encrypted Vercel environment variable. It is never committed to the code repository. Please share it through a secure channel, not email.
 

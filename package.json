@@ -6,12 +6,12 @@
   "scripts": {
     "dev": "node node_modules/next/dist/bin/next dev",
     "build": "node node_modules/prisma/build/index.js generate && node node_modules/next/dist/bin/next build",
-    "vercel-build": "node node_modules/prisma/build/index.js generate && node node_modules/prisma/build/index.js migrate deploy && node node_modules/next/dist/bin/next build",
+    "vercel-build": "node node_modules/prisma/build/index.js generate && node --env-file-if-exists=.env scripts/with-db.mjs node node_modules/prisma/build/index.js migrate deploy && node node_modules/next/dist/bin/next build",
     "start": "node node_modules/next/dist/bin/next start",
     "convert-design": "node scripts/convert-design.mjs",
-    "db:migrate": "node node_modules/prisma/build/index.js migrate deploy",
+    "db:migrate": "node --env-file-if-exists=.env scripts/with-db.mjs node node_modules/prisma/build/index.js migrate deploy",
     "db:seed": "node --env-file-if-exists=.env prisma/seed.mjs",
-    "prisma": "node node_modules/prisma/build/index.js",
+    "prisma": "node --env-file-if-exists=.env scripts/with-db.mjs node node_modules/prisma/build/index.js",
     "postinstall": "node node_modules/prisma/build/index.js generate"
   },
   "engines": {
