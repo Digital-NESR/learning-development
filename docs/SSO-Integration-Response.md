@@ -7,7 +7,7 @@ Response to **"SSO Integration Requirements"** (NESR IT, Identity Provider: Micr
 | **Application** | NESR Learning & Development Portal |
 | **Application owner** | Sakina Bagalkot — sbagalkot@nesr.com |
 | **Technical support contact** | Sakina Bagalkot — sbagalkot@nesr.com |
-| **Hosting** | Vercel (HTTPS only) |
+| **Hosting** | Vercel (HTTPS only): https://learning-development-red.vercel.app |
 | **Protocol chosen** | **OpenID Connect (OIDC) / OAuth 2.0** — the "Secondary Protocol" in the IT requirements |
 | **Auth library** | Auth.js (NextAuth v5), Microsoft Entra ID provider |
 
@@ -21,13 +21,13 @@ Response to **"SSO Integration Requirements"** (NESR IT, Identity Provider: Micr
 |---|---|
 | **Application type** | **Web** (confidential client — server-side code exchange with a client secret) |
 | **Supported account types** | Accounts in this organizational directory only (NESR single tenant) |
-| **Redirect URI (production)** | `https://<PRODUCTION-DOMAIN>/api/auth/callback/microsoft-entra-id` |
+| **Redirect URI (production)** | `https://learning-development-red.vercel.app/api/auth/callback/microsoft-entra-id` |
 | **Redirect URI (local development)** | `http://localhost:3000/api/auth/callback/microsoft-entra-id` |
-| **Post-logout redirect URI** | `https://<PRODUCTION-DOMAIN>/login` |
+| **Post-logout redirect URI** | `https://learning-development-red.vercel.app/login` |
 | **Front-channel logout URL** | Not required |
 | **ID tokens / Access tokens (implicit)** | **Not required** — leave both unchecked |
 
-`<PRODUCTION-DOMAIN>` is the Vercel URL, e.g. `ld-portal.vercel.app`, or a custom domain such as `learning.nesr.com` if IT/DNS assigns one. We will confirm it once the first deployment is live.
+Production domain: **`learning-development-red.vercel.app`** (live on Vercel). If a custom domain such as `learning.nesr.com` is assigned later, its redirect URIs will be added too.
 
 ### OAuth flow
 

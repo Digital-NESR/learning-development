@@ -1,5 +1,7 @@
 # NESR Learning & Development Portal
 
+**Live:** https://learning-development-red.vercel.app
+
 Employees browse the training calendar and request sessions. Line managers approve requests. The L&D team enrolls participants, manages sessions and tracks attendance.
 
 - **Stack:** Next.js 15 (App Router) · React 19 · Auth.js v5 · Prisma 6 · PostgreSQL
@@ -90,7 +92,7 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 
 See [`docs/SSO-Integration-Response.md`](docs/SSO-Integration-Response.md) for the full configuration to hand to NESR IT. In short, IT creates an Entra app registration with:
 
-- Redirect URI `https://<domain>/api/auth/callback/microsoft-entra-id` (and `http://localhost:3000/...` for development)
+- Redirect URI `https://learning-development-red.vercel.app/api/auth/callback/microsoft-entra-id` (and `http://localhost:3000/...` for development)
 - Microsoft Graph `User.Read` (delegated)
 - App Role `LD.Admin`
 
