@@ -1,6 +1,6 @@
 # NESR Learning & Development Portal
 
-**Live:** https://learning-development-red.vercel.app
+**Live:** https://lnd.nesr.com (pending DNS) · https://learning-development-red.vercel.app
 
 Employees browse the training calendar and request sessions. Line managers approve requests. The L&D team enrolls participants, manages sessions and tracks attendance.
 
@@ -92,7 +92,7 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 
 See [`docs/SSO-Integration-Response.md`](docs/SSO-Integration-Response.md) for the full configuration to hand to NESR IT. In short, IT creates an Entra app registration with:
 
-- Redirect URI `https://learning-development-red.vercel.app/api/auth/callback/microsoft-entra-id` (and `http://localhost:3000/...` for development)
+- Redirect URIs `https://lnd.nesr.com/api/auth/callback/microsoft-entra-id` and `https://learning-development-red.vercel.app/api/auth/callback/microsoft-entra-id` (and `http://localhost:3000/...` for development)
 - Microsoft Graph `User.Read` (delegated)
 - App Role `LD.Admin`
 
