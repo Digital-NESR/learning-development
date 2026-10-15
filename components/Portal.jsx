@@ -496,7 +496,7 @@ export default class Portal extends React.Component {
       const n = people.filter(p => p.label === "Attended").length;
       return {code: t.code, title: t.title, meta: this.range(t) + " · " + t.location,
         completionLabel: n + " of " + people.length + " completed", people};
-    });
+    }).filter(a => a.people.length > 0);
 
     const templates = (st.templateRows || []).map(t => {
       const off = st.templatesOff[t.id];
@@ -605,6 +605,10 @@ export default class Portal extends React.Component {
       monthCells, monthLabel: MONTHS[st.month] + " " + st.calYear,
       prevMonth: () => this.setState(st.month === 0 ? {month: 11, calYear: st.calYear - 1} : {month: st.month - 1}),
       nextMonth: () => this.setState(st.month === 11 ? {month: 0, calYear: st.calYear + 1} : {month: st.month + 1}),
+      empty: {
+        myRequests: myRequests.length === 0, teamRequests: teamRequests.length === 0, teamStats: teamStats.length === 0,
+        queueRows: queueRows.length === 0, attendance: attendanceSessions.length === 0
+      },
       myRequests, teamRequests, queueRows, recommended, teamStats,
       empKpis, adminKpis, fillRows, catRows, attendanceSessions, templates, ageingRows, timelineRows,
       resources: RESOURCES,

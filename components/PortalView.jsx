@@ -78,6 +78,9 @@ export default function PortalView({ v }) {
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "18px" }}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", fontSize: "13px", fontWeight: "bold", borderLeft: "4px solid #2A7E4F" }}>Your Requests</div>
+{v.empty.myRequests ? (<>
+<div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No requests yet. Pick a session from Recommended For You or the Training Calendar.</div>
+</>) : null}
 {(v.myRequests || []).map((r, i3) => (<React.Fragment key={i3}>
 <div style={{ padding: "14px 16px", borderBottom: "1px solid #F0F2F1" }}>
 <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
@@ -243,6 +246,9 @@ export default function PortalView({ v }) {
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>My Requests</div>
 <div style={{ fontSize: "13px", color: "#58595B", marginBottom: "18px" }}>Every registration you have submitted, and where it sits in the approval chain.</div>
+{v.empty.myRequests ? (<>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>You haven't requested any training yet. Open the Training Calendar, choose a session and click Submit Request.</div>
+</>) : null}
 {(v.myRequests || []).map((r, i14) => (<React.Fragment key={i14}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "16px 18px", marginBottom: "12px" }}>
 <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -288,6 +294,9 @@ export default function PortalView({ v }) {
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Team Approvals</div>
 <div style={{ fontSize: "13px", color: "#58595B", marginBottom: "18px" }}>{v.pendingLabel}</div>
+{v.empty.teamRequests ? (<>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No requests from your team yet. When someone who reports to you requests a training, it appears here for approval.</div>
+</>) : null}
 {(v.teamRequests || []).map((r, i17) => (<React.Fragment key={i17}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "16px 18px", marginBottom: "12px", borderLeft: `4px solid ${r.st.fg}` }}>
 <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -319,6 +328,9 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Team Development</div>
 <div style={{ fontSize: "13px", color: "#58595B", marginBottom: "18px" }}>Training days completed per direct report, {v.year} cycle.</div>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "6px 18px 18px" }}>
+{v.empty.teamStats ? (<>
+<div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No direct reports found for your account.</div>
+</>) : null}
 {(v.teamStats || []).map((t, i18) => (<React.Fragment key={i18}>
 <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "13px 0", borderBottom: "1px solid #F0F2F1" }}>
 <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "bold" }}>{t.initials}</div>
@@ -605,6 +617,9 @@ export default function PortalView({ v }) {
 <div style={{ padding: "11px 12px" }}>Stage</div>
 <div style={{ padding: "11px 12px" }}>L&amp;D Action</div>
 </div>
+{v.empty.queueRows ? (<>
+<div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>Nothing in the queue. Requests appear here once managers approve them.</div>
+</>) : null}
 {(v.queueRows || []).map((r, i29) => (<React.Fragment key={i29}>
 <div style={{ display: "grid", minWidth: "880px", gridTemplateColumns: "minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px", borderBottom: "1px solid #F0F2F1", alignItems: "center", background: r.zebra }}>
 <div style={{ padding: "10px 12px" }}>
@@ -631,6 +646,9 @@ export default function PortalView({ v }) {
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Attendance &amp; Completion</div>
 <div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Mark attendance for delivered sessions. Completion feeds the training-days KPI.</div>
+{v.empty.attendance ? (<>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No delivered sessions with enrolled participants yet.</div>
+</>) : null}
 {(v.attendanceSessions || []).map((sess, i30) => (<React.Fragment key={i30}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "16px", overflow: "hidden" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: "1px solid #E1E5E3", flexWrap: "wrap" }}>

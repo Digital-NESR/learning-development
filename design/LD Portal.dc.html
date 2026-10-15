@@ -99,6 +99,9 @@
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
               <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Your Requests</div>
+              <sc-if value="{{ empty.myRequests }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No requests yet. Pick a session from Recommended For You or the Training Calendar.</div>
+              </sc-if>
               <sc-for list="{{ myRequests }}" as="r" hint-placeholder-count="3">
                 <div style="padding:14px 16px;border-bottom:1px solid #F0F2F1">
                   <div style="display:flex;gap:10px;align-items:flex-start">
@@ -270,6 +273,9 @@
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">My Requests</div>
           <div style="font-size:13px;color:#58595B;margin-bottom:18px">Every registration you have submitted, and where it sits in the approval chain.</div>
+          <sc-if value="{{ empty.myRequests }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">You haven't requested any training yet. Open the Training Calendar, choose a session and click Submit Request.</div>
+          </sc-if>
           <sc-for list="{{ myRequests }}" as="r" hint-placeholder-count="3">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:16px 18px;margin-bottom:12px">
               <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
@@ -317,6 +323,9 @@
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Approvals</div>
           <div style="font-size:13px;color:#58595B;margin-bottom:18px">{{ pendingLabel }}</div>
+          <sc-if value="{{ empty.teamRequests }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No requests from your team yet. When someone who reports to you requests a training, it appears here for approval.</div>
+          </sc-if>
           <sc-for list="{{ teamRequests }}" as="r" hint-placeholder-count="4">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:16px 18px;margin-bottom:12px;border-left:4px solid {{ r.st.fg }}">
               <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
@@ -349,7 +358,10 @@
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Development</div>
           <div style="font-size:13px;color:#58595B;margin-bottom:18px">Training days completed per direct report, {{ year }} cycle.</div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:6px 18px 18px">
-            <sc-for list="{{ teamStats }}" as="t" hint-placeholder-count="5">
+            <sc-if value="{{ empty.teamStats }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No direct reports found for your account.</div>
+              </sc-if>
+              <sc-for list="{{ teamStats }}" as="t" hint-placeholder-count="5">
               <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #F0F2F1">
                 <div style="width:34px;height:34px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">{{ t.initials }}</div>
                 <div style="width:180px;min-width:120px">
@@ -644,7 +656,10 @@
               <div style="padding:11px 12px">Stage</div>
               <div style="padding:11px 12px">L&amp;D Action</div>
             </div>
-            <sc-for list="{{ queueRows }}" as="r" hint-placeholder-count="6">
+            <sc-if value="{{ empty.queueRows }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">Nothing in the queue. Requests appear here once managers approve them.</div>
+              </sc-if>
+              <sc-for list="{{ queueRows }}" as="r" hint-placeholder-count="6">
               <div style="display:grid;min-width:880px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
                 <div style="padding:10px 12px">
                   <div style="font-size:12.5px;font-weight:bold">{{ r.employee }}</div>
@@ -671,6 +686,9 @@
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Attendance &amp; Completion</div>
           <div style="font-size:13px;color:#58595B;margin-bottom:16px">Mark attendance for delivered sessions. Completion feeds the training-days KPI.</div>
+          <sc-if value="{{ empty.attendance }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No delivered sessions with enrolled participants yet.</div>
+          </sc-if>
           <sc-for list="{{ attendanceSessions }}" as="sess" hint-placeholder-count="2">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-bottom:16px;overflow:hidden">
               <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid #E1E5E3;flex-wrap:wrap">
