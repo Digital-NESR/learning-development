@@ -83,6 +83,7 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 | `LD_AZURE_AD_CLIENT_ID` / `_SECRET` / `_TENANT_ID` | Optional | Only if IT gives L&D its own app registration. They override the shared ones |
 | `LD_ADMIN_EMAILS` | **New** (optional) | Comma-separated emails that always get the L&D Team workspace. Useful before the `LD.Admin` App Role exists |
 | `LD_ADMIN_ROLE` | Optional | Entra App Role value for the L&D Team (default `LD.Admin`) |
+| `LD_SITE_PASSWORD` | Optional | When set, every page first asks for this shared access password (remembered for 30 days per browser). Changing it locks everyone out until they enter the new one. Remove it to turn the gate off |
 | `LD_DEMO_LOGIN` | Optional | `true` shows a demo login with sample people. **Testing only — remove before go-live** |
 | `DATABASE_URL` | Optional | A full connection string. Overrides the `DB_*` parts if set |
 

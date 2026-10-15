@@ -108,7 +108,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers,
   callbacks: {
-    ...authConfig.callbacks,
     async jwt({ token, account, profile, user }) {
       if (account?.provider === "microsoft-entra-id") {
         const emp = await syncEmployee({ ...(profile || {}) }, account.access_token);

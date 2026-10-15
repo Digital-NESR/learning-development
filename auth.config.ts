@@ -5,12 +5,6 @@ export const authConfig = {
   pages: { signIn: "/login" },
   session: { strategy: "jwt", maxAge: 8 * 60 * 60 },
   trustHost: true,
-  providers: [],
-  callbacks: {
-    authorized({ auth, request }) {
-      const { pathname } = request.nextUrl;
-      if (pathname.startsWith("/login")) return true;
-      return !!auth?.user;
-    }
-  }
+  providers: []
+  // Route protection (site password + sign-in redirect) lives in middleware.ts.
 } satisfies NextAuthConfig;
