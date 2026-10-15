@@ -757,14 +757,20 @@ export default function PortalView({ v }) {
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#8A8F8C", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
-<select value={fl.value} onChange={fl.onChange} style={{ width: "100%", padding: "9px 8px", border: "1px solid #D9DDDB", borderRadius: "4px", background: "#fff" }}>
+<select value={fl.value} onChange={fl.onChange} style={{ width: "100%", padding: "9px 8px", border: `1px solid ${fl.border}`, borderRadius: "4px", background: "#fff", color: fl.fg }}>
+{fl.choosePrompt ? (<>
+<option value="" disabled>{fl.choosePrompt}</option>
+</>) : null}
 {(fl.options || []).map((o, i35) => (<React.Fragment key={i35}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>
 </>) : null}
 {fl.isText ? (<>
-<input value={fl.value} onChange={fl.onChange} placeholder={fl.placeholder} style={{ width: "100%", padding: "9px 10px", border: "1px solid #D9DDDB", borderRadius: "4px" }} />
+<input value={fl.value} onChange={fl.onChange} placeholder={fl.placeholder} readOnly={fl.readOnly} title={fl.hint} style={{ width: "100%", padding: "9px 10px", border: `1px solid ${fl.border}`, borderRadius: "4px", background: fl.bg, color: fl.fg }} />
+</>) : null}
+{fl.hint ? (<>
+<div style={{ fontSize: "10.5px", color: "#8A8F8C", marginTop: "4px" }}>{fl.hint}</div>
 </>) : null}
 </div>
 </React.Fragment>))}

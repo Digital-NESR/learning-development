@@ -141,10 +141,10 @@ export default class Portal extends React.Component {
     const p = this.me();
     const boss = p.boss ? this.P(p.boss) : null;
     return {nesrId: p.nesrId === "—" ? "" : p.nesrId, name: p.name, loc: p.loc || LOCATIONS[0], dept: p.dept || DEPTS[0],
-      nat: NATIONALITIES[0], mgr: boss ? boss.email : ""};
+      nat: "", mgr: boss ? boss.email : ""};
   }
 
-  openDetail(id) { this.setState({detailId: id, justification: "", form: this.state.form || this.defaultForm()}); }
+  openDetail(id) { this.setState({detailId: id, justification: "", formError: false, form: this.state.form || this.defaultForm()}); }
 
   row(t, i) {
     const s = this.seatState(t);
@@ -169,6 +169,11 @@ export default class Portal extends React.Component {
     const full = t.enrolled >= t.seats;
     const chain = this.chainFor(this.state.meId);
     const form = this.state.form || this.defaultForm();
+    if (!form.nat) {
+      this.setState({formError: true});
+      this.flash("Nationality needed", "Choose your nationality — the L&D team uses it to arrange visas.");
+      return;
+    }
     const next = chain.length ? this.P(chain[0]) : null;
     const viaForm = !next && form.mgr;
     this.act(() => actions.submitRequest({trainingId: t.id, justification: this.state.justification, form}),
@@ -376,13 +381,22 @@ export default class Portal extends React.Component {
           mk("Approval steps", String(Math.max(myChain.length, myForm.mgr ? 1 : 0) + 1), "M20 6.5L9.5 17 4.5 12")
         ]
       };
+      const field = f => Object.assign({border:"#D9DDDB", fg:"#1F1F1D", bg:"#fff", readOnly:false, hint:"", choosePrompt:""}, f);
+      const lockedMgr = myChain.length ? myChain[0] : null;
+      const natMissing = st.formError && !myForm.nat;
       formFields = [
-        {label:"NESR ID", isText:true, value: myForm.nesrId, placeholder:"e.g. 10428", onChange: this.setForm("nesrId")},
-        {label:"Full name", isText:true, value: myForm.name, placeholder:"Full name", onChange: this.setForm("name")},
-        {label:"Work location", isSelect:true, value: myForm.loc, options: withOption(LOCATIONS, myForm.loc), onChange: this.setForm("loc")},
-        {label:"Department", isSelect:true, value: myForm.dept, options: withOption(DEPTS, myForm.dept), onChange: this.setForm("dept")},
-        {label:"Nationality (visa)", isSelect:true, value: myForm.nat, options: NATIONALITIES, onChange: this.setForm("nat")},
-        {label:"Approver email", isText:true, value: myForm.mgr, placeholder:"name@nesr.com", onChange: this.setForm("mgr")}
+        field({label:"NESR ID", isText:true, value: myForm.nesrId, placeholder:"e.g. 10428", onChange: this.setForm("nesrId")}),
+        field({label:"Full name", isText:true, value: myForm.name, placeholder:"Full name", onChange: this.setForm("name")}),
+        field({label:"Work location", isSelect:true, value: myForm.loc, options: withOption(LOCATIONS, myForm.loc), onChange: this.setForm("loc")}),
+        field({label:"Department", isSelect:true, value: myForm.dept, options: withOption(DEPTS, myForm.dept), onChange: this.setForm("dept")}),
+        field({label:"Nationality (visa)", isSelect:true, value: myForm.nat, options: NATIONALITIES, onChange: this.setForm("nat"),
+          choosePrompt:"Select nationality", fg: myForm.nat ? "#1F1F1D" : "#8A8F8C",
+          border: natMissing ? "#8A2B2B" : "#D9DDDB", hint: natMissing ? "Required" : ""}),
+        lockedMgr
+          ? field({label:"Approver", isText:true, value: lockedMgr.email, readOnly:true, bg:"#F2F4F3", fg:"#58595B", onChange: () => {},
+              hint:"Your line manager, from your Microsoft profile. If it's wrong, ask HR to update it."})
+          : field({label:"Approver email", isText:true, value: myForm.mgr, placeholder:"name@nesr.com", onChange: this.setForm("mgr"),
+              hint:"No manager is listed on your Microsoft profile. Enter who should approve."})
       ];
     }
 

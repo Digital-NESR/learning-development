@@ -4,7 +4,7 @@ import type { Employee, Prisma } from "@prisma/client";
 import { currentEmployee, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { approvalChain, loadSnapshot, type Snapshot } from "@/lib/data";
-import { CATEGORIES, LOCATIONS, TYPES } from "@/lib/constants.js";
+import { CATEGORIES, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js";
 
 type Result = { ok: true; data: Snapshot } | { ok: false; error: string };
 
@@ -45,7 +45,10 @@ export async function submitRequest(input: { trainingId: string; justification: 
       throw new UserError("You already have a request on file for this session.");
 
     const form = Object.fromEntries(["nesrId", "name", "loc", "dept", "nat", "mgr"].map(k => [k, str(input.form?.[k])]));
+    if (!NATIONALITIES.includes(form.nat)) throw new UserError("Choose your nationality.");
     let chain = await approvalChain(me.id);
+    // Record who actually approves, not whatever was typed.
+    if (chain.length) form.mgr = chain[0].email;
 
     // No manager known from Entra ID: use the approver email from the form, if it names someone else.
     const mgrEmail = form.mgr.toLowerCase();
