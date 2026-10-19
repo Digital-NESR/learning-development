@@ -79,7 +79,11 @@ export async function loadSnapshot(meId: string) {
     templatesOff: Object.fromEntries(templates.filter(t => !t.isActive).map(t => [t.id, true])),
     templates: templates.map(t => ({ id: t.id, name: t.name, trigger: t.trigger, subject: t.subject, body: t.body })),
     mail: me.isAdmin
-      ? { from: process.env.LD_MAIL_FROM || "", configured: !!(process.env.LD_MAIL_FROM && process.env.LD_N8N_EMAIL_WEBHOOK_URL) }
+      ? {
+          from: process.env.LD_MAIL_FROM || "",
+          configured: !!(process.env.LD_MAIL_FROM && process.env.LD_N8N_EMAIL_WEBHOOK_URL),
+          testRecipient: (process.env.LD_MAIL_TEST_RECIPIENT || "").trim()
+        }
       : null
   };
 }

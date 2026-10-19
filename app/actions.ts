@@ -246,13 +246,17 @@ export async function sendTrainingEmail(input: { trainingId: string; audience: s
     const messages = people.map(p => {
       const values = { ...shared, first_name: p.firstName, employee_name: p.name, manager_name: p.manager?.name || "your manager" };
       const text = fillPlaceholders(body, values);
-      return { to: p.email, name: p.name, subject: fillPlaceholders(subject, values), text, html: escapeHtml(text).replace(/\r?\n/g, "<br>") };
+      const filledSubject = fillPlaceholders(subject, values);
+      // Test mode: everything goes to one inbox; the subject shows who it was meant for.
+      const testTo = (process.env.LD_MAIL_TEST_RECIPIENT || "").trim();
+      return { to: testTo || p.email, intendedTo: p.email, name: p.name,
+        subject: testTo ? `[TEST → ${p.email}] ${filledSubject}` : filledSubject, text, html: escapeHtml(text).replace(/\r?\n/g, "<br>") };
     });
 
     const res = await fetch(hook, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(process.env.LD_N8N_EMAIL_WEBHOOK_SECRET ? { "x-webhook-secret": process.env.LD_N8N_EMAIL_WEBHOOK_SECRET } : {}) },
-      body: JSON.stringify({ from, training: { id: t.id, ...shared }, audience, count: messages.length, messages })
+      body: JSON.stringify({ from, testMode: !!process.env.LD_MAIL_TEST_RECIPIENT, training: { id: t.id, ...shared }, audience, count: messages.length, messages })
     }).catch(() => null);
     if (!res || !res.ok) throw new UserError(`The email service didn't accept the request${res ? ` (HTTP ${res.status})` : ""}. Nothing was sent.`);
 

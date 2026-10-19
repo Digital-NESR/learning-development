@@ -17,6 +17,7 @@ An L&D admin opens **Notifications → Send Training Email**, picks a training a
 | `LD_MAIL_FROM` | `sbagalkot@nesr.com` (testing) · `training@nesr.com` (production) | Sender address passed to n8n |
 | `LD_N8N_EMAIL_WEBHOOK_URL` | `https://<n8n-host>/webhook/ld-portal-email` | Production URL of the n8n Webhook node |
 | `LD_N8N_EMAIL_WEBHOOK_SECRET` | random string | Optional. Sent as the `x-webhook-secret` header so n8n can reject anything else |
+| `LD_MAIL_TEST_RECIPIENT` | `sbagalkot@nesr.com` | **Test mode.** Every email goes to this address instead of the real recipients, and the subject starts with `[TEST → real@address]`. The Notifications page shows a test-mode banner. Remove it to send to the real people |
 
 The Send button stays disabled until both `LD_MAIL_FROM` and `LD_N8N_EMAIL_WEBHOOK_URL` are set.
 
@@ -27,6 +28,7 @@ The Send button stays disabled until both `LD_MAIL_FROM` and `LD_N8N_EMAIL_WEBHO
 ```json
 {
   "from": "sbagalkot@nesr.com",
+  "testMode": false,
   "training": {
     "id": "3736cdaa-…",
     "training_title": "Presentation Skills Masterclass",
@@ -39,6 +41,7 @@ The Send button stays disabled until both `LD_MAIL_FROM` and `LD_N8N_EMAIL_WEBHO
   "messages": [
     {
       "to": "mohammed.alharbi@nesr.com",
+      "intendedTo": "mohammed.alharbi@nesr.com",
       "name": "Mohammed Al-Harbi",
       "subject": "You are enrolled: Presentation Skills Masterclass",
       "text": "Your seat is confirmed for SFT-02 on 7–8 Sep 2026 …",
@@ -50,6 +53,7 @@ The Send button stays disabled until both `LD_MAIL_FROM` and `LD_N8N_EMAIL_WEBHO
 
 - `audience` is `registered` (everyone except declined requests), `enrolled` (enrolled or completed) or `participants` (marked attended).
 - `html` is the same text with HTML special characters escaped and line breaks turned into `<br>`.
+- In test mode, `testMode` is `true`, every `to` is the test address, and `intendedTo` holds the real recipient. n8n should always send to `to`.
 - n8n must reply with **2xx**. Any other response, or no response, makes the portal tell the admin that **nothing was sent**.
 
 ### Suggested n8n workflow

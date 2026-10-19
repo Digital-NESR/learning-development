@@ -690,7 +690,8 @@ export default class Portal extends React.Component {
       subject: m.subject, body: m.body,
       onSubject: e => this.setMail({subject: e.target.value}), onBody: e => this.setMail({body: e.target.value}),
       placeholders: PLACEHOLDERS.join(" "),
-      fromLabel: mailInfo.configured ? "From: " + mailInfo.from : "Sending isn't set up yet (needs LD_MAIL_FROM and LD_N8N_EMAIL_WEBHOOK_URL in Vercel).",
+      fromLabel: !mailInfo.configured ? "Sending isn't set up yet (needs LD_MAIL_FROM and LD_N8N_EMAIL_WEBHOOK_URL in Vercel)."
+        : "From: " + mailInfo.from + (mailInfo.testRecipient ? "  ·  TEST MODE: every email goes to " + mailInfo.testRecipient : ""),
       buttonLabel: st.busy ? "Sending…" : mailCount ? "Send to " + mailCount : "Send",
       buttonBg: canSend ? "#2A7E4F" : "#A8ACAA", buttonCursor: canSend ? "pointer" : "not-allowed",
       onSubmit: () => {
@@ -699,9 +700,13 @@ export default class Portal extends React.Component {
           if (!m.trainingId || !mailCount) return this.flash("No recipients", "Choose a training and a group that has people in it.");
           return this.flash("Message incomplete", "Write a subject and a message first.");
         }
-        if (!window.confirm("Send this email to " + mailCount + (mailCount === 1 ? " person" : " people") + "?")) return;
+        const question = mailInfo.testRecipient
+          ? "TEST MODE: send " + mailCount + (mailCount === 1 ? " email" : " emails") + " to " + mailInfo.testRecipient + " (instead of the real recipients)?"
+          : "Send this email to " + mailCount + (mailCount === 1 ? " person" : " people") + "?";
+        if (!window.confirm(question)) return;
         this.act(() => actions.sendTrainingEmail({trainingId: m.trainingId, audience: m.audience, subject: m.subject, body: m.body}),
-          "Email sent", mailCount + (mailCount === 1 ? " email" : " emails") + " handed to the mail service from " + mailInfo.from + ".");
+          "Email sent", mailCount + (mailCount === 1 ? " email" : " emails") + " handed to the mail service from " + mailInfo.from +
+          (mailInfo.testRecipient ? " — test mode, all delivered to " + mailInfo.testRecipient + "." : "."));
       }
     };
 
