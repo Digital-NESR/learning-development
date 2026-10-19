@@ -88,13 +88,33 @@
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px">
             <sc-for list="{{ empKpis }}" as="k" hint-placeholder-count="4">
-              <div style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid #2A7E4F;border-radius:5px;padding:14px 16px">
+              <div onClick="{{ k.onClick }}" title="Show these trainings" style="background:{{ k.bg }};border:1px solid {{ k.border }};border-top:4px solid #2A7E4F;border-radius:5px;padding:14px 16px;cursor:pointer" style-hover="box-shadow:0 4px 14px rgba(31,31,29,.08)">
                 <div style="font-size:11px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#58595B">{{ k.label }}</div>
                 <div style="font-size:30px;font-weight:bold;color:#2A7E4F;line-height:1.2;margin-top:4px">{{ k.value }}</div>
                 <div style="font-size:11px;color:#8A8F8C">{{ k.note }}</div>
               </div>
             </sc-for>
           </div>
+          <sc-if value="{{ dashList }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin:-6px 0 20px;animation:fadeIn .15s ease">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px">
+                <div style="font-size:13px;font-weight:bold;flex:1">{{ dashList.title }}</div>
+                <button onClick="{{ dashList.onClose }}" title="Close" style="border:0;background:#EEF1EF;color:#58595B;width:24px;height:24px;border-radius:4px;cursor:pointer;font-weight:bold">&times;</button>
+              </div>
+              <sc-if value="{{ dashList.empty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:26px 16px;text-align:center;color:#8A8F8C;font-size:13px">{{ dashList.emptyText }}</div>
+              </sc-if>
+              <sc-for list="{{ dashList.rows }}" as="dr" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F2F1">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:bold">{{ dr.title }}</div>
+                    <div style="font-size:11px;color:#58595B;margin-top:2px">{{ dr.meta }}</div>
+                  </div>
+                  <span style="background:{{ dr.stBg }};color:{{ dr.stFg }};font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ dr.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
               <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Your Requests</div>

@@ -40,6 +40,7 @@ export default class Portal extends React.Component {
     const now = new Date();
     this.state = Object.assign({
       teamOpen: {},
+      dashCard: null,
       editorError: false,
       screen: "dashboard",
       calView: "table",
@@ -624,15 +625,45 @@ export default class Portal extends React.Component {
       };
     });
 
-    const myUpcoming = myRequests.filter(r => r.state === "enrolled").length;
-    const myDays = st.requests.filter(r => r.who === meP.key && (r.state === "enrolled" || r.state === "completed"))
-      .reduce((a, r) => { const tt = this.t(r.tid); return a + (tt ? this.days(tt) : 0); }, 0);
+    // ---- Dashboard cards: click to list the trainings behind each number ----
+    const mine = st.requests.filter(r => r.who === meP.key)
+      .map(r => ({r, t: this.t(r.tid), d: myRequests.find(x => x.id === r.id)})).filter(x => x.t && x.d)
+      .sort((a, b) => a.t.start < b.t.start ? -1 : 1);
+    const cardGroups = {
+      enrolled: mine.filter(x => x.r.state === "enrolled"),
+      pending: mine.filter(x => x.r.state === "pending" || x.r.state === "lnd"),
+      completed: mine.filter(x => x.r.state === "completed"),
+      days: mine.filter(x => x.r.state === "enrolled" || x.r.state === "completed")
+    };
+    const myDays = cardGroups.days.reduce((a, x) => a + this.days(x.t), 0);
+    const card = (key, label, value, note) => {
+      const on = st.dashCard === key;
+      return {label, value: String(value), note, bg: on ? "#F2F7F4" : "#FFFFFF", border: on ? "#2A7E4F" : "#E1E5E3",
+        onClick: () => this.setState({dashCard: on ? null : key})};
+    };
     const empKpis = [
-      {label:"Enrolled", value: String(myUpcoming), note:"Confirmed sessions"},
-      {label:"Awaiting Approval", value: String(mineOpen), note:"In the approval chain"},
-      {label:"Completed", value: String(st.requests.filter(r => r.who === meP.key && r.state === "completed").length), note: YEAR + " cycle"},
-      {label:"Training Days", value: String(myDays), note:"Target 10 days"}
+      card("enrolled", "Enrolled", cardGroups.enrolled.length, "Confirmed sessions"),
+      card("pending", "Awaiting Approval", cardGroups.pending.length, "In the approval chain"),
+      card("completed", "Completed", cardGroups.completed.length, "Attended sessions"),
+      card("days", "Training Days", myDays, "Enrolled + completed · target 10")
     ];
+    const LISTS = {
+      enrolled: ["Enrolled trainings", "You're not enrolled in any training yet."],
+      pending: ["Requests awaiting approval", "Nothing is waiting for approval."],
+      completed: ["Completed trainings", "No completed trainings yet. A training counts as completed once L&D marks you as attended."],
+      days: ["Training days", "No enrolled or completed trainings yet."]
+    };
+    const dashList = st.dashCard ? {
+      title: LISTS[st.dashCard][0] + " (" + cardGroups[st.dashCard].length + ")",
+      empty: cardGroups[st.dashCard].length === 0, emptyText: LISTS[st.dashCard][1],
+      onClose: () => this.setState({dashCard: null}),
+      rows: cardGroups[st.dashCard].map(x => ({
+        title: x.t.code + " · " + x.t.title,
+        meta: this.range(x.t) + " · " + x.t.location + (st.dashCard === "days" ? "" : " · submitted " + x.r.submitted),
+        status: st.dashCard === "days" ? this.days(x.t) + (this.days(x.t) === 1 ? " day" : " days") : x.d.st.label,
+        stBg: st.dashCard === "days" ? "#EEF5F1" : x.d.st.bg, stFg: st.dashCard === "days" ? "#1F5E3A" : x.d.st.fg
+      }))
+    } : null;
 
     // ---- Send Training Email ----
     const m = st.mail;
@@ -807,7 +838,7 @@ export default class Portal extends React.Component {
         queueRows: queueRows.length === 0, attendance: attendanceSessions.length === 0
       },
       myRequests, teamRequests, queueRows, recommended, teamStats,
-      empKpis, adminKpis, fillRows, catRows, attendanceSessions, templates, ageingRows, timelineRows,
+      empKpis, dashList, adminKpis, fillRows, catRows, attendanceSessions, templates, ageingRows, timelineRows,
       resources: RESOURCES,
       detail, formFields, justification: st.justification,
       onJustification: e => this.setState({justification: e.target.value}),

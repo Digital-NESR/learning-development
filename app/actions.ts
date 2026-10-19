@@ -175,13 +175,21 @@ export async function deleteTraining(id: string): Promise<Result> {
   });
 }
 
+/** Marks attendance. Attended → the request becomes "completed"; no show → back to "enrolled". */
 export async function setAttendance(trainingId: string, employeeId: string, attended: boolean): Promise<Result> {
   return run(async me => {
     requireAdmin(me);
-    await prisma.attendance.upsert({
-      where: { trainingId_employeeId: { trainingId, employeeId } },
-      update: { attended, markedById: me.id },
-      create: { trainingId, employeeId, attended, markedById: me.id }
+    await prisma.$transaction(async tx => {
+      await tx.attendance.upsert({
+        where: { trainingId_employeeId: { trainingId, employeeId } },
+        update: { attended, markedById: me.id },
+        create: { trainingId, employeeId, attended, markedById: me.id }
+      });
+      await tx.trainingRequest.updateMany({
+        where: { trainingId, employeeId, state: { in: attended ? ["enrolled"] : ["completed"] } },
+        data: { state: attended ? "completed" : "enrolled" }
+      });
+      await audit(tx, me, attended ? "attended" : "no_show", "attendance", `${trainingId}:${employeeId}`);
     });
   });
 }

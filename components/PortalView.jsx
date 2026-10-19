@@ -67,20 +67,40 @@ export default function PortalView({ v }) {
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "14px", marginBottom: "20px" }}>
 {(v.empKpis || []).map((k, i1) => (<React.Fragment key={i1}>
-<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderTop: "4px solid #2A7E4F", borderRadius: "5px", padding: "14px 16px" }}>
+<div onClick={k.onClick} title="Show these trainings" style={{ background: k.bg, border: `1px solid ${k.border}`, borderTop: "4px solid #2A7E4F", borderRadius: "5px", padding: "14px 16px", cursor: "pointer" }} className="dc-h0">
 <div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: ".8px", textTransform: "uppercase", color: "#58595B" }}>{k.label}</div>
 <div style={{ fontSize: "30px", fontWeight: "bold", color: "#2A7E4F", lineHeight: "1.2", marginTop: "4px" }}>{k.value}</div>
 <div style={{ fontSize: "11px", color: "#8A8F8C" }}>{k.note}</div>
 </div>
 </React.Fragment>))}
 </div>
+{v.dashList ? (<>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", margin: "-6px 0 20px", animation: "fadeIn .15s ease" }}>
+<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", display: "flex", alignItems: "center", gap: "10px" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold", flex: "1" }}>{v.dashList.title}</div>
+<button onClick={v.dashList.onClose} title="Close" style={{ border: "0", background: "#EEF1EF", color: "#58595B", width: "24px", height: "24px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>&times;</button>
+</div>
+{v.dashList.empty ? (<>
+<div style={{ padding: "26px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>{v.dashList.emptyText}</div>
+</>) : null}
+{(v.dashList.rows || []).map((dr, i2) => (<React.Fragment key={i2}>
+<div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderBottom: "1px solid #F0F2F1" }}>
+<div style={{ flex: "1", minWidth: "0" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>{dr.title}</div>
+<div style={{ fontSize: "11px", color: "#58595B", marginTop: "2px" }}>{dr.meta}</div>
+</div>
+<span style={{ background: dr.stBg, color: dr.stFg, fontSize: "10px", fontWeight: "bold", padding: "3px 9px", borderRadius: "3px", whiteSpace: "nowrap" }}>{dr.status}</span>
+</div>
+</React.Fragment>))}
+</div>
+</>) : null}
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "18px" }}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", fontSize: "13px", fontWeight: "bold", borderLeft: "4px solid #2A7E4F" }}>Your Requests</div>
 {v.empty.myRequests ? (<>
 <div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No requests yet. Pick a session from Recommended For You or the Training Calendar.</div>
 </>) : null}
-{(v.myRequests || []).map((r, i2) => (<React.Fragment key={i2}>
+{(v.myRequests || []).map((r, i3) => (<React.Fragment key={i3}>
 <div style={{ padding: "14px 16px", borderBottom: "1px solid #F0F2F1" }}>
 <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
 <div style={{ flex: "1" }}>
@@ -90,7 +110,7 @@ export default function PortalView({ v }) {
 <span style={{ background: r.st.bg, color: r.st.fg, fontSize: "10px", fontWeight: "bold", padding: "3px 9px", borderRadius: "3px", whiteSpace: "nowrap" }}>{r.st.label}</span>
 </div>
 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "11px" }}>
-{(r.steps || []).map((stp, i3) => (<React.Fragment key={i3}>
+{(r.steps || []).map((stp, i4) => (<React.Fragment key={i4}>
 <div style={{ flex: "1", minWidth: "0" }}>
 <div style={{ height: "4px", borderRadius: "2px", background: stp.bar }}></div>
 <div style={{ fontSize: "9.5px", color: stp.fg, marginTop: "4px", fontWeight: "bold", letterSpacing: ".3px" }}>{stp.label}</div>
@@ -102,8 +122,8 @@ export default function PortalView({ v }) {
 </div>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", fontSize: "13px", fontWeight: "bold", borderLeft: "4px solid #2A7E4F" }}>Recommended For You</div>
-{(v.recommended || []).map((t, i4) => (<React.Fragment key={i4}>
-<div onClick={t.onClick} style={{ padding: "13px 16px", borderBottom: "1px solid #F0F2F1", cursor: "pointer", display: "flex", gap: "12px", alignItems: "center" }} className="dc-h0">
+{(v.recommended || []).map((t, i5) => (<React.Fragment key={i5}>
+<div onClick={t.onClick} style={{ padding: "13px 16px", borderBottom: "1px solid #F0F2F1", cursor: "pointer", display: "flex", gap: "12px", alignItems: "center" }} className="dc-h1">
 <div style={{ width: "42px", height: "42px", borderRadius: "4px", background: t.tint, color: t.tintFg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: "0 0 auto" }}>
 <div style={{ fontSize: "14px", fontWeight: "bold", lineHeight: "1" }}>{t.day}</div>
 <div style={{ fontSize: "9px", letterSpacing: ".5px", textTransform: "uppercase" }}>{t.mon}</div>
@@ -128,7 +148,7 @@ export default function PortalView({ v }) {
 </div>
 <div style={{ flex: "1" }}></div>
 <div style={{ display: "flex", gap: "2px", background: "#E7EBE9", padding: "3px", borderRadius: "4px" }}>
-{(v.viewTabs || []).map((v, i5) => (<React.Fragment key={i5}>
+{(v.viewTabs || []).map((v, i6) => (<React.Fragment key={i6}>
 <button onClick={v.onClick} style={{ border: "0", cursor: "pointer", padding: "7px 15px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold", background: v.bg, color: v.fg }}>{v.label}</button>
 </React.Fragment>))}
 </div>
@@ -138,11 +158,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Search</div>
 <input value={v.q} onChange={v.onSearch} placeholder="Title, code or keyword" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px" }} />
 </div>
-{(v.filters || []).map((f, i6) => (<React.Fragment key={i6}>
+{(v.filters || []).map((f, i7) => (<React.Fragment key={i7}>
 <div style={{ minWidth: "150px" }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 8px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i7) => (<React.Fragment key={i7}>
+{(f.options || []).map((o, i8) => (<React.Fragment key={i8}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>
@@ -161,8 +181,8 @@ export default function PortalView({ v }) {
 <div style={{ padding: "11px 12px" }}>Location</div>
 <div style={{ padding: "11px 12px" }}>Seats</div>
 </div>
-{(v.rows || []).map((r, i8) => (<React.Fragment key={i8}>
-<div onClick={r.onClick} style={{ display: "grid", minWidth: "880px", gridTemplateColumns: "86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,.85fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr)", borderBottom: "1px solid #F0F2F1", cursor: "pointer", background: r.zebra, alignItems: "center" }} className="dc-h1">
+{(v.rows || []).map((r, i9) => (<React.Fragment key={i9}>
+<div onClick={r.onClick} style={{ display: "grid", minWidth: "880px", gridTemplateColumns: "86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,.85fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr)", borderBottom: "1px solid #F0F2F1", cursor: "pointer", background: r.zebra, alignItems: "center" }} className="dc-h2">
 <div style={{ padding: "11px 12px", fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{r.code}</div>
 <div style={{ padding: "11px 12px", fontSize: "12.5px", fontWeight: "bold" }}>{r.title}</div>
 <div style={{ padding: "11px 12px", fontSize: "12px", color: "#58595B" }}>{r.category}</div>
@@ -196,15 +216,15 @@ export default function PortalView({ v }) {
 </div>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", background: "#F7F9F8", borderBottom: "1px solid #E1E5E3" }}>
-{(v.dayNames || []).map((d, i9) => (<React.Fragment key={i9}>
+{(v.dayNames || []).map((d, i10) => (<React.Fragment key={i10}>
 <div style={{ padding: "8px", fontSize: "10.5px", fontWeight: "bold", letterSpacing: ".6px", color: "#58595B", textAlign: "center" }}>{d}</div>
 </React.Fragment>))}
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
-{(v.monthCells || []).map((c, i10) => (<React.Fragment key={i10}>
+{(v.monthCells || []).map((c, i11) => (<React.Fragment key={i11}>
 <div style={{ minHeight: "104px", borderRight: "1px solid #F0F2F1", borderBottom: "1px solid #F0F2F1", padding: "6px", background: c.bg, display: "flex", flexDirection: "column", gap: "4px" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: c.numFg }}>{c.day}</div>
-{(c.items || []).map((ev, i11) => (<React.Fragment key={i11}>
+{(c.items || []).map((ev, i12) => (<React.Fragment key={i12}>
 <div onClick={ev.onClick} style={{ cursor: "pointer", background: ev.bg, color: "#fff", borderRadius: "3px", padding: "4px 6px", fontSize: "10.5px", fontWeight: "bold", lineHeight: "1.3" }}>{ev.label}</div>
 </React.Fragment>))}
 </div>
@@ -214,8 +234,8 @@ export default function PortalView({ v }) {
 </>) : null}
 {v.isCards ? (<>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "16px" }}>
-{(v.rows || []).map((r, i12) => (<React.Fragment key={i12}>
-<div onClick={r.onClick} style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", cursor: "pointer", overflow: "hidden", display: "flex", flexDirection: "column" }} className="dc-h2">
+{(v.rows || []).map((r, i13) => (<React.Fragment key={i13}>
+<div onClick={r.onClick} style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", cursor: "pointer", overflow: "hidden", display: "flex", flexDirection: "column" }} className="dc-h3">
 <div style={{ height: "118px", backgroundColor: "#24503C", backgroundImage: `linear-gradient(0deg,rgba(31,31,29,.45) 0%,rgba(31,31,29,0) 55%),url(${r.photo})`, backgroundSize: "cover,cover", backgroundPosition: "center,center" }}></div>
 <div style={{ height: "5px", background: r.st.fg }}></div>
 <div style={{ padding: "14px 16px", flex: "1", display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -248,7 +268,7 @@ export default function PortalView({ v }) {
 {v.empty.myRequests ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>You haven't requested any training yet. Open the Training Calendar, choose a session and click Submit Request.</div>
 </>) : null}
-{(v.myRequests || []).map((r, i13) => (<React.Fragment key={i13}>
+{(v.myRequests || []).map((r, i14) => (<React.Fragment key={i14}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "16px 18px", marginBottom: "12px" }}>
 <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
 <div style={{ flex: "1", minWidth: "220px" }}>
@@ -259,7 +279,7 @@ export default function PortalView({ v }) {
 <span style={{ background: r.st.bg, color: r.st.fg, fontSize: "11px", fontWeight: "bold", padding: "5px 11px", borderRadius: "3px" }}>{r.st.label}</span>
 </div>
 <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-{(r.steps || []).map((stp, i14) => (<React.Fragment key={i14}>
+{(r.steps || []).map((stp, i15) => (<React.Fragment key={i15}>
 <div style={{ flex: "1" }}>
 <div style={{ height: "5px", borderRadius: "3px", background: stp.bar }}></div>
 <div style={{ fontSize: "10.5px", fontWeight: "bold", color: stp.fg, marginTop: "5px" }}>{stp.label}</div>
@@ -279,8 +299,8 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "13px", color: "#DCEAE2", marginTop: "4px" }}>Guides, policies and contacts for the {v.year} training cycle.</div>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: "14px" }}>
-{(v.resources || []).map((rs, i15) => (<React.Fragment key={i15}>
-<a href="#" style={{ background: "#fff", border: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", borderRadius: "5px", padding: "16px", display: "block", textDecoration: "none" }} className="dc-h3">
+{(v.resources || []).map((rs, i16) => (<React.Fragment key={i16}>
+<a href="#" style={{ background: "#fff", border: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", borderRadius: "5px", padding: "16px", display: "block", textDecoration: "none" }} className="dc-h4">
 <div style={{ fontSize: "14px", fontWeight: "bold", color: "#1F1F1D" }}>{rs.title}</div>
 <div style={{ fontSize: "12px", color: "#58595B", marginTop: "5px", lineHeight: "1.5" }}>{rs.desc}</div>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F", marginTop: "10px" }}>{rs.meta}</div>
@@ -296,7 +316,7 @@ export default function PortalView({ v }) {
 {v.empty.teamRequests ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No requests from your team yet. When someone who reports to you requests a training, it appears here for approval.</div>
 </>) : null}
-{(v.teamRequests || []).map((r, i16) => (<React.Fragment key={i16}>
+{(v.teamRequests || []).map((r, i17) => (<React.Fragment key={i17}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "16px 18px", marginBottom: "12px", borderLeft: `4px solid ${r.st.fg}` }}>
 <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", flexWrap: "wrap" }}>
 <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "bold", flex: "0 0 auto" }}>{r.initials}</div>
@@ -330,9 +350,9 @@ export default function PortalView({ v }) {
 {v.empty.teamStats ? (<>
 <div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No direct reports found for your account.</div>
 </>) : null}
-{(v.teamStats || []).map((t, i17) => (<React.Fragment key={i17}>
+{(v.teamStats || []).map((t, i18) => (<React.Fragment key={i18}>
 <div style={{ borderBottom: "1px solid #F0F2F1" }}>
-<div onClick={t.onToggle} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "13px 18px", cursor: "pointer", background: t.rowBg }} className="dc-h4">
+<div onClick={t.onToggle} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "13px 18px", cursor: "pointer", background: t.rowBg }} className="dc-h5">
 <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "bold", flex: "0 0 auto" }}>{t.initials}</div>
 <div style={{ flex: "1", minWidth: "0" }}>
 <div style={{ fontSize: "13px", fontWeight: "bold" }}>{t.name}</div>
@@ -349,7 +369,7 @@ export default function PortalView({ v }) {
 {t.noTrainings ? (<>
 <div style={{ padding: "10px 0", fontSize: "12px", color: "#8A8F8C" }}>No training requests yet.</div>
 </>) : null}
-{(t.trainings || []).map((tr, i18) => (<React.Fragment key={i18}>
+{(t.trainings || []).map((tr, i19) => (<React.Fragment key={i19}>
 <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 0", borderBottom: "1px solid #EEF1EF" }}>
 <div style={{ flex: "1", minWidth: "0" }}>
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{tr.title}</div>
@@ -384,7 +404,7 @@ export default function PortalView({ v }) {
 <button onClick={v.onExport} style={{ position: "relative", padding: "11px 18px", border: "0", background: "#fff", color: "#1F5E3A", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Export to Excel</button>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: "14px", marginBottom: "18px" }}>
-{(v.adminKpis || []).map((k, i19) => (<React.Fragment key={i19}>
+{(v.adminKpis || []).map((k, i20) => (<React.Fragment key={i20}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderTop: "4px solid #2A7E4F", borderRadius: "5px", padding: "14px 16px" }}>
 <div style={{ fontSize: "10.5px", fontWeight: "bold", letterSpacing: ".8px", textTransform: "uppercase", color: "#58595B" }}>{k.label}</div>
 <div style={{ fontSize: "30px", fontWeight: "bold", color: "#2A7E4F", lineHeight: "1.2", marginTop: "4px" }}>{k.value}</div>
@@ -396,7 +416,7 @@ export default function PortalView({ v }) {
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", fontSize: "13px", fontWeight: "bold", borderLeft: "4px solid #2A7E4F" }}>Seat Fill &mdash; Next Sessions</div>
 <div style={{ padding: "14px 16px" }}>
-{(v.fillRows || []).map((f, i20) => (<React.Fragment key={i20}>
+{(v.fillRows || []).map((f, i21) => (<React.Fragment key={i21}>
 <div style={{ marginBottom: "13px" }}>
 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "5px" }}>
 <span style={{ fontWeight: "bold" }}>{f.title}</span>
@@ -412,7 +432,7 @@ export default function PortalView({ v }) {
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", fontSize: "13px", fontWeight: "bold", borderLeft: "4px solid #2A7E4F" }}>Registrations By Category</div>
 <div style={{ padding: "14px 16px" }}>
-{(v.catRows || []).map((c, i21) => (<React.Fragment key={i21}>
+{(v.catRows || []).map((c, i22) => (<React.Fragment key={i22}>
 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
 <div style={{ width: "150px", fontSize: "11.5px", color: "#1F1F1D" }}>{c.label}</div>
 <div style={{ flex: "1", height: "16px", background: "#F3F5F4", borderRadius: "3px", overflow: "hidden" }}>
@@ -430,7 +450,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "13px", fontWeight: "bold", flex: "1" }}>Longest Waiting Approvals</div>
 <div style={{ fontSize: "11px", color: "#58595B" }}>sorted by oldest request</div>
 </div>
-{(v.ageingRows || []).map((a, i22) => (<React.Fragment key={i22}>
+{(v.ageingRows || []).map((a, i23) => (<React.Fragment key={i23}>
 <div style={{ padding: "12px 16px", borderBottom: "1px solid #F0F2F1", display: "flex", alignItems: "center", gap: "12px" }}>
 <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11.5px", fontWeight: "bold", flex: "0 0 auto" }}>{a.initials}</div>
 <div style={{ flex: "1", minWidth: "0" }}>
@@ -453,7 +473,7 @@ export default function PortalView({ v }) {
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", fontSize: "13px", fontWeight: "bold" }}>Approval Timeline</div>
 <div style={{ padding: "14px 16px" }}>
-{(v.timelineRows || []).map((s2, i23) => (<React.Fragment key={i23}>
+{(v.timelineRows || []).map((s2, i24) => (<React.Fragment key={i24}>
 <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", paddingBottom: "14px" }}>
 <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: s2.color, marginTop: "4px", flex: "0 0 auto" }}></div>
 <div style={{ flex: "1", minWidth: "0" }}>
@@ -494,7 +514,7 @@ export default function PortalView({ v }) {
 <div style={{ padding: "11px 12px" }}>Seats</div>
 <div style={{ padding: "11px 12px" }}>Actions</div>
 </div>
-{(v.adminRows || []).map((r, i24) => (<React.Fragment key={i24}>
+{(v.adminRows || []).map((r, i25) => (<React.Fragment key={i25}>
 <div style={{ display: "grid", minWidth: "960px", gridTemplateColumns: "86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,.9fr) 200px", borderBottom: "1px solid #F0F2F1", alignItems: "center", background: r.zebra }}>
 <div style={{ padding: "10px 12px", fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{r.code}</div>
 <div style={{ padding: "10px 12px", fontSize: "12.5px", fontWeight: "bold" }}>{r.title}</div>
@@ -537,7 +557,7 @@ export default function PortalView({ v }) {
 </div>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "14px", marginBottom: "18px" }}>
-{(v.session.kpis || []).map((k, i25) => (<React.Fragment key={i25}>
+{(v.session.kpis || []).map((k, i26) => (<React.Fragment key={i26}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderTop: "4px solid #2A7E4F", borderRadius: "5px", padding: "13px 15px" }}>
 <div style={{ fontSize: "10.5px", fontWeight: "bold", letterSpacing: ".8px", textTransform: "uppercase", color: "#58595B" }}>{k.label}</div>
 <div style={{ fontSize: "27px", fontWeight: "bold", color: "#2A7E4F", lineHeight: "1.2", marginTop: "3px" }}>{k.value}</div>
@@ -549,7 +569,7 @@ export default function PortalView({ v }) {
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", fontSize: "13px", fontWeight: "bold" }}>Registration Funnel</div>
 <div style={{ padding: "14px 16px" }}>
-{(v.session.funnel || []).map((b, i26) => (<React.Fragment key={i26}>
+{(v.session.funnel || []).map((b, i27) => (<React.Fragment key={i27}>
 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "11px" }}>
 <div style={{ width: "130px", fontSize: "11.5px" }}>{b.label}</div>
 <div style={{ flex: "1", height: "16px", background: "#F3F5F4", borderRadius: "3px", overflow: "hidden" }}>
@@ -572,7 +592,7 @@ export default function PortalView({ v }) {
 </div>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", fontSize: "13px", fontWeight: "bold" }}>Pending Approvals</div>
-{(v.session.pending || []).map((r, i27) => (<React.Fragment key={i27}>
+{(v.session.pending || []).map((r, i28) => (<React.Fragment key={i28}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #F0F2F1" }}>
 <div style={{ display: "flex", gap: "11px", alignItems: "flex-start" }}>
 <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11.5px", fontWeight: "bold", flex: "0 0 auto" }}>{r.initials}</div>
@@ -601,7 +621,7 @@ export default function PortalView({ v }) {
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "10px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
 <div style={{ display: "flex", gap: "2px", background: "#E7EBE9", padding: "3px", borderRadius: "4px" }}>
-{(v.session.rosterTabs || []).map((rt, i28) => (<React.Fragment key={i28}>
+{(v.session.rosterTabs || []).map((rt, i29) => (<React.Fragment key={i29}>
 <button onClick={rt.onClick} style={{ border: "0", cursor: "pointer", padding: "6px 13px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold", background: rt.bg, color: rt.fg }}>{rt.label}</button>
 </React.Fragment>))}
 </div>
@@ -610,7 +630,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{v.session.completionLabel}</div>
 </>) : null}
 </div>
-{(v.session.roster || []).map((p, i29) => (<React.Fragment key={i29}>
+{(v.session.roster || []).map((p, i30) => (<React.Fragment key={i30}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "11px 16px", borderBottom: "1px solid #F4F6F5" }}>
 <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11.5px", fontWeight: "bold" }}>{p.initials}</div>
 <div style={{ flex: "1", minWidth: "0" }}>
@@ -649,7 +669,7 @@ export default function PortalView({ v }) {
 {v.empty.queueRows ? (<>
 <div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>Nothing in the queue. Requests appear here once managers approve them.</div>
 </>) : null}
-{(v.queueRows || []).map((r, i30) => (<React.Fragment key={i30}>
+{(v.queueRows || []).map((r, i31) => (<React.Fragment key={i31}>
 <div style={{ display: "grid", minWidth: "880px", gridTemplateColumns: "minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px", borderBottom: "1px solid #F0F2F1", alignItems: "center", background: r.zebra }}>
 <div style={{ padding: "10px 12px" }}>
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{r.employee}</div>
@@ -678,7 +698,7 @@ export default function PortalView({ v }) {
 {v.empty.attendance ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No delivered sessions with enrolled participants yet.</div>
 </>) : null}
-{(v.attendanceSessions || []).map((sess, i31) => (<React.Fragment key={i31}>
+{(v.attendanceSessions || []).map((sess, i32) => (<React.Fragment key={i32}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "16px", overflow: "hidden" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: "1px solid #E1E5E3", flexWrap: "wrap" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{sess.code}</div>
@@ -687,7 +707,7 @@ export default function PortalView({ v }) {
 <div style={{ flex: "1" }}></div>
 <div style={{ fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{sess.completionLabel}</div>
 </div>
-{(sess.people || []).map((p, i32) => (<React.Fragment key={i32}>
+{(sess.people || []).map((p, i33) => (<React.Fragment key={i33}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px", borderBottom: "1px solid #F4F6F5" }}>
 <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "bold" }}>{p.initials}</div>
 <div style={{ flex: "1", minWidth: "0" }}>
@@ -712,11 +732,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Goes only to people registered for the selected training. Each email is personalised.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: "1" }}>
-{(v.mail.selects || []).map((f, i33) => (<React.Fragment key={i33}>
+{(v.mail.selects || []).map((f, i34) => (<React.Fragment key={i34}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i34) => (<React.Fragment key={i34}>
+{(f.options || []).map((o, i35) => (<React.Fragment key={i35}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -744,11 +764,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Fold-in-half desk nameplates as a PDF, one A4 page per person.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
-{(v.plate.selects || []).map((f, i35) => (<React.Fragment key={i35}>
+{(v.plate.selects || []).map((f, i36) => (<React.Fragment key={i36}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i36) => (<React.Fragment key={i36}>
+{(f.options || []).map((o, i37) => (<React.Fragment key={i37}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -777,7 +797,7 @@ export default function PortalView({ v }) {
 </div>
 <div style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "10px" }}>Email Templates</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: "16px" }}>
-{(v.templates || []).map((t, i37) => (<React.Fragment key={i37}>
+{(v.templates || []).map((t, i38) => (<React.Fragment key={i38}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden" }}>
 <div style={{ padding: "12px 16px", borderBottom: "1px solid #E1E5E3", display: "flex", alignItems: "center", gap: "10px" }}>
 <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#2A7E4F" }}></div>
@@ -825,7 +845,7 @@ export default function PortalView({ v }) {
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(288px,1fr))" }}>
 <div style={{ padding: "20px 22px", background: v.detail.railBg, borderRight: v.detail.railBorder, display: "flex", flexDirection: "column", gap: "16px" }}>
 <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
-{(v.detail.facts || []).map((f, i38) => (<React.Fragment key={i38}>
+{(v.detail.facts || []).map((f, i39) => (<React.Fragment key={i39}>
 <div style={{ display: "flex", gap: "11px", alignItems: "center" }}>
 <div style={{ width: "30px", height: "30px", flex: "0 0 30px", borderRadius: "5px", background: "#EDF5F0", border: "1px solid #DCEAE2", display: "flex", alignItems: "center", justifyContent: "center" }}>
 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2A7E4F" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={f.d}></path></svg>
@@ -853,7 +873,7 @@ export default function PortalView({ v }) {
 <span style={{ fontSize: "12px", fontWeight: "bold", color: "#1F5E3A" }}>{v.detail.chainNote}</span>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "11px" }}>
-{(v.formFields || []).map((fl, i39) => (<React.Fragment key={i39}>
+{(v.formFields || []).map((fl, i40) => (<React.Fragment key={i40}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#8A8F8C", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
@@ -861,7 +881,7 @@ export default function PortalView({ v }) {
 {fl.choosePrompt ? (<>
 <option value="" disabled>{fl.choosePrompt}</option>
 </>) : null}
-{(fl.options || []).map((o, i40) => (<React.Fragment key={i40}>
+{(fl.options || []).map((o, i41) => (<React.Fragment key={i41}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>
@@ -901,7 +921,7 @@ export default function PortalView({ v }) {
 <button onClick={v.closeModal} style={{ border: "0", background: "rgba(255,255,255,.18)", color: "#fff", width: "28px", height: "28px", borderRadius: "4px", cursor: "pointer", fontSize: "15px", fontWeight: "bold" }}>&times;</button>
 </div>
 <div style={{ padding: "18px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "13px" }}>
-{(v.editorFields || []).map((fl, i41) => (<React.Fragment key={i41}>
+{(v.editorFields || []).map((fl, i42) => (<React.Fragment key={i42}>
 <div style={{ gridColumn: fl.span }}>
 <div style={{ fontSize: "10.5px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
@@ -909,7 +929,7 @@ export default function PortalView({ v }) {
 {fl.choosePrompt ? (<>
 <option value="" disabled>{fl.choosePrompt}</option>
 </>) : null}
-{(fl.options || []).map((o, i42) => (<React.Fragment key={i42}>
+{(fl.options || []).map((o, i43) => (<React.Fragment key={i43}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>
