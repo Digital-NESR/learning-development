@@ -72,7 +72,10 @@ export async function loadSnapshot(meId: string) {
     })),
     attended: Object.fromEntries(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended])),
     templatesOff: Object.fromEntries(templates.filter(t => !t.isActive).map(t => [t.id, true])),
-    templates: templates.map(t => ({ id: t.id, name: t.name, trigger: t.trigger, subject: t.subject, body: t.body }))
+    templates: templates.map(t => ({ id: t.id, name: t.name, trigger: t.trigger, subject: t.subject, body: t.body })),
+    mail: me.isAdmin
+      ? { from: process.env.LD_MAIL_FROM || "", configured: !!(process.env.LD_MAIL_FROM && process.env.LD_N8N_EMAIL_WEBHOOK_URL) }
+      : null
   };
 }
 

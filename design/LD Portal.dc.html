@@ -616,8 +616,13 @@
           </div>
 
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
-            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <div style="font-size:13px;font-weight:bold;flex:1">Participants</div>
+            <div style="padding:10px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="display:flex;gap:2px;background:#E7EBE9;padding:3px;border-radius:4px">
+                <sc-for list="{{ session.rosterTabs }}" as="rt" hint-placeholder-count="2">
+                  <button onClick="{{ rt.onClick }}" style="border:0;cursor:pointer;padding:6px 13px;border-radius:3px;font-size:12px;font-weight:bold;background:{{ rt.bg }};color:{{ rt.fg }}">{{ rt.label }}</button>
+                </sc-for>
+              </div>
+              <div style="flex:1"></div>
               <sc-if value="{{ session.showAttendance }}" hint-placeholder-val="{{ false }}">
                 <div style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ session.completionLabel }}</div>
               </sc-if>
@@ -629,8 +634,11 @@
                   <div style="font-size:12.5px;font-weight:bold">{{ p.name }}</div>
                   <div style="font-size:11px;color:#58595B">{{ p.meta }}</div>
                 </div>
-                <sc-if value="{{ session.showAttendance }}" hint-placeholder-val="{{ false }}">
-                  <button onClick="{{ p.onToggle }}" style="padding:6px 13px;border:1px solid {{ p.border }};background:{{ p.bg }};color:{{ p.fg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ p.label }}</button>
+                <sc-if value="{{ p.badge }}" hint-placeholder-val="{{ false }}">
+                  <span style="background:{{ p.badgeBg }};color:{{ p.badgeFg }};font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ p.badge }}</span>
+                </sc-if>
+                <sc-if value="{{ p.showToggle }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ p.onToggle }}" title="Click to change attendance" style="padding:6px 13px;border:1px solid {{ p.border }};background:{{ p.bg }};color:{{ p.fg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ p.label }}</button>
                 </sc-if>
               </div>
             </sc-for>
@@ -638,7 +646,7 @@
               <div style="padding:11px 16px;font-size:11.5px;color:#58595B">{{ session.rosterNote }}</div>
             </sc-if>
             <sc-if value="{{ session.noRoster }}" hint-placeholder-val="{{ false }}">
-              <div style="padding:30px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">No participant records yet &mdash; approved requests will appear here.</div>
+              <div style="padding:30px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">{{ session.rosterEmpty }}</div>
             </sc-if>
           </div>
         </div>
@@ -715,8 +723,78 @@
 
       <sc-if value="{{ s.aNotify }}" hint-placeholder-val="{{ false }}">
         <div>
-          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Notification Templates</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Emails sent automatically at each stage of the approval chain.</div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Notifications</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Email the people registered for a training, print nameplates, and edit the email templates.</div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;margin-bottom:26px">
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
+              <div style="font-size:13px;font-weight:bold">Send Training Email</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Goes only to people registered for the selected training. Each email is personalised.</div>
+            </div>
+            <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1">
+              <sc-for list="{{ mail.selects }}" as="f" hint-placeholder-count="3">
+                <div style="grid-column:{{ f.span }}">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                  <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                      <option value="{{ o.value }}">{{ o.label }}</option>
+                    </sc-for>
+                  </select>
+                </div>
+              </sc-for>
+              <div style="grid-column:1 / -1;background:{{ mail.recipientBg }};border:1px solid {{ mail.recipientBorder }};border-radius:4px;padding:9px 12px;font-size:12px;font-weight:bold;color:{{ mail.recipientFg }}">{{ mail.recipientLabel }}</div>
+              <div style="grid-column:1 / -1">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Subject</div>
+                <input value="{{ mail.subject }}" onChange="{{ mail.onSubject }}" placeholder="Email subject" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              </div>
+              <div style="grid-column:1 / -1">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Message</div>
+                <textarea value="{{ mail.body }}" onChange="{{ mail.onBody }}" placeholder="Write the email, or pick a template above" rows="7" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
+                <div style="font-size:10.5px;color:#8A8F8C;margin-top:4px;line-height:1.5">Placeholders filled per person: {{ mail.placeholders }}</div>
+              </div>
+            </div>
+            <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;align-items:center;gap:10px">
+              <div style="flex:1;font-size:11px;color:#58595B">{{ mail.fromLabel }}</div>
+              <button onClick="{{ mail.onSubmit }}" style="padding:9px 18px;border:0;background:{{ mail.buttonBg }};color:#fff;border-radius:4px;cursor:{{ mail.buttonCursor }};font-weight:bold">{{ mail.buttonLabel }}</button>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
+              <div style="font-size:13px;font-weight:bold">Nameplate Generator</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Fold-in-half desk nameplates as a PDF, one A4 page per person.</div>
+            </div>
+            <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;flex:1">
+              <sc-for list="{{ plate.selects }}" as="f" hint-placeholder-count="3">
+                <div style="grid-column:{{ f.span }}">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                  <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                      <option value="{{ o.value }}">{{ o.label }}</option>
+                    </sc-for>
+                  </select>
+                </div>
+              </sc-for>
+              <sc-if value="{{ plate.showCustom }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Name on nameplate</div>
+                  <input value="{{ plate.customName }}" onChange="{{ plate.onCustomName }}" placeholder="Full name" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </div>
+              </sc-if>
+              <div style="grid-column:1 / -1">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date shown</div>
+                <input value="{{ plate.date }}" onChange="{{ plate.onDate }}" placeholder="e.g. 14–16 Dec 2026" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              </div>
+              <div style="grid-column:1 / -1;font-size:11.5px;color:#58595B">{{ plate.summary }}</div>
+            </div>
+            <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end">
+              <button onClick="{{ plate.onSubmit }}" style="padding:9px 18px;border:0;background:{{ plate.buttonBg }};color:#fff;border-radius:4px;cursor:{{ plate.buttonCursor }};font-weight:bold">{{ plate.buttonLabel }}</button>
+            </div>
+          </div>
+          </div>
+
+          <div style="font-size:15px;font-weight:bold;margin-bottom:10px">Email Templates</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
             <sc-for list="{{ templates }}" as="t" hint-placeholder-count="4">
               <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden">
@@ -730,7 +808,7 @@
                   <div style="font-size:12px;margin:3px 0 10px">{{ t.trigger }}</div>
                   <div style="font-size:10.5px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B">Subject</div>
                   <div style="font-size:12px;margin:3px 0 10px;font-weight:bold">{{ t.subject }}</div>
-                  <div style="background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:11px 12px;font-size:11.5px;line-height:1.6;color:#1F1F1D">{{ t.body }}</div>
+                  <div style="background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:11px 12px;font-size:11.5px;line-height:1.6;color:#1F1F1D;white-space:pre-wrap">{{ t.body }}</div>
                   <div style="display:flex;gap:8px;margin-top:12px">
                     <button onClick="{{ t.onEdit }}" style="padding:7px 13px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Edit</button>
                     <button onClick="{{ t.onToggle }}" style="padding:7px 13px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ t.toggleLabel }}</button>
@@ -860,7 +938,13 @@
                 </select>
               </sc-if>
               <sc-if value="{{ fl.isText }}" hint-placeholder-val="{{ true }}">
-                <input value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" style="width:100%;padding:9px 10px;border:1px solid #D1D3D4;border-radius:4px" />
+                <input type="{{ fl.inputType }}" value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" style="width:100%;padding:9px 10px;border:1px solid #D1D3D4;border-radius:4px" />
+              </sc-if>
+              <sc-if value="{{ fl.isTextarea }}" hint-placeholder-val="{{ false }}">
+                <textarea value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" rows="7" style="width:100%;padding:9px 10px;border:1px solid #D1D3D4;border-radius:4px;resize:vertical;line-height:1.5"></textarea>
+              </sc-if>
+              <sc-if value="{{ fl.hint }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:10.5px;color:#8A8F8C;margin-top:4px;line-height:1.5">{{ fl.hint }}</div>
               </sc-if>
             </div>
           </sc-for>

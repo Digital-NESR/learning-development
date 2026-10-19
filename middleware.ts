@@ -24,6 +24,6 @@ export default auth(async req => {
 });
 
 export const config = {
-  // Everything except auth endpoints (Microsoft returns there), Next internals and static files.
-  matcher: ["/((?!api/auth|_next/static|_next/image|assets|favicon.ico).*)"]
+  // Everything except auth endpoints (Microsoft returns there), key-protected automation hooks, Next internals and static files.
+  matcher: ["/((?!api/auth|api/hooks|_next/static|_next/image|assets|favicon.ico).*)"]
 };

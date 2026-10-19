@@ -5,6 +5,8 @@ import { currentEmployee, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { approvalChain, loadSnapshot, type Snapshot } from "@/lib/data";
 import { CATEGORIES, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js";
+import { AUDIENCES, audienceIds, fillPlaceholders } from "@/lib/audience.js";
+import { dateRange } from "@/lib/training-format.js";
 
 type Result = { ok: true; data: Snapshot } | { ok: false; error: string };
 
@@ -176,6 +178,67 @@ export async function setTemplateActive(id: string, isActive: boolean): Promise<
     requireAdmin(me);
     await prisma.notificationTemplate.update({ where: { id }, data: { isActive } });
   });
+}
+
+export async function saveTemplate(input: { id: string; name: string; trigger: string; subject: string; body: string }): Promise<Result> {
+  return run(async me => {
+    requireAdmin(me);
+    const name = str(input.name, 120), subject = str(input.subject, 300), body = String(input.body ?? "").trim().slice(0, 10000);
+    if (!name || !subject || !body) throw new UserError("Name, subject and message are all required.");
+    await prisma.$transaction(async tx => {
+      await tx.notificationTemplate.update({ where: { id: String(input.id) }, data: { name, trigger: str(input.trigger, 200), subject, body } });
+      await audit(tx, me, "update", "template", String(input.id));
+    });
+  });
+}
+
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
+/**
+ * Emails everyone in the chosen audience of a training, personalised per person, via the n8n webhook.
+ * Recipients are resolved here on the server and never sent to the browser.
+ */
+export async function sendTrainingEmail(input: { trainingId: string; audience: string; subject: string; body: string }): Promise<Result & { sent?: number }> {
+  let sent = 0;
+  const result = await run(async me => {
+    requireAdmin(me);
+    const from = process.env.LD_MAIL_FROM, hook = process.env.LD_N8N_EMAIL_WEBHOOK_URL;
+    if (!from || !hook) throw new UserError("Email sending isn't set up yet: LD_MAIL_FROM and LD_N8N_EMAIL_WEBHOOK_URL must be set in Vercel.");
+    const audience = AUDIENCES.some(a => a.value === input.audience) ? input.audience : "registered";
+    const subject = str(input.subject, 300), body = String(input.body ?? "").trim().slice(0, 10000);
+    if (!subject || !body) throw new UserError("Write a subject and a message first.");
+
+    const t = await prisma.training.findUnique({ where: { id: String(input.trainingId) } });
+    if (!t) throw new UserError("Choose a training.");
+    const [requests, attendance] = await Promise.all([
+      prisma.trainingRequest.findMany({ where: { trainingId: t.id }, select: { employeeId: true, state: true } }),
+      prisma.attendance.findMany({ where: { trainingId: t.id } })
+    ]);
+    const ids = audienceIds(audience, t.id,
+      requests.map(r => ({ who: r.employeeId, tid: t.id, state: r.state })),
+      Object.fromEntries(attendance.map(a => [`${t.id}:${a.employeeId}`, a.attended])));
+    if (!ids.length) throw new UserError("No one in that group for this training.");
+
+    const people = await prisma.employee.findMany({ where: { id: { in: ids } }, include: { manager: true } });
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const shared = { training_title: t.title, session_code: t.code, dates: dateRange(iso(t.startDate), iso(t.endDate)), location: t.location };
+    const messages = people.map(p => {
+      const values = { ...shared, first_name: p.firstName, employee_name: p.name, manager_name: p.manager?.name || "your manager" };
+      const text = fillPlaceholders(body, values);
+      return { to: p.email, name: p.name, subject: fillPlaceholders(subject, values), text, html: escapeHtml(text).replace(/\r?\n/g, "<br>") };
+    });
+
+    const res = await fetch(hook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(process.env.LD_N8N_EMAIL_WEBHOOK_SECRET ? { "x-webhook-secret": process.env.LD_N8N_EMAIL_WEBHOOK_SECRET } : {}) },
+      body: JSON.stringify({ from, training: { id: t.id, ...shared }, audience, count: messages.length, messages })
+    }).catch(() => null);
+    if (!res || !res.ok) throw new UserError(`The email service didn't accept the request${res ? ` (HTTP ${res.status})` : ""}. Nothing was sent.`);
+
+    sent = messages.length;
+    await prisma.auditLog.create({ data: { actorId: me.id, action: "email", entity: "training", entityId: t.id, details: { audience, count: sent, subject } } });
+  });
+  return result.ok ? { ...result, sent } : result;
 }
 
 export async function logout() {

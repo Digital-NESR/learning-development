@@ -84,6 +84,10 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 | `LD_ADMIN_EMAILS` | **New** (optional) | Comma-separated emails that always get the L&D Team workspace. Useful before the `LD.Admin` App Role exists |
 | `LD_ADMIN_ROLE` | Optional | Entra App Role value for the L&D Team (default `LD.Admin`) |
 | `LD_SITE_PASSWORD` | Optional | When set, every page first asks for this shared access password (remembered for 30 days per browser). Changing it locks everyone out until they enter the new one. Remove it to turn the gate off |
+| `LD_MAIL_FROM` | For email | Sender address for training emails: `sbagalkot@nesr.com` while testing, `training@nesr.com` in production |
+| `LD_N8N_EMAIL_WEBHOOK_URL` | For email | n8n webhook that actually sends the emails. See [docs/n8n-Integration.md](docs/n8n-Integration.md) |
+| `LD_N8N_EMAIL_WEBHOOK_SECRET` | Optional | Sent to n8n as `x-webhook-secret` |
+| `LD_NAMEPLATE_API_KEY` | Optional | Enables `POST /api/hooks/nameplate` for n8n. Without it the endpoint is closed |
 | `LD_DEMO_LOGIN` | Optional | `true` shows a demo login with sample people. **Testing only — remove before go-live** |
 | `DATABASE_URL` | Optional | A full connection string. Overrides the `DB_*` parts if set |
 
@@ -124,9 +128,18 @@ Open http://localhost:3000.
 4. Add the environment variables above (Production and Preview).
 5. Deploy. Send the production URL to IT so they can register the redirect URI.
 
+## L&D admin features
+
+| Page | What it does |
+|---|---|
+| Manage Trainings | Add, edit (date pickers), delete (withdraw) sessions. **View** opens the session with **Registered** / **Participants** tabs. Mark attendance on the Registered tab once the session has started; Participants lists only people marked attended |
+| Notifications → Send Training Email | Email everyone registered, enrolled or attended for a training. Only a count is shown. Sent through n8n |
+| Notifications → Nameplate Generator | Fold-in-half A4 desk nameplates as a PDF, for one person, all enrolled, all participants or a typed name |
+| Notifications → Email Templates | Edit name, trigger, subject and message (saved to `notification_templates`), pause or activate |
+
 ## Not built yet
 
-- **Email notifications:** templates are stored and can be switched on and off, but sending is not wired up. The next step is Microsoft Graph `Mail.Send` from a shared mailbox, or SMTP.
+- **Automatic emails:** emails are sent only when an admin uses Send Training Email. Templates are not yet sent automatically when a request is submitted, approved, enrolled or declined.
 - **Excel exports:** the "Export" buttons show a placeholder message.
 - **Resources:** the four resource cards don't link to documents yet.
 - **Images:** the three background photos in `public/assets/` came over truncated from Claude Design and should be replaced with the full images.

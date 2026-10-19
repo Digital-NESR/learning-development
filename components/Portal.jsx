@@ -5,6 +5,7 @@ import React from "react";
 import PortalView from "./PortalView";
 import * as actions from "@/app/actions";
 import { APPROVAL_LEVELS, CATEGORIES, DEPTS, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js";
+import { AUDIENCES, ENROLLED_STATES, PLACEHOLDERS, REGISTERED_STATES, audienceIds } from "@/lib/audience.js";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -48,6 +49,9 @@ export default class Portal extends React.Component {
       editor: null,
       sessionId: null,
       busy: false,
+      rosterTab: "registered",
+      mail: {trainingId: "", audience: "registered", templateId: "", subject: "", body: ""},
+      plate: {trainingId: "", who: "participants", customName: "", date: ""},
       toast: null
     }, this.fromSnapshot(d));
   }
@@ -56,7 +60,7 @@ export default class Portal extends React.Component {
     return {
       meId: d.meId, isAdminUser: d.isAdmin, canManage: d.canManage, people: d.people,
       trainings: d.trainings, requests: d.requests, attended: d.attended,
-      templatesOff: d.templatesOff, templateRows: d.templates
+      templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail
     };
   }
 
@@ -187,7 +191,40 @@ export default class Portal extends React.Component {
 
   saveTraining() {
     const ed = this.state.editor;
+    if (ed.kind === "template") {
+      this.act(() => actions.saveTemplate(ed), "Template saved", ed.name + " was updated.", {editor: null});
+      return;
+    }
     this.act(() => actions.saveTraining(ed), ed.id ? "Training updated" : "Training published", ed.code + " — " + ed.title, {editor: null});
+  }
+
+  setMail(patch) { this.setState({mail: Object.assign({}, this.state.mail, patch)}); }
+  setPlate(patch) { this.setState({plate: Object.assign({}, this.state.plate, patch)}); }
+
+  /** Downloads the nameplate PDF from /api/nameplate. */
+  async downloadPlates(body, label) {
+    if (this.state.busy) return;
+    this.setState({busy: true});
+    try {
+      const res = await fetch("/api/nameplate", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        this.flash("Couldn't create the PDF", err.error || "Try again in a moment.");
+        return;
+      }
+      const blob = await res.blob();
+      const match = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") || "");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = match ? match[1] : "nameplates.pdf";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      this.flash("Nameplates ready", label);
+    } catch {
+      this.flash("Couldn't reach the server", "Check your connection and try again.");
+    } finally {
+      this.setState({busy: false});
+    }
   }
 
   renderVals() {
@@ -401,23 +438,30 @@ export default class Portal extends React.Component {
     }
 
     const ed = st.editor;
-    const editorFields = ed ? [
+    const ef = f => Object.assign({inputType: "text", hint: "", isTextarea: false}, f);
+    const editorFields = !ed ? [] : ed.kind === "template" ? [
+      {label:"Template name", isText:true, span:"1 / -1", value: ed.name, placeholder:"e.g. Joining Instructions", onChange: this.setEditor("name")},
+      {label:"When it's used", isText:true, span:"1 / -1", value: ed.trigger, placeholder:"e.g. L&D confirms a seat", onChange: this.setEditor("trigger")},
+      {label:"Subject", isText:true, span:"1 / -1", value: ed.subject, placeholder:"Email subject", onChange: this.setEditor("subject")},
+      {label:"Message", isTextarea:true, span:"1 / -1", value: ed.body, placeholder:"Email text", onChange: this.setEditor("body"),
+        hint: "Placeholders filled per person: " + PLACEHOLDERS.join(" ")}
+    ].map(ef) : [
       {label:"Session code", isText:true, span:"auto", value: ed.code, placeholder:"TNT-04", onChange: this.setEditor("code")},
       {label:"Instructor", isText:true, span:"auto", value: ed.instructor, placeholder:"Lead instructor", onChange: this.setEditor("instructor")},
       {label:"Training title", isText:true, span:"1 / -1", value: ed.title, placeholder:"Session title", onChange: this.setEditor("title")},
       {label:"Category", isSelect:true, span:"auto", value: ed.category, options: CATEGORIES, onChange: this.setEditor("category")},
       {label:"Type", isSelect:true, span:"auto", value: ed.type, options: TYPES, onChange: this.setEditor("type")},
-      {label:"Start date", isText:true, span:"auto", value: ed.start, placeholder: YEAR + "-10-18", onChange: this.setEditor("start")},
-      {label:"End date", isText:true, span:"auto", value: ed.end, placeholder: YEAR + "-10-22", onChange: this.setEditor("end")},
+      {label:"Start date", isText:true, inputType:"date", span:"auto", value: ed.start, onChange: this.setEditor("start")},
+      {label:"End date", isText:true, inputType:"date", span:"auto", value: ed.end, onChange: this.setEditor("end")},
       {label:"Location", isSelect:true, span:"auto", value: ed.location, options: LOCATIONS, onChange: this.setEditor("location")},
       {label:"Seat capacity", isText:true, span:"auto", value: String(ed.seats), placeholder:"20", onChange: this.setEditor("seats")},
-      {label:"Description", isText:true, span:"1 / -1", value: ed.desc, placeholder:"What participants will learn", onChange: this.setEditor("desc")}
-    ] : [];
+      {label:"Description", isTextarea:true, span:"1 / -1", value: ed.desc, placeholder:"What participants will learn", onChange: this.setEditor("desc")}
+    ].map(ef);
 
     const adminRows = list.map((t, i) => {
       const r = this.row(t, i);
-      r.onClick = () => this.setState({screen:"session", sessionId: t.id});
-      r.onView = () => this.setState({screen:"session", sessionId: t.id});
+      r.onClick = () => this.setState({screen:"session", sessionId: t.id, rosterTab: "registered"});
+      r.onView = () => this.setState({screen:"session", sessionId: t.id, rosterTab: "registered"});
       r.onEdit = () => this.setState({editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})});
       r.onDelete = () => {
         if (!window.confirm("Withdraw " + t.code + " — " + t.title + " from the calendar?")) return;
@@ -493,13 +537,15 @@ export default class Portal extends React.Component {
     const attendee = (t, pk) => {
       const p = this.P(pk) || {name:"Unknown", nesrId:"—", title:"", dept:""};
       const key = t.id + ":" + pk;
-      const on = st.attended[key] !== false;
+      const mark = st.attended[key]; // true = attended, false = no show, undefined = not marked yet
       return {
         name: p.name, initials: initialsOf(p.name),
-        meta: "NESR ID " + p.nesrId + " · " + p.title + " · " + p.dept,
-        label: on ? "Attended" : "No show",
-        bg: on ? "#C5E0D2" : "#FFFFFF", fg: on ? "#1F5E3A" : "#8A2B2B", border: on ? "#2A7E4F" : "#D1D3D4",
-        onToggle: () => this.act(() => actions.setAttendance(t.id, pk, !on))
+        meta: [p.nesrId && p.nesrId !== "—" ? "NESR ID " + p.nesrId : "", p.title, p.dept].filter(Boolean).join(" · "),
+        label: mark === true ? "Attended" : mark === false ? "No show" : "Mark attended",
+        bg: mark === true ? "#C5E0D2" : "#FFFFFF",
+        fg: mark === true ? "#1F5E3A" : mark === false ? "#8A2B2B" : "#58595B",
+        border: mark === true ? "#2A7E4F" : "#D1D3D4",
+        onToggle: () => this.act(() => actions.setAttendance(t.id, pk, mark !== true))
       };
     };
 
@@ -517,7 +563,7 @@ export default class Portal extends React.Component {
       return Object.assign({}, t, {
         state: off ? "Paused" : "Active", stBg: off ? "#EEF1EF" : "#C5E0D2", stFg: off ? "#58595B" : "#1F5E3A",
         toggleLabel: off ? "Activate" : "Pause",
-        onEdit: () => this.flash("Template editor", "Editing templates in the portal is coming soon. Ask IT to update " + t.name + "."),
+        onEdit: () => this.setState({editor: Object.assign({}, t, {kind: "template", heading: "Edit Template", cta: "Save Template"})}),
         onToggle: () => this.act(() => actions.setTemplateActive(t.id, !!off), off ? "Template activated" : "Template paused", t.name)
       });
     });
@@ -540,6 +586,77 @@ export default class Portal extends React.Component {
       {label:"Training Days", value: String(myDays), note:"Target 10 days"}
     ];
 
+    // ---- Send Training Email ----
+    const m = st.mail;
+    const mailInfo = st.mailInfo || {from: "", configured: false};
+    const trainingOptions = [{value: "", label: "Select a training"}].concat(upcoming.map(t => ({value: t.id, label: t.code + " · " + t.title + " (" + this.range(t) + ")"})));
+    const mailCount = m.trainingId ? audienceIds(m.audience, m.trainingId, st.requests, st.attended).length : 0;
+    const audienceLabel = (AUDIENCES.find(a => a.value === m.audience) || AUDIENCES[0]).label.toLowerCase();
+    const canSend = mailInfo.configured && mailCount > 0 && m.subject.trim() && m.body.trim() && !st.busy;
+    const mail = {
+      selects: [
+        {label: "Training", span: "1 / -1", value: m.trainingId, options: trainingOptions, onChange: e => this.setMail({trainingId: e.target.value})},
+        {label: "Send to", span: "auto", value: m.audience, options: AUDIENCES, onChange: e => this.setMail({audience: e.target.value})},
+        {label: "Start from template", span: "auto", value: m.templateId,
+          options: [{value: "", label: "Blank"}].concat((st.templateRows || []).map(t => ({value: t.id, label: t.name}))),
+          onChange: e => {
+            const tpl = (st.templateRows || []).find(t => t.id === e.target.value);
+            this.setMail(tpl ? {templateId: tpl.id, subject: tpl.subject, body: tpl.body} : {templateId: ""});
+          }}
+      ],
+      recipientLabel: !m.trainingId ? "Select a training to see how many people will receive this email."
+        : mailCount ? mailCount + (mailCount === 1 ? " person" : " people") + " (" + audienceLabel + ") will receive this email."
+        : "No one in this group for this training yet.",
+      recipientBg: mailCount ? "#F2F7F4" : "#F7F9F8", recipientBorder: mailCount ? "#D9E7E0" : "#EAEEEC", recipientFg: mailCount ? "#1F5E3A" : "#8A8F8C",
+      subject: m.subject, body: m.body,
+      onSubject: e => this.setMail({subject: e.target.value}), onBody: e => this.setMail({body: e.target.value}),
+      placeholders: PLACEHOLDERS.join(" "),
+      fromLabel: mailInfo.configured ? "From: " + mailInfo.from : "Sending isn't set up yet (needs LD_MAIL_FROM and LD_N8N_EMAIL_WEBHOOK_URL in Vercel).",
+      buttonLabel: st.busy ? "Sending…" : mailCount ? "Send to " + mailCount : "Send",
+      buttonBg: canSend ? "#2A7E4F" : "#A8ACAA", buttonCursor: canSend ? "pointer" : "not-allowed",
+      onSubmit: () => {
+        if (!canSend) {
+          if (!mailInfo.configured) return this.flash("Email not set up", "Ask whoever manages Vercel to set LD_MAIL_FROM and LD_N8N_EMAIL_WEBHOOK_URL.");
+          if (!m.trainingId || !mailCount) return this.flash("No recipients", "Choose a training and a group that has people in it.");
+          return this.flash("Message incomplete", "Write a subject and a message first.");
+        }
+        if (!window.confirm("Send this email to " + mailCount + (mailCount === 1 ? " person" : " people") + "?")) return;
+        this.act(() => actions.sendTrainingEmail({trainingId: m.trainingId, audience: m.audience, subject: m.subject, body: m.body}),
+          "Email sent", mailCount + (mailCount === 1 ? " email" : " emails") + " handed to the mail service from " + mailInfo.from + ".");
+      }
+    };
+
+    // ---- Nameplate Generator ----
+    const pl = st.plate;
+    const pt = pl.trainingId ? this.t(pl.trainingId) : null;
+    const ptReqs = pt ? st.requests.filter(r => r.tid === pt.id && ENROLLED_STATES.includes(r.state)) : [];
+    const nAttended = pt ? audienceIds("participants", pt.id, st.requests, st.attended).length : 0;
+    const nEnrolled = pt ? audienceIds("enrolled", pt.id, st.requests, st.attended).length : 0;
+    const whoOptions = [
+      {value: "participants", label: "All participants (attended) — " + nAttended},
+      {value: "enrolled", label: "All enrolled — " + nEnrolled}
+    ].concat(ptReqs.map(r => this.P(r.who)).filter(Boolean).sort((a, b) => a.name < b.name ? -1 : 1).map(p => ({value: p.key, label: p.name})))
+     .concat([{value: "custom", label: "Someone else (type a name)"}]);
+    const plateCount = !pt ? 0 : pl.who === "participants" ? nAttended : pl.who === "enrolled" ? nEnrolled : pl.who === "custom" ? (pl.customName.trim() ? 1 : 0) : 1;
+    const plateDate = pl.date || (pt ? this.range(pt) : "");
+    const canPlate = !!pt && plateCount > 0 && !st.busy;
+    const plate = {
+      selects: [
+        {label: "Training", span: "1 / -1", value: pl.trainingId, options: trainingOptions, onChange: e => this.setPlate({trainingId: e.target.value, date: ""})},
+        {label: "Nameplate for", span: "1 / -1", value: pl.who, options: whoOptions, onChange: e => this.setPlate({who: e.target.value})}
+      ],
+      showCustom: pl.who === "custom", customName: pl.customName, onCustomName: e => this.setPlate({customName: e.target.value}),
+      date: plateDate, onDate: e => this.setPlate({date: e.target.value}),
+      summary: !pt ? "Select a training to start." : plateCount ? plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " · one A4 landscape page each, fold along the dashed line." : "No one to print for this choice.",
+      buttonLabel: st.busy ? "Preparing…" : "Download PDF",
+      buttonBg: canPlate ? "#2A7E4F" : "#A8ACAA", buttonCursor: canPlate ? "pointer" : "not-allowed",
+      onSubmit: () => {
+        if (!canPlate) return this.flash("Nothing to print", pt ? "Choose people who have a name to print." : "Select a training first.");
+        this.downloadPlates({trainingId: pt.id, who: pl.who, customName: pl.customName, date: plateDate},
+          plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " for " + pt.code + " downloaded.");
+      }
+    };
+
     let session = null;
     if (s.aSession) {
       const t = this.t(st.sessionId);
@@ -560,8 +677,22 @@ export default class Portal extends React.Component {
         const applied = enrolledN + inApproval + by("waitlist").length + by("rejected").length;
         const fillPct = Math.round(t.enrolled / Math.max(1, t.seats) * 100);
         const bar = (label, n, color) => ({label, n: String(n), pct: Math.round(n / Math.max(1, applied) * 100), color});
-        const roster = by("enrolled").concat(by("completed")).map(r => attendee(t, r.who));
-        const attendedN = roster.filter(p => p.label === "Attended").length;
+        const showAttendance = isDelivered || live;
+        const registered = reqs.filter(r => REGISTERED_STATES.includes(r.state));
+        const enrolledReqs = registered.filter(r => ENROLLED_STATES.includes(r.state));
+        const attendedReqs = registered.filter(r => st.attended[t.id + ":" + r.who] === true);
+        const registeredRows = registered.map(r => {
+          const base = STATE_STYLE[r.state] || STATE_STYLE.pending;
+          return Object.assign(attendee(t, r.who), {badge: base.label, badgeBg: base.bg, badgeFg: base.fg,
+            showToggle: showAttendance && ENROLLED_STATES.includes(r.state)});
+        });
+        const participantRows = attendedReqs.map(r => Object.assign(attendee(t, r.who),
+          {badge: "Attended", badgeBg: "#C5E0D2", badgeFg: "#1F5E3A", showToggle: false}));
+        const onParticipants = st.rosterTab === "participants";
+        const roster = onParticipants ? participantRows : registeredRows;
+        const attendedN = attendedReqs.length;
+        const tabBtn = (k, label) => ({label, bg: st.rosterTab === k ? "#FFFFFF" : "transparent", fg: st.rosterTab === k ? "#2A7E4F" : "#58595B",
+          onClick: () => this.setState({rosterTab: k})});
         session = {
           code: t.code, title: t.title, photo: this.photoFor(t),
           meta: [t.category, t.type, t.instructor].filter(Boolean).join(" · "),
@@ -588,11 +719,15 @@ export default class Portal extends React.Component {
           ],
           pending: by("pending").concat(by("lnd")).map(decorate),
           hasPending: inApproval > 0, noPending: inApproval === 0,
-          roster, hasRoster: roster.length > 0, noRoster: roster.length === 0 && roster.length >= enrolledN,
-          rosterNote: roster.length < enrolledN ? (enrolledN - roster.length) + " further seats were enrolled directly by the L&D team" : "",
-          hasRosterNote: roster.length < enrolledN,
-          showAttendance: isDelivered || live,
-          completionLabel: attendedN + " of " + roster.length + " marked attended",
+          rosterTabs: [tabBtn("registered", "Registered (" + registered.length + ")"), tabBtn("participants", "Participants (" + attendedN + ")")],
+          roster, hasRoster: roster.length > 0, noRoster: roster.length === 0,
+          rosterEmpty: onParticipants
+            ? (showAttendance ? "No one has been marked as attended yet. Mark attendance on the Registered tab." : "Attendance can be marked once the session starts.")
+            : "No one has registered for this session yet.",
+          rosterNote: !onParticipants && enrolledReqs.length < t.enrolled ? (t.enrolled - enrolledReqs.length) + " further seats were enrolled directly by the L&D team" : "",
+          hasRosterNote: !onParticipants && enrolledReqs.length < t.enrolled,
+          showAttendance,
+          completionLabel: attendedN + " of " + enrolledReqs.length + " marked attended",
           onBack: () => this.setState({screen:"trainings", sessionId: null}),
           onEdit: () => this.setState({editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})}),
           onExport: () => this.flash("Export coming soon", t.code + " participant export is not wired up yet.")
@@ -629,7 +764,8 @@ export default class Portal extends React.Component {
       detail, formFields, justification: st.justification,
       onJustification: e => this.setState({justification: e.target.value}),
       submitRequest: () => this.submitRequest(),
-      editor: st.editor, editorFields, saveTraining: () => this.saveTraining(),
+      mail, plate,
+      editor: st.editor && Object.assign({}, st.editor, {cta: st.busy ? "Saving…" : st.editor.cta}), editorFields, saveTraining: () => this.saveTraining(),
       onNewTraining: () => this.setState({editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category: CATEGORIES[0], type: TYPES[0], start:"", end:"", location: LOCATIONS[0], seats:"20", instructor:"", desc:""}}),
       onExport: () => this.flash("Export coming soon", "The registration report export is not wired up yet."),
       closeModal: () => this.setState({detailId: null, editor: null}),
