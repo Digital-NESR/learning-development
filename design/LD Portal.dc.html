@@ -37,11 +37,6 @@
     <div style="width:1px;height:28px;background:rgba(255,255,255,.35)"></div>
     <div style="color:#fff;font-size:15px;font-weight:bold;letter-spacing:.2px">Learning &amp; Development Portal</div>
     <div style="flex:1"></div>
-    <div style="display:flex;gap:2px;background:rgba(0,0,0,.18);padding:3px;border-radius:4px">
-      <sc-for list="{{ roleTabs }}" as="rt" hint-placeholder-count="3">
-        <button onClick="{{ rt.onClick }}" style="border:0;cursor:pointer;padding:6px 14px;border-radius:3px;font-size:12px;font-weight:bold;background:{{ rt.bg }};color:{{ rt.fg }}">{{ rt.label }}</button>
-      </sc-for>
-    </div>
     <div style="display:flex;align-items:center;gap:10px;padding-left:6px">
       <div style="text-align:right;line-height:1.25">
         <div style="color:#fff;font-size:12px;font-weight:bold">{{ user.name }}</div>
@@ -55,14 +50,18 @@
   <div style="display:flex;flex:1;min-height:0;position:relative;z-index:1">
 
     <div style="width:226px;flex:0 0 226px;background:#fff;border-right:1px solid #E1E5E3;padding:16px 0;display:flex;flex-direction:column">
-      <div style="padding:0 16px 10px;font-size:10px;font-weight:bold;letter-spacing:1.2px;color:#8A8F8C;text-transform:uppercase">{{ roleLabel }}</div>
       <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <sc-if value="{{ n.isHeader }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:{{ n.pad }};font-size:10px;font-weight:bold;letter-spacing:1.2px;color:#8A8F8C;text-transform:uppercase">{{ n.label }}</div>
+        </sc-if>
+        <sc-if value="{{ n.isItem }}" hint-placeholder-val="{{ true }}">
         <button onClick="{{ n.onClick }}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;border-left:3px solid {{ n.edge }};cursor:pointer;padding:11px 16px;font-size:13px;font-weight:{{ n.weight }};background:{{ n.bg }};color:{{ n.fg }}">
           <span style="flex:1">{{ n.label }}</span>
           <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ true }}">
             <span style="background:{{ n.badgeBg }};color:{{ n.badgeFg }};font-size:11px;font-weight:bold;padding:1px 7px;border-radius:9px">{{ n.badge }}</span>
           </sc-if>
         </button>
+        </sc-if>
       </sc-for>
       <div style="flex:1"></div>
       <div style="margin:0 16px;padding:12px;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px">
@@ -356,22 +355,44 @@
       <sc-if value="{{ s.mgrTeam }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Development</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:18px">Training days completed per direct report, {{ year }} cycle.</div>
-          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:6px 18px 18px">
+          <div style="font-size:13px;color:#58595B;margin-bottom:18px">Trainings each direct report has registered for and attended. Click a person to see their trainings.</div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden">
             <sc-if value="{{ empty.teamStats }}" hint-placeholder-val="{{ false }}">
               <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No direct reports found for your account.</div>
               </sc-if>
               <sc-for list="{{ teamStats }}" as="t" hint-placeholder-count="5">
-              <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #F0F2F1">
-                <div style="width:34px;height:34px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">{{ t.initials }}</div>
-                <div style="width:180px;min-width:120px">
-                  <div style="font-size:13px;font-weight:bold">{{ t.name }}</div>
-                  <div style="font-size:11px;color:#58595B">{{ t.role }}</div>
+              <div style="border-bottom:1px solid #F0F2F1">
+                <div onClick="{{ t.onToggle }}" style="display:flex;align-items:center;gap:14px;padding:13px 18px;cursor:pointer;background:{{ t.rowBg }}" style-hover="background:#F7F9F8">
+                  <div style="width:34px;height:34px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex:0 0 auto">{{ t.initials }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:bold">{{ t.name }}</div>
+                    <div style="font-size:11px;color:#58595B">{{ t.role }}</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div style="font-size:13px;font-weight:bold;color:#2A7E4F">{{ t.label }}</div>
+                    <div style="font-size:10.5px;color:#8A8F8C">{{ t.sub }}</div>
+                  </div>
+                  <div style="width:18px;text-align:center;color:#8A8F8C;font-size:12px">{{ t.chevron }}</div>
                 </div>
-                <div style="flex:1;height:10px;background:#EEF1EF;border-radius:5px;overflow:hidden">
-                  <div style="height:10px;background:#2A7E4F;width:{{ t.pct }}%"></div>
-                </div>
-                <div style="width:110px;text-align:right;font-size:12px;font-weight:bold;color:#2A7E4F">{{ t.label }}</div>
+                <sc-if value="{{ t.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:2px 18px 14px 66px;background:#FAFBFA">
+                    <sc-if value="{{ t.noTrainings }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:10px 0;font-size:12px;color:#8A8F8C">No training requests yet.</div>
+                    </sc-if>
+                    <sc-for list="{{ t.trainings }}" as="tr" hint-placeholder-count="2">
+                      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #EEF1EF">
+                        <div style="flex:1;min-width:0">
+                          <div style="font-size:12.5px;font-weight:bold">{{ tr.title }}</div>
+                          <div style="font-size:11px;color:#58595B">{{ tr.meta }}</div>
+                        </div>
+                        <span style="background:{{ tr.stBg }};color:{{ tr.stFg }};font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ tr.status }}</span>
+                        <sc-if value="{{ tr.attended }}" hint-placeholder-val="{{ false }}">
+                          <span style="background:#2A7E4F;color:#fff;font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">Attended</span>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
               </div>
             </sc-for>
           </div>
@@ -782,9 +803,13 @@
                   <input value="{{ plate.customName }}" onChange="{{ plate.onCustomName }}" placeholder="Full name" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
                 </div>
               </sc-if>
-              <div style="grid-column:1 / -1">
-                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date shown</div>
-                <input value="{{ plate.date }}" onChange="{{ plate.onDate }}" placeholder="e.g. 14–16 Dec 2026" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              <div>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date from</div>
+                <input type="date" value="{{ plate.from }}" onChange="{{ plate.onFrom }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date to</div>
+                <input type="date" value="{{ plate.to }}" onChange="{{ plate.onTo }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
               </div>
               <div style="grid-column:1 / -1;font-size:11.5px;color:#58595B">{{ plate.summary }}</div>
             </div>
@@ -931,17 +956,20 @@
             <div style="grid-column:{{ fl.span }}">
               <div style="font-size:10.5px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ fl.label }}</div>
               <sc-if value="{{ fl.isSelect }}" hint-placeholder-val="{{ false }}">
-                <select value="{{ fl.value }}" onChange="{{ fl.onChange }}" style="width:100%;padding:9px 8px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                <select value="{{ fl.value }}" onChange="{{ fl.onChange }}" style="width:100%;padding:9px 8px;border:1px solid {{ fl.border }};border-radius:4px;background:#fff;color:{{ fl.fg }}">
+                  <sc-if value="{{ fl.choosePrompt }}" hint-placeholder-val="{{ false }}">
+                    <option value="" disabled>{{ fl.choosePrompt }}</option>
+                  </sc-if>
                   <sc-for list="{{ fl.options }}" as="o" hint-placeholder-count="3">
                     <option value="{{ o }}">{{ o }}</option>
                   </sc-for>
                 </select>
               </sc-if>
               <sc-if value="{{ fl.isText }}" hint-placeholder-val="{{ true }}">
-                <input type="{{ fl.inputType }}" value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" style="width:100%;padding:9px 10px;border:1px solid #D1D3D4;border-radius:4px" />
+                <input type="{{ fl.inputType }}" value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" style="width:100%;padding:9px 10px;border:1px solid {{ fl.border }};border-radius:4px" />
               </sc-if>
               <sc-if value="{{ fl.isTextarea }}" hint-placeholder-val="{{ false }}">
-                <textarea value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" rows="7" style="width:100%;padding:9px 10px;border:1px solid #D1D3D4;border-radius:4px;resize:vertical;line-height:1.5"></textarea>
+                <textarea value="{{ fl.value }}" onChange="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" rows="{{ fl.rows }}" style="width:100%;padding:9px 10px;border:1px solid {{ fl.border }};border-radius:4px;resize:vertical;line-height:1.5"></textarea>
               </sc-if>
               <sc-if value="{{ fl.hint }}" hint-placeholder-val="{{ false }}">
                 <div style="font-size:10.5px;color:#8A8F8C;margin-top:4px;line-height:1.5">{{ fl.hint }}</div>

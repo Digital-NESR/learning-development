@@ -31,11 +31,17 @@ Don't edit `components/PortalView.jsx` by hand. It is regenerated each time.
 
 ## Who sees what
 
-| Workspace | Who gets it |
-|---|---|
-| Employee | Everyone who signs in |
-| Manager | People with direct reports in Entra ID, or who are the approver on a request |
-| L&D Team | Users with the Entra App Role `LD.Admin` (or listed in `LD_ADMIN_EMAILS`) |
+The left panel has up to three sections. Each person only sees the sections they have access to.
+
+| Section | Pages | Who gets it |
+|---|---|---|
+| Employee | My Dashboard, Training Calendar, My Requests, Resources | Everyone who signs in |
+| Manager | Team Approvals, Team Development | People with direct reports in Entra ID, or who are the approver on a request |
+| L&D Team | Dashboard, Manage Trainings, Approval Queue, Attendance, Notifications | Users with the Entra App Role `LD.Admin` (or listed in `LD_ADMIN_EMAILS`) |
+
+Managers see all of their direct reports' requests. Team Development lists each report's trainings and attendance.
+
+**Seats:** a seat is reserved as soon as someone registers (`trainings.enrolled` goes up immediately). It stays reserved while the request is with a manager, with L&D or enrolled, and is released if the request is declined or moved to the waitlist. If no seats are left, the request goes straight to the waitlist.
 
 **Approval chain:** employee → line manager (from Entra ID) → L&D team. If Entra ID has no manager for a person, they can enter an approver email on the form. To require more levels, change `APPROVAL_LEVELS` in `lib/constants.js`.
 

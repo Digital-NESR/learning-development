@@ -35,6 +35,17 @@ const audit = (tx: Prisma.TransactionClient, me: Employee, action: string, entit
 
 const str = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 
+/** Request states that hold a seat in the training (seat is reserved as soon as someone registers). */
+const SEAT_STATES = ["pending", "lnd", "enrolled", "completed"];
+const holdsSeat = (state: string) => SEAT_STATES.includes(state);
+
+/** Adjusts the training's taken-seat count when a request moves between states. */
+async function moveSeat(tx: Prisma.TransactionClient, trainingId: string, from: string, to: string) {
+  const delta = Number(holdsSeat(to)) - Number(holdsSeat(from));
+  if (delta > 0) await tx.training.update({ where: { id: trainingId }, data: { enrolled: { increment: 1 } } });
+  if (delta < 0) await tx.$executeRaw`UPDATE "trainings" SET "enrolled" = GREATEST("enrolled" - 1, 0) WHERE "id" = ${trainingId}`;
+}
+
 export async function refresh(): Promise<Result> {
   return run(async () => {});
 }
@@ -64,12 +75,13 @@ export async function submitRequest(input: { trainingId: string; justification: 
       chain = [approver];
     }
 
-    const full = t.enrolled >= t.seats;
     await prisma.$transaction(async tx => {
+      // Reserve a seat now; only succeeds while seats are left, so two people can't take the last one.
+      const reserved = await tx.$executeRaw`UPDATE "trainings" SET "enrolled" = "enrolled" + 1 WHERE "id" = ${t.id} AND "enrolled" < "seats"`;
       const req = await tx.trainingRequest.create({
         data: {
           employeeId: me.id, trainingId: t.id, form, justification: str(input.justification, 2000) || null,
-          state: full ? "waitlist" : chain.length ? "pending" : "lnd",
+          state: !reserved ? "waitlist" : chain.length ? "pending" : "lnd",
           steps: { create: chain.map((a, i) => ({ stepNo: i, approverId: a.id })) }
         }
       });
@@ -102,7 +114,7 @@ export async function rejectRequest(id: string): Promise<Result> {
     if (r.state === "rejected" || r.state === "completed") throw new UserError("This request is already closed.");
     await prisma.$transaction(async tx => {
       if (isApprover) await tx.approvalStep.update({ where: { id: step.id }, data: { status: "rejected", decidedAt: new Date() } });
-      if (r.state === "enrolled") await tx.training.update({ where: { id: r.trainingId }, data: { enrolled: { decrement: 1 } } });
+      await moveSeat(tx, r.trainingId, r.state, "rejected");
       await tx.trainingRequest.update({ where: { id }, data: { state: "rejected" } });
       await audit(tx, me, "reject", "request", id);
     });
@@ -116,8 +128,7 @@ async function setLndState(id: string, state: "enrolled" | "waitlist"): Promise<
     if (!r) throw new UserError("Request not found.");
     if (r.state === state) return;
     await prisma.$transaction(async tx => {
-      if (state === "enrolled") await tx.training.update({ where: { id: r.trainingId }, data: { enrolled: { increment: 1 } } });
-      if (r.state === "enrolled") await tx.training.update({ where: { id: r.trainingId }, data: { enrolled: { decrement: 1 } } });
+      await moveSeat(tx, r.trainingId, r.state, state);
       await tx.trainingRequest.update({ where: { id }, data: { state } });
       await audit(tx, me, state === "enrolled" ? "enroll" : "waitlist", "request", id);
     });
@@ -131,18 +142,20 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
     requireAdmin(me);
     const start = str(ed.start, 10), end = str(ed.end, 10);
     const dateOk = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
-    if (!str(ed.code) || !str(ed.title)) throw new UserError("Session code and title are required.");
-    if (!dateOk(start) || !dateOk(end)) throw new UserError("Enter start and end dates as YYYY-MM-DD.");
+    const seats = Math.floor(Number(ed.seats));
+    const missing = [
+      !str(ed.code) && "session code", !str(ed.instructor) && "instructor", !str(ed.title) && "training title",
+      !CATEGORIES.includes(String(ed.category)) && "category", !TYPES.includes(String(ed.type)) && "type",
+      !dateOk(start) && "start date", !dateOk(end) && "end date",
+      !LOCATIONS.includes(String(ed.location)) && "location", !(seats >= 1) && "seat capacity", !str(ed.desc) && "description"
+    ].filter(Boolean);
+    if (missing.length) throw new UserError("Please fill in: " + missing.join(", ") + ".");
     if (end < start) throw new UserError("End date must be on or after the start date.");
-    const seats = Math.max(0, Math.floor(Number(ed.seats) || 0));
-    if (!seats) throw new UserError("Seat capacity must be at least 1.");
     const data = {
-      code: str(ed.code, 20), title: str(ed.title), instructor: str(ed.instructor) || null,
-      category: CATEGORIES.includes(String(ed.category)) ? String(ed.category) : CATEGORIES[0],
-      type: TYPES.includes(String(ed.type)) ? String(ed.type) : TYPES[0],
-      location: LOCATIONS.includes(String(ed.location)) ? String(ed.location) : LOCATIONS[0],
+      code: str(ed.code, 20), title: str(ed.title), instructor: str(ed.instructor),
+      category: String(ed.category), type: String(ed.type), location: String(ed.location),
       startDate: new Date(start), endDate: new Date(end), seats,
-      description: str(ed.desc, 4000) || "Session details to be published by the L&D team."
+      description: str(ed.desc, 4000)
     };
     await prisma.$transaction(async tx => {
       const id = ed.id ? String(ed.id) : null;

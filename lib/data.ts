@@ -37,7 +37,10 @@ export async function loadSnapshot(meId: string) {
   const [trainings, requests, reports, chain, templates] = await Promise.all([
     prisma.training.findMany({ where: { isActive: true }, orderBy: { startDate: "asc" } }),
     prisma.trainingRequest.findMany({
-      where: me.isAdmin ? {} : { OR: [{ employeeId: me.id }, { steps: { some: { approverId: me.id } } }] },
+      // Non-admins: their own requests, requests they approve, and all requests from their direct reports.
+      where: me.isAdmin ? {} : {
+        OR: [{ employeeId: me.id }, { steps: { some: { approverId: me.id } } }, { employee: { managerId: me.id } }]
+      },
       include: { steps: { orderBy: { stepNo: "asc" } } },
       orderBy: { submittedAt: "desc" }
     }),
@@ -46,7 +49,9 @@ export async function loadSnapshot(meId: string) {
     me.isAdmin ? prisma.notificationTemplate.findMany() : Promise.resolve([])
   ]);
 
-  const attendance = me.isAdmin ? await prisma.attendance.findMany() : [];
+  // Admins see all attendance; others only for people whose requests they can see (themselves, their team).
+  const requesters = [...new Set(requests.map(r => r.employeeId))];
+  const attendance = await prisma.attendance.findMany({ where: me.isAdmin ? {} : { employeeId: { in: requesters } } });
 
   const ids = new Set<string>([me.id, ...reports.map(r => r.id), ...chain.map(c => c.id)]);
   requests.forEach(r => { ids.add(r.employeeId); r.steps.forEach(s => ids.add(s.approverId)); });

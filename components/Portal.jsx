@@ -6,6 +6,7 @@ import PortalView from "./PortalView";
 import * as actions from "@/app/actions";
 import { APPROVAL_LEVELS, CATEGORIES, DEPTS, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js";
 import { AUDIENCES, ENROLLED_STATES, PLACEHOLDERS, REGISTERED_STATES, audienceIds } from "@/lib/audience.js";
+import { dateRange } from "@/lib/training-format.js";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -38,7 +39,8 @@ export default class Portal extends React.Component {
     const d = props.initial;
     const now = new Date();
     this.state = Object.assign({
-      view: d.isAdmin ? "admin" : "employee",
+      teamOpen: {},
+      editorError: false,
       screen: "dashboard",
       calView: "table",
       month: now.getMonth(), calYear: now.getFullYear(),
@@ -51,7 +53,7 @@ export default class Portal extends React.Component {
       busy: false,
       rosterTab: "registered",
       mail: {trainingId: "", audience: "registered", templateId: "", subject: "", body: ""},
-      plate: {trainingId: "", who: "participants", customName: "", date: ""},
+      plate: {trainingId: "", who: "participants", customName: "", from: "", to: ""},
       toast: null
     }, this.fromSnapshot(d));
   }
@@ -80,15 +82,28 @@ export default class Portal extends React.Component {
       const res = await promiseFn();
       if (res.ok) {
         this.setState(Object.assign(this.fromSnapshot(res.data), extra || {}, {busy: false}));
-        if (title) this.flash(title, body);
+        // title may be a function of the fresh data returning [title, body]
+        const [tt, bb] = typeof title === "function" ? title(res.data) : [title, body];
+        if (tt) this.flash(tt, bb);
       } else {
         this.setState({busy: false});
         this.flash("Couldn't save that change", res.error);
       }
-    } catch {
+    } catch (e) {
       this.setState({busy: false});
-      this.flash("Couldn't reach the server", "Check your connection and try again.");
+      if (/server action|deployment/i.test(String(e && e.message)))
+        this.flash("The portal was updated", "Refresh the page (F5) and try again. Nothing was saved.");
+      else
+        this.flash("Couldn't reach the server", "Check your connection and try again.");
     }
+  }
+
+  /** Re-reads data from the server in the background (e.g. latest seat counts). */
+  async refreshQuiet() {
+    try {
+      const res = await actions.refresh();
+      if (res.ok) this.setState(this.fromSnapshot(res.data));
+    } catch { /* keep what we have */ }
   }
 
   P(id) { return this.state.people[id]; }
@@ -144,11 +159,14 @@ export default class Portal extends React.Component {
   defaultForm() {
     const p = this.me();
     const boss = p.boss ? this.P(p.boss) : null;
-    return {nesrId: p.nesrId === "—" ? "" : p.nesrId, name: p.name, loc: p.loc || LOCATIONS[0], dept: p.dept || DEPTS[0],
+    return {nesrId: p.nesrId === "—" ? "" : p.nesrId, name: p.name, loc: p.loc || "", dept: p.dept || "",
       nat: "", mgr: boss ? boss.email : ""};
   }
 
-  openDetail(id) { this.setState({detailId: id, justification: "", formError: false, form: this.state.form || this.defaultForm()}); }
+  openDetail(id) {
+    this.setState({detailId: id, justification: "", formError: false, form: this.state.form || this.defaultForm()});
+    this.refreshQuiet(); // so seats left are current
+  }
 
   row(t, i) {
     const s = this.seatState(t);
@@ -170,22 +188,26 @@ export default class Portal extends React.Component {
   submitRequest() {
     const t = this.t(this.state.detailId);
     if (!t) return;
-    const full = t.enrolled >= t.seats;
     const chain = this.chainFor(this.state.meId);
     const form = this.state.form || this.defaultForm();
-    if (!form.nat) {
+    const missing = [!form.loc && "work location", !form.dept && "department", !form.nat && "nationality"].filter(Boolean);
+    if (missing.length) {
       this.setState({formError: true});
-      this.flash("Nationality needed", "Choose your nationality — the L&D team uses it to arrange visas.");
+      this.flash("Some details are missing", "Please choose your " + missing.join(", ") + ".");
       return;
     }
     const next = chain.length ? this.P(chain[0]) : null;
     const viaForm = !next && form.mgr;
     this.act(() => actions.submitRequest({trainingId: t.id, justification: this.state.justification, form}),
-      full ? "Added to the waitlist" : "Request submitted",
-      full ? t.code + " is at capacity. You keep your place in the queue and will be notified if a seat opens." :
-      next ? "Sent to " + next.name + (next.title ? " (" + next.title + ")" : "") + ". L&D is notified at each step." :
-      viaForm ? "Sent to " + form.mgr + " for approval. L&D is notified at each step." :
-                "You have no approver above you — routed straight to the L&D team for enrollment.",
+      data => {
+        const mine = data.requests.find(r => r.who === data.meId && r.tid === t.id);
+        if (mine && mine.state === "waitlist")
+          return ["Added to the waitlist", t.code + " is full. You keep your place in the queue and will be notified if a seat opens."];
+        return ["Request submitted, seat reserved",
+          next ? "Sent to " + next.name + (next.title ? " (" + next.title + ")" : "") + " for approval. L&D is notified at each step." :
+          viaForm ? "Sent to " + form.mgr + " for approval. L&D is notified at each step." :
+                    "You have no approver above you — routed straight to the L&D team for enrollment."];
+      }, null,
       {detailId: null, justification: ""});
   }
 
@@ -195,7 +217,22 @@ export default class Portal extends React.Component {
       this.act(() => actions.saveTemplate(ed), "Template saved", ed.name + " was updated.", {editor: null});
       return;
     }
-    this.act(() => actions.saveTraining(ed), ed.id ? "Training updated" : "Training published", ed.code + " — " + ed.title, {editor: null});
+    const blank = v => !String(v ?? "").trim();
+    const missing = [["code","session code"],["instructor","instructor"],["title","training title"],["category","category"],["type","type"],
+      ["start","start date"],["end","end date"],["location","location"],["seats","seat capacity"],["desc","description"]]
+      .filter(([k]) => blank(ed[k])).map(([, label]) => label);
+    if (!blank(ed.seats) && !(Math.floor(Number(ed.seats)) >= 1)) missing.push("seat capacity (a number, at least 1)");
+    if (missing.length) {
+      this.setState({editorError: true});
+      this.flash("Some fields are empty", "Please fill in: " + missing.join(", ") + ".");
+      return;
+    }
+    if (ed.end < ed.start) {
+      this.setState({editorError: true});
+      this.flash("Check the dates", "The end date must be on or after the start date.");
+      return;
+    }
+    this.act(() => actions.saveTraining(ed), ed.id ? "Training updated" : "Training published", ed.code + " — " + ed.title, {editor: null, editorError: false});
   }
 
   setMail(patch) { this.setState({mail: Object.assign({}, this.state.mail, patch)}); }
@@ -235,26 +272,9 @@ export default class Portal extends React.Component {
     const TODAY = todayIso();
 
     const meP = this.me();
-    const isAdmin = st.view === "admin";
+    const isAdmin = st.isAdminUser;
+    const canManage = st.canManage;
     const myReports = this.reportsOf(meP.key);
-    const hasReports = st.view === "manager";
-
-    const views = [["employee","Employee"]]
-      .concat(st.canManage ? [["manager","Manager"]] : [])
-      .concat(st.isAdminUser ? [["admin","L&D Team"]] : []);
-    const roleTabs = views.map(([k, label]) => ({
-      label,
-      bg: st.view === k ? "#FFFFFF" : "transparent", fg: st.view === k ? "#2A7E4F" : "#DCEAE2",
-      onClick: () => this.setState({view: k, screen: k === "manager" ? "approvals" : "dashboard", detailId: null})
-    }));
-
-    const navItems = isAdmin
-      ? [["dashboard","Dashboard"],["trainings","Manage Trainings"],["queue","Approval Queue"],["attendance","Attendance"],["templates","Notifications"]]
-      : [["dashboard","My Dashboard"]]
-          .concat(hasReports ? [["approvals","Team Approvals"]] : [])
-          .concat([["calendar","Training Calendar"],["requests","My Requests"]])
-          .concat(hasReports ? [["team","Team Development"]] : [])
-          .concat([["resources","Resources"]]);
 
     const pendingAll = st.requests.filter(r => r.state === "pending").length;
     const pendingLnd = st.requests.filter(r => r.state === "lnd").length;
@@ -262,9 +282,10 @@ export default class Portal extends React.Component {
     const mineOpen = st.requests.filter(r => r.who === meP.key && (r.state === "pending" || r.state === "lnd")).length;
     const badges = {approvals: onMe, queue: pendingLnd, requests: mineOpen};
 
-    const nav = navItems.map(([k, label]) => {
+    const navItem = ([k, label]) => {
       const on = scr === k || (k === "trainings" && scr === "session");
       return {
+        isItem: true, isHeader: false,
         label, weight: on ? "bold" : "normal",
         bg: on ? "#F2F7F4" : "transparent", fg: on ? "#1F5E3A" : "#3E403E",
         edge: on ? "#2A7E4F" : "transparent",
@@ -272,16 +293,21 @@ export default class Portal extends React.Component {
         badgeBg: on ? "#2A7E4F" : "#E7EBE9", badgeFg: on ? "#FFFFFF" : "#58595B",
         onClick: () => this.setState({screen: k, detailId: null})
       };
-    });
+    };
+    const section = (label, items, first) =>
+      [{isHeader: true, isItem: false, label, pad: first ? "0 16px 8px" : "18px 16px 8px"}].concat(items.map(navItem));
+    const nav = section("Employee", [["dashboard","My Dashboard"],["calendar","Training Calendar"],["requests","My Requests"],["resources","Resources"]], true)
+      .concat(canManage ? section("Manager", [["approvals","Team Approvals"],["team","Team Development"]]) : [])
+      .concat(isAdmin ? section("L&D Team", [["adminDash","Dashboard"],["trainings","Manage Trainings"],["queue","Approval Queue"],["attendance","Attendance"],["templates","Notifications"]]) : []);
 
     const s = {
-      empDash: !isAdmin && scr === "dashboard",
+      empDash: scr === "dashboard",
       cal: scr === "calendar",
-      myReq: !isAdmin && scr === "requests",
-      res: !isAdmin && scr === "resources",
-      mgrApp: !isAdmin && hasReports && scr === "approvals",
-      mgrTeam: !isAdmin && hasReports && scr === "team",
-      aDash: isAdmin && scr === "dashboard",
+      myReq: scr === "requests",
+      res: scr === "resources",
+      mgrApp: canManage && scr === "approvals",
+      mgrTeam: canManage && scr === "team",
+      aDash: isAdmin && scr === "adminDash",
       aTrain: isAdmin && scr === "trainings",
       aSession: isAdmin && scr === "session",
       aApp: isAdmin && scr === "queue",
@@ -375,7 +401,8 @@ export default class Portal extends React.Component {
       .map((r, i) => { const d = decorate(r); return Object.assign(d, {zebra: i % 2 ? "#FAFBFA" : "#FFFFFF", onReject: d.onDeclineLnd}); });
 
     const upcoming = st.trainings.slice().sort((a, b) => a.start < b.start ? -1 : 1);
-    const recommended = upcoming.filter(t => t.enrolled < t.seats && t.start >= TODAY).slice(0, 4).map(t => {
+    const requestedByMe = new Set(st.requests.filter(r => r.who === meP.key).map(r => r.tid));
+    const recommended = upcoming.filter(t => t.enrolled < t.seats && t.start >= TODAY && !requestedByMe.has(t.id)).slice(0, 4).map(t => {
       const ss = this.seatState(t);
       return {
         title: t.title, sub: t.category + " · " + t.location, day: String(this.dayNum(t.start)),
@@ -392,7 +419,7 @@ export default class Portal extends React.Component {
       const ss = this.seatState(detailT);
       const left = Math.max(0, detailT.seats - detailT.enrolled);
       const already = st.requests.some(r => r.who === meP.key && r.tid === detailT.id);
-      const canApply = !isAdmin && !already;
+      const canApply = !already;
       const myChain = this.chainFor(meP.key).map(k => this.P(k));
       const chainNote = myChain.length
         ? myChain.map(p => p.first + (p.title ? " (" + p.title + ")" : "")).join(" → ") + " → L&D Team"
@@ -406,7 +433,6 @@ export default class Portal extends React.Component {
         ctaLabel: st.busy ? "Submitting…" : left > 0 ? "Submit Request" : "Join Waitlist",
         chainNote,
         footNote: already ? "You already have a request on file for this session." :
-          isAdmin ? "Switch to the Employee view to register for this session." :
           left > 0 ? left + " of " + detailT.seats + " seats remaining." : "This class is full — waitlist requests are still accepted.",
         facts: [
           mk("Dates", this.range(detailT), "M7 3v3M17 3v3M4 9.5h16M5.5 6h13a1.5 1.5 0 011.5 1.5v11A1.5 1.5 0 0118.5 20h-13A1.5 1.5 0 014 18.5v-11A1.5 1.5 0 015.5 6z"),
@@ -424,10 +450,14 @@ export default class Portal extends React.Component {
       formFields = [
         field({label:"NESR ID", isText:true, value: myForm.nesrId, placeholder:"e.g. 10428", onChange: this.setForm("nesrId")}),
         field({label:"Full name", isText:true, value: myForm.name, placeholder:"Full name", onChange: this.setForm("name")}),
-        field({label:"Work location", isSelect:true, value: myForm.loc, options: withOption(LOCATIONS, myForm.loc), onChange: this.setForm("loc")}),
-        field({label:"Department", isSelect:true, value: myForm.dept, options: withOption(DEPTS, myForm.dept), onChange: this.setForm("dept")}),
+        field({label:"Work location", isSelect:true, value: myForm.loc, options: withOption(LOCATIONS, myForm.loc), onChange: this.setForm("loc"),
+          choosePrompt:"Select from dropdown", fg: myForm.loc ? "#1F1F1D" : "#8A8F8C",
+          border: st.formError && !myForm.loc ? "#8A2B2B" : "#D9DDDB", hint: st.formError && !myForm.loc ? "Required" : ""}),
+        field({label:"Department", isSelect:true, value: myForm.dept, options: withOption(DEPTS, myForm.dept), onChange: this.setForm("dept"),
+          choosePrompt:"Select from dropdown", fg: myForm.dept ? "#1F1F1D" : "#8A8F8C",
+          border: st.formError && !myForm.dept ? "#8A2B2B" : "#D9DDDB", hint: st.formError && !myForm.dept ? "Required" : ""}),
         field({label:"Nationality (visa)", isSelect:true, value: myForm.nat, options: NATIONALITIES, onChange: this.setForm("nat"),
-          choosePrompt:"Select nationality", fg: myForm.nat ? "#1F1F1D" : "#8A8F8C",
+          choosePrompt:"Select from dropdown", fg: myForm.nat ? "#1F1F1D" : "#8A8F8C",
           border: natMissing ? "#8A2B2B" : "#D9DDDB", hint: natMissing ? "Required" : ""}),
         lockedMgr
           ? field({label:"Approver", isText:true, value: lockedMgr.email, readOnly:true, bg:"#F2F4F3", fg:"#58595B", onChange: () => {},
@@ -438,7 +468,11 @@ export default class Portal extends React.Component {
     }
 
     const ed = st.editor;
-    const ef = f => Object.assign({inputType: "text", hint: "", isTextarea: false}, f);
+    const ef = f => Object.assign({inputType: "text", hint: "", isTextarea: false, rows: "7", border: "#D1D3D4", fg: "#1F1F1D", choosePrompt: ""}, f);
+    const miss = v => st.editorError && !String(v ?? "").trim();
+    // Required training field: label with *, red border when left empty after trying to save
+    const rf = (f, v) => ef(Object.assign({}, f, {label: f.label + " *", border: miss(v) ? "#8A2B2B" : "#D1D3D4"},
+      f.isSelect ? {choosePrompt: "Select from dropdown", fg: v ? "#1F1F1D" : "#8A8F8C"} : {}));
     const editorFields = !ed ? [] : ed.kind === "template" ? [
       {label:"Template name", isText:true, span:"1 / -1", value: ed.name, placeholder:"e.g. Joining Instructions", onChange: this.setEditor("name")},
       {label:"When it's used", isText:true, span:"1 / -1", value: ed.trigger, placeholder:"e.g. L&D confirms a seat", onChange: this.setEditor("trigger")},
@@ -446,23 +480,23 @@ export default class Portal extends React.Component {
       {label:"Message", isTextarea:true, span:"1 / -1", value: ed.body, placeholder:"Email text", onChange: this.setEditor("body"),
         hint: "Placeholders filled per person: " + PLACEHOLDERS.join(" ")}
     ].map(ef) : [
-      {label:"Session code", isText:true, span:"auto", value: ed.code, placeholder:"TNT-04", onChange: this.setEditor("code")},
-      {label:"Instructor", isText:true, span:"auto", value: ed.instructor, placeholder:"Lead instructor", onChange: this.setEditor("instructor")},
-      {label:"Training title", isText:true, span:"1 / -1", value: ed.title, placeholder:"Session title", onChange: this.setEditor("title")},
-      {label:"Category", isSelect:true, span:"auto", value: ed.category, options: CATEGORIES, onChange: this.setEditor("category")},
-      {label:"Type", isSelect:true, span:"auto", value: ed.type, options: TYPES, onChange: this.setEditor("type")},
-      {label:"Start date", isText:true, inputType:"date", span:"auto", value: ed.start, onChange: this.setEditor("start")},
-      {label:"End date", isText:true, inputType:"date", span:"auto", value: ed.end, onChange: this.setEditor("end")},
-      {label:"Location", isSelect:true, span:"auto", value: ed.location, options: LOCATIONS, onChange: this.setEditor("location")},
-      {label:"Seat capacity", isText:true, span:"auto", value: String(ed.seats), placeholder:"20", onChange: this.setEditor("seats")},
-      {label:"Description", isTextarea:true, span:"1 / -1", value: ed.desc, placeholder:"What participants will learn", onChange: this.setEditor("desc")}
-    ].map(ef);
+      rf({label:"Session code", isText:true, span:"auto", value: ed.code, placeholder:"TNT-04", onChange: this.setEditor("code")}, ed.code),
+      rf({label:"Instructor", isText:true, span:"auto", value: ed.instructor, placeholder:"Lead instructor", onChange: this.setEditor("instructor")}, ed.instructor),
+      rf({label:"Training title", isText:true, span:"1 / -1", value: ed.title, placeholder:"Session title", onChange: this.setEditor("title")}, ed.title),
+      rf({label:"Category", isSelect:true, span:"auto", value: ed.category, options: CATEGORIES, onChange: this.setEditor("category")}, ed.category),
+      rf({label:"Type", isSelect:true, span:"auto", value: ed.type, options: TYPES, onChange: this.setEditor("type")}, ed.type),
+      rf({label:"Start date", isText:true, inputType:"date", span:"auto", value: ed.start, onChange: this.setEditor("start")}, ed.start),
+      rf({label:"End date", isText:true, inputType:"date", span:"auto", value: ed.end, onChange: this.setEditor("end")}, ed.end),
+      rf({label:"Location", isSelect:true, span:"auto", value: ed.location, options: LOCATIONS, onChange: this.setEditor("location")}, ed.location),
+      rf({label:"Seat capacity", isText:true, inputType:"number", span:"auto", value: String(ed.seats ?? ""), placeholder:"e.g. 20", onChange: this.setEditor("seats")}, ed.seats),
+      rf({label:"Description", isTextarea:true, rows:"3", span:"1 / -1", value: ed.desc, placeholder:"What participants will learn", onChange: this.setEditor("desc")}, ed.desc)
+    ];
 
     const adminRows = list.map((t, i) => {
       const r = this.row(t, i);
       r.onClick = () => this.setState({screen:"session", sessionId: t.id, rosterTab: "registered"});
       r.onView = () => this.setState({screen:"session", sessionId: t.id, rosterTab: "registered"});
-      r.onEdit = () => this.setState({editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})});
+      r.onEdit = () => this.setState({editorError: false, editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})});
       r.onDelete = () => {
         if (!window.confirm("Withdraw " + t.code + " — " + t.title + " from the calendar?")) return;
         this.act(() => actions.deleteTraining(t.id), "Training removed", t.code + " was withdrawn from the calendar.");
@@ -570,10 +604,24 @@ export default class Portal extends React.Component {
 
     const teamStats = myReports.map(k => {
       const p = this.P(k);
-      const d = st.requests.filter(r => r.who === k && (r.state === "enrolled" || r.state === "completed"))
-        .reduce((a, r) => { const tt = this.t(r.tid); return a + (tt ? this.days(tt) : 0); }, 0);
-      return {name: p.name, role: [p.title, (p.loc || "").split(",")[0]].filter(Boolean).join(" · "), initials: initialsOf(p.name),
-        pct: Math.min(100, Math.round(d / 15 * 100)), label: d + " of 15 days"};
+      const reqs = st.requests.filter(r => r.who === k && r.state !== "rejected")
+        .map(r => ({r, t: this.t(r.tid)})).filter(x => x.t)
+        .sort((a, b) => a.t.start < b.t.start ? 1 : -1);
+      const attended = x => st.attended[x.t.id + ":" + k] === true;
+      const nAttended = reqs.filter(attended).length;
+      const open = !!st.teamOpen[k];
+      return {
+        name: p.name, role: [p.title, (p.loc || "").split(",")[0]].filter(Boolean).join(" · "), initials: initialsOf(p.name),
+        label: reqs.length + (reqs.length === 1 ? " training" : " trainings"), sub: nAttended + " attended",
+        open, chevron: open ? "▾" : "▸", rowBg: open ? "#F7F9F8" : "#FFFFFF",
+        onToggle: () => this.setState({teamOpen: Object.assign({}, st.teamOpen, {[k]: !open})}),
+        noTrainings: reqs.length === 0,
+        trainings: reqs.map(x => {
+          const base = STATE_STYLE[x.r.state] || STATE_STYLE.pending;
+          return {title: x.t.code + " · " + x.t.title, meta: this.range(x.t) + " · " + x.t.location,
+            status: base.label, stBg: base.bg, stFg: base.fg, attended: attended(x)};
+        })
+      };
     });
 
     const myUpcoming = myRequests.filter(r => r.state === "enrolled").length;
@@ -638,15 +686,16 @@ export default class Portal extends React.Component {
     ].concat(ptReqs.map(r => this.P(r.who)).filter(Boolean).sort((a, b) => a.name < b.name ? -1 : 1).map(p => ({value: p.key, label: p.name})))
      .concat([{value: "custom", label: "Someone else (type a name)"}]);
     const plateCount = !pt ? 0 : pl.who === "participants" ? nAttended : pl.who === "enrolled" ? nEnrolled : pl.who === "custom" ? (pl.customName.trim() ? 1 : 0) : 1;
-    const plateDate = pl.date || (pt ? this.range(pt) : "");
+    const pFrom = pl.from || (pt ? pt.start : ""), pTo = pl.to || (pt ? pt.end : "");
+    const plateDate = pFrom ? dateRange(pFrom, pTo && pTo >= pFrom ? pTo : pFrom) : "";
     const canPlate = !!pt && plateCount > 0 && !st.busy;
     const plate = {
       selects: [
-        {label: "Training", span: "1 / -1", value: pl.trainingId, options: trainingOptions, onChange: e => this.setPlate({trainingId: e.target.value, date: ""})},
+        {label: "Training", span: "1 / -1", value: pl.trainingId, options: trainingOptions, onChange: e => this.setPlate({trainingId: e.target.value, from: "", to: ""})},
         {label: "Nameplate for", span: "1 / -1", value: pl.who, options: whoOptions, onChange: e => this.setPlate({who: e.target.value})}
       ],
       showCustom: pl.who === "custom", customName: pl.customName, onCustomName: e => this.setPlate({customName: e.target.value}),
-      date: plateDate, onDate: e => this.setPlate({date: e.target.value}),
+      from: pFrom, to: pTo, onFrom: e => this.setPlate({from: e.target.value}), onTo: e => this.setPlate({to: e.target.value}),
       summary: !pt ? "Select a training to start." : plateCount ? plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " · one A4 landscape page each, fold along the dashed line." : "No one to print for this choice.",
       buttonLabel: st.busy ? "Preparing…" : "Download PDF",
       buttonBg: canPlate ? "#2A7E4F" : "#A8ACAA", buttonCursor: canPlate ? "pointer" : "not-allowed",
@@ -729,7 +778,7 @@ export default class Portal extends React.Component {
           showAttendance,
           completionLabel: attendedN + " of " + enrolledReqs.length + " marked attended",
           onBack: () => this.setState({screen:"trainings", sessionId: null}),
-          onEdit: () => this.setState({editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})}),
+          onEdit: () => this.setState({editorError: false, editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})}),
           onExport: () => this.flash("Export coming soon", t.code + " participant export is not wired up yet.")
         };
       }
@@ -740,8 +789,7 @@ export default class Portal extends React.Component {
       user: {name: meP.name, first: meP.first, initials: initialsOf(meP.name),
         sub: [meP.title, meP.nesrId && meP.nesrId !== "—" ? "NESR ID " + meP.nesrId : ""].filter(Boolean).join(" · ")},
       onSignOut: () => actions.logout(),
-      year: YEAR, roleTabs, nav, s,
-      roleLabel: isAdmin ? "L&D Administration" : hasReports ? "Manager Workspace" : "My Learning",
+      year: YEAR, nav, s,
       rows, adminRows, viewTabs, filters, q: st.q,
       onSearch: e => this.setState({q: e.target.value}),
       clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All", fSeats:"All"}),
@@ -766,9 +814,9 @@ export default class Portal extends React.Component {
       submitRequest: () => this.submitRequest(),
       mail, plate,
       editor: st.editor && Object.assign({}, st.editor, {cta: st.busy ? "Saving…" : st.editor.cta}), editorFields, saveTraining: () => this.saveTraining(),
-      onNewTraining: () => this.setState({editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category: CATEGORIES[0], type: TYPES[0], start:"", end:"", location: LOCATIONS[0], seats:"20", instructor:"", desc:""}}),
+      onNewTraining: () => this.setState({editorError: false, editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category:"", type:"", start:"", end:"", location:"", seats:"", instructor:"", desc:""}}),
       onExport: () => this.flash("Export coming soon", "The registration report export is not wired up yet."),
-      closeModal: () => this.setState({detailId: null, editor: null}),
+      closeModal: () => this.setState({detailId: null, editor: null, editorError: false}),
       stop: e => e.stopPropagation(),
       toast: st.toast
     };
