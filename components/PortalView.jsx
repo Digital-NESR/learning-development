@@ -641,7 +641,10 @@ export default function PortalView({ v }) {
 <span style={{ background: p.badgeBg, color: p.badgeFg, fontSize: "10px", fontWeight: "bold", padding: "3px 9px", borderRadius: "3px", whiteSpace: "nowrap" }}>{p.badge}</span>
 </>) : null}
 {p.showToggle ? (<>
-<button onClick={p.onToggle} title="Click to change attendance" style={{ padding: "6px 13px", border: `1px solid ${p.border}`, background: p.bg, color: p.fg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>{p.label}</button>
+<div style={{ display: "flex", gap: "0", border: "1px solid #D1D3D4", borderRadius: "4px", overflow: "hidden", flex: "0 0 auto" }}>
+<button onClick={p.onAttended} title="Mark as attended" style={{ padding: "6px 12px", border: "0", background: p.attBg, color: p.attFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Attended</button>
+<button onClick={p.onNoShow} title="Mark as no show" style={{ padding: "6px 12px", border: "0", borderLeft: "1px solid #D1D3D4", background: p.noBg, color: p.noFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>No show</button>
+</div>
 </>) : null}
 </div>
 </React.Fragment>))}
@@ -714,7 +717,10 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{p.name}</div>
 <div style={{ fontSize: "11px", color: "#58595B" }}>{p.meta}</div>
 </div>
-<button onClick={p.onToggle} style={{ padding: "6px 13px", border: `1px solid ${p.border}`, background: p.bg, color: p.fg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>{p.label}</button>
+<div style={{ display: "flex", gap: "0", border: "1px solid #D1D3D4", borderRadius: "4px", overflow: "hidden", flex: "0 0 auto" }}>
+<button onClick={p.onAttended} title="Mark as attended" style={{ padding: "6px 12px", border: "0", background: p.attBg, color: p.attFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Attended</button>
+<button onClick={p.onNoShow} title="Mark as no show" style={{ padding: "6px 12px", border: "0", borderLeft: "1px solid #D1D3D4", background: p.noBg, color: p.noFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>No show</button>
+</div>
 </div>
 </React.Fragment>))}
 </div>

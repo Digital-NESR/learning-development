@@ -576,11 +576,12 @@ export default class Portal extends React.Component {
       return {
         name: p.name, initials: initialsOf(p.name),
         meta: [p.nesrId && p.nesrId !== "—" ? "NESR ID " + p.nesrId : "", p.title, p.dept].filter(Boolean).join(" · "),
-        label: mark === true ? "Attended" : mark === false ? "No show" : "Mark attended",
-        bg: mark === true ? "#C5E0D2" : "#FFFFFF",
-        fg: mark === true ? "#1F5E3A" : mark === false ? "#8A2B2B" : "#58595B",
-        border: mark === true ? "#2A7E4F" : "#D1D3D4",
-        onToggle: () => this.act(() => actions.setAttendance(t.id, pk, mark !== true))
+        label: mark === true ? "Attended" : mark === false ? "No show" : "Not marked",
+        // Two explicit buttons; the selected one is filled in
+        attBg: mark === true ? "#2A7E4F" : "#FFFFFF", attFg: mark === true ? "#FFFFFF" : "#58595B",
+        noBg: mark === false ? "#8A2B2B" : "#FFFFFF", noFg: mark === false ? "#FFFFFF" : "#58595B",
+        onAttended: () => { if (mark !== true) this.act(() => actions.setAttendance(t.id, pk, true), "Marked attended", p.name + " · " + t.code); },
+        onNoShow: () => { if (mark !== false) this.act(() => actions.setAttendance(t.id, pk, false), "Marked no show", p.name + " · " + t.code); }
       };
     };
 
