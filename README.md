@@ -1,6 +1,6 @@
 # NESR Training Portal
 
-**Live:** https://lnd.nesr.com (pending DNS) · https://learning-development-red.vercel.app
+**Live:** https://training.nesr.com (pending DNS) · https://nesr-training.vercel.app
 
 Employees browse the training calendar and request sessions. Line managers approve requests. The L&D team enrolls participants, manages sessions and tracks attendance.
 
@@ -93,7 +93,7 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 | `LD_MAIL_FROM` | Optional | Not needed: emails are sent from the Outlook account connected in n8n |
 | `LD_N8N_EMAIL_WEBHOOK_URL` | For email | n8n webhook that actually sends the emails. See [docs/n8n-Integration.md](docs/n8n-Integration.md) |
 | `LD_N8N_EMAIL_WEBHOOK_SECRET` | Optional | Sent to n8n as `x-webhook-secret` |
-| `LD_PUBLIC_URL` | Optional | Address used for the "Open Training Portal" button in emails, e.g. `https://lnd.nesr.com`. Defaults to the address the admin is using |
+| `LD_PUBLIC_URL` | Optional | Address used for the "Open Training Portal" button in emails, e.g. `https://training.nesr.com`. Defaults to the address the admin is using |
 | `LD_MAIL_TEST_RECIPIENT` | Optional | Test mode: all emails go to this one address, with the real recipient shown in the subject. Remove before go-live |
 | `LD_NAMEPLATE_API_KEY` | Optional | Enables `POST /api/hooks/nameplate` for n8n. Without it the endpoint is closed |
 | `LD_DEMO_LOGIN` | Optional | `true` shows a demo login with sample people. **Testing only — remove before go-live** |
@@ -105,7 +105,7 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 
 See [`docs/SSO-Integration-Response.md`](docs/SSO-Integration-Response.md) for the full configuration to hand to NESR IT. In short, IT creates an Entra app registration with:
 
-- Redirect URIs `https://lnd.nesr.com/api/auth/callback/microsoft-entra-id` and `https://learning-development-red.vercel.app/api/auth/callback/microsoft-entra-id` (and `http://localhost:3000/...` for development)
+- Redirect URIs `https://training.nesr.com/api/auth/callback/microsoft-entra-id` and `https://nesr-training.vercel.app/api/auth/callback/microsoft-entra-id` (and `http://localhost:3000/...` for development)
 - Microsoft Graph `User.Read` (delegated)
 - App Role `LD.Admin`
 

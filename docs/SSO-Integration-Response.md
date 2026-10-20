@@ -7,7 +7,7 @@ Response to **"SSO Integration Requirements"** (NESR IT, Identity Provider: Micr
 | **Application** | NESR Training Portal |
 | **Application owner** | Sakina Bagalkot — sbagalkot@nesr.com |
 | **Technical support contact** | Sakina Bagalkot — sbagalkot@nesr.com |
-| **Hosting** | Vercel (HTTPS only): **https://lnd.nesr.com** (also https://learning-development-red.vercel.app) |
+| **Hosting** | Vercel (HTTPS only): **https://training.nesr.com** (also https://nesr-training.vercel.app) |
 | **Protocol chosen** | **OpenID Connect (OIDC) / OAuth 2.0** — the "Secondary Protocol" in the IT requirements |
 | **Auth library** | Auth.js (NextAuth v5), Microsoft Entra ID provider |
 
@@ -21,21 +21,21 @@ Response to **"SSO Integration Requirements"** (NESR IT, Identity Provider: Micr
 |---|---|
 | **Application type** | **Web** (confidential client — server-side code exchange with a client secret) |
 | **Supported account types** | Accounts in this organizational directory only (NESR single tenant) |
-| **Redirect URI (production)** | `https://lnd.nesr.com/api/auth/callback/microsoft-entra-id` |
-| **Redirect URI (Vercel URL)** | `https://learning-development-red.vercel.app/api/auth/callback/microsoft-entra-id` |
+| **Redirect URI (production)** | `https://training.nesr.com/api/auth/callback/microsoft-entra-id` |
+| **Redirect URI (Vercel URL)** | `https://nesr-training.vercel.app/api/auth/callback/microsoft-entra-id` |
 | **Redirect URI (local development)** | `http://localhost:3000/api/auth/callback/microsoft-entra-id` |
-| **Post-logout redirect URI** | `https://lnd.nesr.com/login` and `https://learning-development-red.vercel.app/login` |
+| **Post-logout redirect URI** | `https://training.nesr.com/login` and `https://nesr-training.vercel.app/login` |
 | **Front-channel logout URL** | Not required |
 | **ID tokens / Access tokens (implicit)** | **Not required** — leave both unchecked |
 
-Production domain: **`lnd.nesr.com`**, which needs the DNS records below. The Vercel address `learning-development-red.vercel.app` stays live as well, so register both.
+Production domain: **`training.nesr.com`**, which needs the DNS records below. The Vercel address `nesr-training.vercel.app` stays live as well, so register both. The old address `learning-development-red.vercel.app` permanently redirects to `nesr-training.vercel.app`, so it needs no redirect URI.
 
-**DNS records needed in the `nesr.com` zone** (copy the exact values from Vercel → project → Domains):
+**DNS records needed in the `nesr.com` zone** (copy the exact values from Vercel → project → Domains → training.nesr.com):
 
 | Type | Name | Value |
 |---|---|---|
-| CNAME | `lnd` | `4dffa4c35b710869.vercel-dns-017.com` |
-| TXT | `_vercel` | `vc-domain-verify=lnd.nesr.com,e4b6e1169fc8c173bdab` |
+| CNAME (if Vercel lists one) | `training` | value shown in Vercel → project → Domains → training.nesr.com |
+| TXT | `_vercel` | `vc-domain-verify=training.nesr.com,…` (copy the full value from Vercel) |
 
 The TXT record proves domain ownership, because `nesr.com` is already linked to another Vercel account. Add it alongside any existing `_vercel` TXT value rather than replacing it. It can be removed once Vercel shows the domain as verified.
 
