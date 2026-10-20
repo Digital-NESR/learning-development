@@ -3,7 +3,7 @@ import "./design.css";
 import "./hover.css";
 
 export const metadata: Metadata = {
-  title: "NESR Learning & Development Portal",
+  title: "NESR Training Portal",
   description: "Browse the training calendar, request sessions and track approvals."
 };
 

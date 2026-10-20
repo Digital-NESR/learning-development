@@ -1,4 +1,4 @@
-// NESR L&D Portal — PostgreSQL schema
+// NESR Training Portal — PostgreSQL schema
 generator client {
   provider = "prisma-client-js"
 }

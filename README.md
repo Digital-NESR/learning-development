@@ -1,4 +1,4 @@
-# NESR Learning & Development Portal
+# NESR Training Portal
 
 **Live:** https://lnd.nesr.com (pending DNS) · https://learning-development-red.vercel.app
 

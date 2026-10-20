@@ -91,7 +91,7 @@ let logoBytes: Buffer | null = null;
 export async function nameplatePdf(plates: Nameplate[]) {
   const doc = await PDFDocument.create();
   doc.setTitle(plates.length === 1 ? `Nameplate - ${plates[0].name}` : "Nameplates");
-  doc.setAuthor("NESR Learning & Development Portal");
+  doc.setAuthor("NESR Training Portal");
   const fonts = { bold: await doc.embedFont(StandardFonts.HelveticaBold), regular: await doc.embedFont(StandardFonts.Helvetica) };
   logoBytes ??= await fs.readFile(path.join(process.cwd(), "public", "assets", "nesr-logo-white.png"));
   const logo = await doc.embedPng(logoBytes);

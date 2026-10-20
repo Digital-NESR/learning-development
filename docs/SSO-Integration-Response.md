@@ -1,10 +1,10 @@
-# L&D Portal — SSO Integration Response
+# Training Portal — SSO Integration Response
 
 Response to **"SSO Integration Requirements"** (NESR IT, Identity Provider: Microsoft Entra ID).
 
 | | |
 |---|---|
-| **Application** | NESR Learning & Development Portal |
+| **Application** | NESR Training Portal |
 | **Application owner** | Sakina Bagalkot — sbagalkot@nesr.com |
 | **Technical support contact** | Sakina Bagalkot — sbagalkot@nesr.com |
 | **Hosting** | Vercel (HTTPS only): **https://lnd.nesr.com** (also https://learning-development-red.vercel.app) |
@@ -69,7 +69,7 @@ The TXT record proves domain ownership, because `nesr.com` is already linked to 
 
 **Existing Digital-NESR registration or a new one:** the Digital-NESR apps on Vercel already share one Entra app registration (`AZURE_AD_*`). IT can choose either option:
 - **Reuse it:** add the L&D redirect URIs below and the `LD.Admin` App Role to the existing registration. No new credentials are needed.
-- **Create a dedicated "NESR L&D Portal" registration:** the portal then reads it from the `LD_AZURE_AD_*` variables, which take priority over the shared ones.
+- **Create a dedicated "NESR Training Portal" registration:** the portal then reads it from the `LD_AZURE_AD_*` variables, which take priority over the shared ones.
 
 The secret is stored only as an encrypted Vercel environment variable. It is never committed to the code repository. Please share it through a secure channel, not email.
 
@@ -135,10 +135,10 @@ Create one App Role on the app registration:
 
 ## 5. Steps for IT (summary)
 
-1. Entra admin center → **App registrations** → **New registration** → name "NESR L&D Portal", single tenant, Web redirect URI as above.
+1. Entra admin center → **App registrations** → **New registration** → name "NESR Training Portal", single tenant, Web redirect URI as above.
 2. **Authentication**: add the localhost redirect URI, and add the post-logout URL as another Web redirect URI. Leave implicit grant off.
 3. **Certificates & secrets** → new client secret → send the value securely.
 4. **API permissions** → confirm Microsoft Graph `User.Read` (delegated); optionally grant admin consent.
 5. **App roles** → create `LD.Admin` as above.
-6. **Enterprise applications** → NESR L&D Portal → **Users and groups** → assign the L&D team (group) to the `L&D Team` role.
+6. **Enterprise applications** → NESR Training Portal → **Users and groups** → assign the L&D team (group) to the `L&D Team` role.
 7. Send back: tenant ID, client ID, client secret (and expiry).

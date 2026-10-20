@@ -2,7 +2,7 @@
   "name": "ld-portal",
   "version": "1.0.0",
   "private": true,
-  "description": "NESR Learning & Development Portal",
+  "description": "NESR Training Portal",
   "scripts": {
     "dev": "node node_modules/next/dist/bin/next dev",
     "build": "node node_modules/prisma/build/index.js generate && node node_modules/next/dist/bin/next build",

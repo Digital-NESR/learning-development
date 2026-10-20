@@ -1,4 +1,4 @@
-# L&D Portal — n8n integration
+# Training Portal — n8n integration
 
 The portal sends no email itself. It hands emails to an **n8n webhook**, the same pattern the other Digital-NESR apps use. It also exposes a **nameplate PDF** endpoint that n8n can call.
 

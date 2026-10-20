@@ -18,7 +18,7 @@ export default function PortalView({ v }) {
 </div>
 <img src="/assets/nesr-logo-white.png" alt="NESR" style={{ height: "34px", width: "auto", display: "block" }} />
 <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,.35)" }}></div>
-<div style={{ color: "#fff", fontSize: "15px", fontWeight: "bold", letterSpacing: ".2px" }}>Learning &amp; Development Portal</div>
+<div style={{ color: "#fff", fontSize: "15px", fontWeight: "bold", letterSpacing: ".2px" }}>Training Portal</div>
 <div style={{ flex: "1" }}></div>
 <div style={{ display: "flex", alignItems: "center", gap: "10px", paddingLeft: "6px" }}>
 <div style={{ textAlign: "right", lineHeight: "1.25" }}>
@@ -294,7 +294,7 @@ export default function PortalView({ v }) {
 {v.s.res ? (<>
 <div>
 <div style={{ position: "relative", overflow: "hidden", borderRadius: "7px", padding: "28px", marginBottom: "18px", minHeight: "150px", display: "flex", flexDirection: "column", justifyContent: "flex-end", backgroundColor: "#1F5E3A", backgroundImage: "linear-gradient(90deg,rgba(31,94,58,.95) 0%,rgba(42,126,79,.7) 55%,rgba(31,31,29,.35) 100%),url(/assets/photo-toolbox-talk.png)", backgroundSize: "cover,cover", backgroundPosition: "center,center 32%" }}>
-<div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: "1.3px", textTransform: "uppercase", color: "#C5E0D2" }}>Learning &amp; Development</div>
+<div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: "1.3px", textTransform: "uppercase", color: "#C5E0D2" }}>Training Portal</div>
 <div style={{ fontSize: "24px", fontWeight: "bold", color: "#fff", marginTop: "5px" }}>Resources</div>
 <div style={{ fontSize: "13px", color: "#DCEAE2", marginTop: "4px" }}>Guides, policies and contacts for the {v.year} training cycle.</div>
 </div>
@@ -397,7 +397,7 @@ export default function PortalView({ v }) {
 <div style={{ position: "absolute", top: "-30px", right: "-50px", width: "160px", height: "80px", borderRadius: "0 0 160px 160px", background: "rgba(197,224,210,.16)" }}></div>
 </div>
 <div style={{ position: "relative", flex: "1", minWidth: "230px" }}>
-<div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: "1.3px", textTransform: "uppercase", color: "#C5E0D2" }}>Learning &amp; Development</div>
+<div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: "1.3px", textTransform: "uppercase", color: "#C5E0D2" }}>Training Portal</div>
 <div style={{ fontSize: "24px", fontWeight: "bold", color: "#fff", marginTop: "5px" }}>Operations Dashboard</div>
 <div style={{ fontSize: "13px", color: "#DCEAE2", marginTop: "4px" }}>{v.year} training cycle &middot; all regions</div>
 </div>
@@ -829,7 +829,7 @@ export default function PortalView({ v }) {
 <span style={{ color: "#8A8F8C" }}>|</span>
 <a href="https://www.nesr.com" style={{ color: "#C5E0D2" }}>www.nesr.com</a>
 <div style={{ flex: "1" }}></div>
-<span style={{ color: "#8A8F8C" }}>NESR Internal &middot; Learning &amp; Development</span>
+<span style={{ color: "#8A8F8C" }}>NESR Internal &middot; Training Portal</span>
 </div>
 {v.detail ? (<>
 <div onClick={v.closeModal} style={{ position: "fixed", inset: "0", background: "rgba(31,31,29,.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "44px 20px", zIndex: "50", overflow: "auto", animation: "fadeIn .15s ease" }}>

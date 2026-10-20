@@ -33,7 +33,7 @@ export default async function GatePage({ searchParams }: { searchParams: Promise
         <div style={{ background: green, padding: "22px 24px", display: "flex", alignItems: "center", gap: 16 }}>
           <img src="/assets/nesr-logo-white.png" alt="NESR" style={{ height: 34, width: "auto" }} />
           <div style={{ width: 1, height: 28, background: "rgba(255,255,255,.35)" }} />
-          <div style={{ color: "#fff", fontSize: 15, fontWeight: "bold" }}>Learning &amp; Development Portal</div>
+          <div style={{ color: "#fff", fontSize: 15, fontWeight: "bold" }}>Training Portal</div>
         </div>
         <form action={unlock} style={{ padding: "26px 24px" }}>
           <div style={{ fontSize: 20, fontWeight: "bold" }}>Restricted access</div>
