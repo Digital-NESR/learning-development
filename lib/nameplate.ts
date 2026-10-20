@@ -65,7 +65,7 @@ function drawFace(page: PDFPage, flip: boolean, p: Nameplate, f: { bold: PDFFont
   rect(0, FACE - band, W, band, GREEN);
   const logoH = 30, logoW = (logo.width / logo.height) * logoH;
   page.drawImage(logo, { ...map(36, FACE - band + (band - logoH) / 2), width: logoW, height: logoH, rotate: rot });
-  const tag = "Learning & Development";
+  const tag = "NESR TRAINING";
   text(tag, W - 36 - f.bold.widthOfTextAtSize(tag, 13), FACE - band / 2 - 4.5, 13, f.bold, rgb(1, 1, 1));
 
   // Name, course and date, centred in the white area between the band and the bottom accent
