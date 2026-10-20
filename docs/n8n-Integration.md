@@ -52,7 +52,7 @@ The Send button stays disabled until `LD_N8N_EMAIL_WEBHOOK_URL` is set.
 ```
 
 - `audience` is `registered` (everyone except declined requests), `enrolled` (enrolled or completed) or `participants` (marked attended).
-- `html` is the same text with HTML special characters escaped and line breaks turned into `<br>`.
+- `html` is the complete branded email (NESR header, message, training details table, "Open Training Portal" button, footer). Use it as the Outlook node body with content type HTML. `text` is the plain-text version.
 - In test mode, `testMode` is `true`, every `to` is the test address, and `intendedTo` holds the real recipient. n8n should always send to `to`.
 - n8n must reply with **2xx**. Any other response, or no response, makes the portal tell the admin that **nothing was sent**.
 

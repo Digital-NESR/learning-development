@@ -7,6 +7,8 @@ import { approvalChain, loadSnapshot, type Snapshot } from "@/lib/data";
 import { CATEGORIES, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js";
 import { AUDIENCES, audienceIds, fillPlaceholders } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
+import { trainingEmailHtml } from "@/lib/email-template";
+import { headers } from "next/headers";
 
 type Result = { ok: true; data: Snapshot } | { ok: false; error: string };
 
@@ -213,13 +215,21 @@ export async function saveTemplate(input: { id: string; name: string; trigger: s
   });
 }
 
-const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /**
  * Emails everyone in the chosen audience of a training, personalised per person, via the n8n webhook.
  * Recipients are resolved here on the server and never sent to the browser.
  */
-export async function sendTrainingEmail(input: { trainingId: string; audience: string; subject: string; body: string }): Promise<Result & { sent?: number }> {
+/** Public address of the portal, for links in emails. */
+async function portalUrl() {
+  if (process.env.LD_PUBLIC_URL) return process.env.LD_PUBLIC_URL.replace(/[/]+$/, "");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") || h.get("host") || "localhost:3000";
+  const proto = h.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+export async function sendTrainingEmail(input: { trainingId: string; audience: string; subject: string; body: string; templateId?: string }): Promise<Result & { sent?: number }> {
   let sent = 0;
   const result = await run(async me => {
     requireAdmin(me);
@@ -242,6 +252,9 @@ export async function sendTrainingEmail(input: { trainingId: string; audience: s
     if (!ids.length) throw new UserError("No one in that group for this training.");
 
     const people = await prisma.employee.findMany({ where: { id: { in: ids } }, include: { manager: true } });
+    const template = input.templateId ? await prisma.notificationTemplate.findUnique({ where: { id: String(input.templateId) } }) : null;
+    const tag = (template?.name || "Training Update").toUpperCase();
+    const link = await portalUrl();
     const iso = (d: Date) => d.toISOString().slice(0, 10);
     const shared = { training_title: t.title, session_code: t.code, dates: dateRange(iso(t.startDate), iso(t.endDate)), location: t.location };
     const messages = people.map(p => {
@@ -250,8 +263,13 @@ export async function sendTrainingEmail(input: { trainingId: string; audience: s
       const filledSubject = fillPlaceholders(subject, values);
       // Test mode: everything goes to one inbox; the subject shows who it was meant for.
       const testTo = (process.env.LD_MAIL_TEST_RECIPIENT || "").trim();
+      const html = trainingEmailHtml({
+        tag, eyebrow: `${t.code} · NESR Training Portal`, title: filledSubject, firstName: p.firstName, message: text,
+        details: [["Session", t.code], ["Training", t.title], ["Dates", shared.dates], ["Location", t.location]],
+        buttonText: "Open Training Portal", buttonUrl: link
+      });
       return { to: testTo || p.email, intendedTo: p.email, name: p.name,
-        subject: testTo ? `[TEST → ${p.email}] ${filledSubject}` : filledSubject, text, html: escapeHtml(text).replace(/\r?\n/g, "<br>") };
+        subject: testTo ? `[TEST → ${p.email}] ${filledSubject}` : filledSubject, text, html };
     });
 
     const res = await fetch(hook, {

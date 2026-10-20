@@ -708,7 +708,7 @@ export default class Portal extends React.Component {
           ? "TEST MODE: send " + mailCount + (mailCount === 1 ? " email" : " emails") + " to " + mailInfo.testRecipient + " (instead of the real recipients)?"
           : "Send this email to " + mailCount + (mailCount === 1 ? " person" : " people") + "?";
         if (!window.confirm(question)) return;
-        this.act(() => actions.sendTrainingEmail({trainingId: m.trainingId, audience: m.audience, subject: m.subject, body: m.body}),
+        this.act(() => actions.sendTrainingEmail({trainingId: m.trainingId, audience: m.audience, subject: m.subject, body: m.body, templateId: m.templateId}),
           "Email sent", mailCount + (mailCount === 1 ? " email" : " emails") + " handed to n8n to send from " + sender +
           (mailInfo.testRecipient ? " — test mode, all delivered to " + mailInfo.testRecipient + "." : "."), null, "mail");
       }
