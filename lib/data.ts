@@ -81,7 +81,7 @@ export async function loadSnapshot(meId: string) {
     mail: me.isAdmin
       ? {
           from: process.env.LD_MAIL_FROM || "",
-          configured: !!(process.env.LD_MAIL_FROM && process.env.LD_N8N_EMAIL_WEBHOOK_URL),
+          configured: !!process.env.LD_N8N_EMAIL_WEBHOOK_URL,
           testRecipient: (process.env.LD_MAIL_TEST_RECIPIENT || "").trim()
         }
       : null

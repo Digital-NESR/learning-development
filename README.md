@@ -90,7 +90,7 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 | `LD_ADMIN_EMAILS` | **New** (optional) | Comma-separated emails that always get the L&D Team workspace. Useful before the `LD.Admin` App Role exists |
 | `LD_ADMIN_ROLE` | Optional | Entra App Role value for the L&D Team (default `LD.Admin`) |
 | `LD_SITE_PASSWORD` | Optional | When set, every page first asks for this shared access password (remembered for 30 days per browser). Changing it locks everyone out until they enter the new one. Remove it to turn the gate off |
-| `LD_MAIL_FROM` | For email | Sender address for training emails: `sbagalkot@nesr.com` while testing, `training@nesr.com` in production |
+| `LD_MAIL_FROM` | Optional | Not needed: emails are sent from the Outlook account connected in n8n |
 | `LD_N8N_EMAIL_WEBHOOK_URL` | For email | n8n webhook that actually sends the emails. See [docs/n8n-Integration.md](docs/n8n-Integration.md) |
 | `LD_N8N_EMAIL_WEBHOOK_SECRET` | Optional | Sent to n8n as `x-webhook-secret` |
 | `LD_MAIL_TEST_RECIPIENT` | Optional | Test mode: all emails go to this one address, with the real recipient shown in the subject. Remove before go-live |

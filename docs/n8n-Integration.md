@@ -14,12 +14,12 @@ An L&D admin opens **Notifications → Send Training Email**, picks a training a
 
 | Variable | Example | Notes |
 |---|---|---|
-| `LD_MAIL_FROM` | `sbagalkot@nesr.com` (testing) · `training@nesr.com` (production) | Sender address passed to n8n |
+| `LD_MAIL_FROM` | *(leave unset)* | Optional and informational only. Emails are sent **from the Outlook account connected in the n8n node**. If set, it's passed to n8n as `from`, but n8n should not use it as the sender unless that account has Send As rights |
 | `LD_N8N_EMAIL_WEBHOOK_URL` | `https://<n8n-host>/webhook/ld-portal-email` | Production URL of the n8n Webhook node |
 | `LD_N8N_EMAIL_WEBHOOK_SECRET` | random string | Optional. Sent as the `x-webhook-secret` header so n8n can reject anything else |
 | `LD_MAIL_TEST_RECIPIENT` | `sbagalkot@nesr.com` | **Test mode.** Every email goes to this address instead of the real recipients, and the subject starts with `[TEST → real@address]`. The Notifications page shows a test-mode banner. Remove it to send to the real people |
 
-The Send button stays disabled until both `LD_MAIL_FROM` and `LD_N8N_EMAIL_WEBHOOK_URL` are set.
+The Send button stays disabled until `LD_N8N_EMAIL_WEBHOOK_URL` is set.
 
 ### Request the webhook receives
 
@@ -27,7 +27,7 @@ The Send button stays disabled until both `LD_MAIL_FROM` and `LD_N8N_EMAIL_WEBHO
 
 ```json
 {
-  "from": "sbagalkot@nesr.com",
+  "from": null,
   "testMode": false,
   "training": {
     "id": "3736cdaa-…",
@@ -58,13 +58,13 @@ The Send button stays disabled until both `LD_MAIL_FROM` and `LD_N8N_EMAIL_WEBHO
 
 ### Suggested n8n workflow
 
-1. **Webhook** node: method POST, path e.g. `ld-portal-email`, respond "Immediately". Optionally add an **IF** node that checks `{{$json.headers["x-webhook-secret"]}}` equals the secret.
+1. **Webhook** node: method POST, path `ld-portal-email`, Respond "When Last Node Finishes". Authentication **Header Auth** with a credential whose Name is `x-webhook-secret` and Value is the secret.
 2. **Split Out** node on `body.messages`.
 3. **Microsoft Outlook → Send a message** node (or Send Email via SMTP):
    - To: `{{$json.to}}`
    - Subject: `{{$json.subject}}`
    - Body (HTML): `{{$json.html}}`
-   - From / send as: `{{$('Webhook').item.json.body.from}}`. The connected Microsoft account needs **Send As** (or Send on behalf) rights on that mailbox, e.g. `training@nesr.com`.
+   - Leave **From** empty. The email is sent from the mailbox of the Outlook credential. Setting From to another address fails with "does not have the right to send mail on behalf of the specified sending account" unless IT grants Send As rights.
 
 ### Placeholders
 

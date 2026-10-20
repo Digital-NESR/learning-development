@@ -76,22 +76,22 @@ export default class Portal extends React.Component {
   }
 
   /** Calls a server action, swaps in the fresh data and shows a toast. */
-  async act(promiseFn, title, body, extra) {
+  async act(promiseFn, title, body, extra, op = "action") {
     if (this.state.busy) return;
-    this.setState({busy: true});
+    this.setState({busy: true, busyOp: op});
     try {
       const res = await promiseFn();
       if (res.ok) {
-        this.setState(Object.assign(this.fromSnapshot(res.data), extra || {}, {busy: false}));
+        this.setState(Object.assign(this.fromSnapshot(res.data), extra || {}, {busy: false, busyOp: null}));
         // title may be a function of the fresh data returning [title, body]
         const [tt, bb] = typeof title === "function" ? title(res.data) : [title, body];
         if (tt) this.flash(tt, bb);
       } else {
-        this.setState({busy: false});
+        this.setState({busy: false, busyOp: null});
         this.flash("Couldn't save that change", res.error);
       }
     } catch (e) {
-      this.setState({busy: false});
+      this.setState({busy: false, busyOp: null});
       if (/server action|deployment/i.test(String(e && e.message)))
         this.flash("The portal was updated", "Refresh the page (F5) and try again. Nothing was saved.");
       else
@@ -242,7 +242,7 @@ export default class Portal extends React.Component {
   /** Downloads the nameplate PDF from /api/nameplate. */
   async downloadPlates(body, label) {
     if (this.state.busy) return;
-    this.setState({busy: true});
+    this.setState({busy: true, busyOp: "plate"});
     try {
       const res = await fetch("/api/nameplate", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
       if (!res.ok) {
@@ -261,7 +261,7 @@ export default class Portal extends React.Component {
     } catch {
       this.flash("Couldn't reach the server", "Check your connection and try again.");
     } finally {
-      this.setState({busy: false});
+      this.setState({busy: false, busyOp: null});
     }
   }
 
@@ -431,7 +431,7 @@ export default class Portal extends React.Component {
         width: canApply ? "900px" : "600px",
         railBg: canApply ? "#FAFBFA" : "#FFFFFF",
         railBorder: canApply ? "1px solid #EAEEEC" : "0",
-        ctaLabel: st.busy ? "Submitting…" : left > 0 ? "Submit Request" : "Join Waitlist",
+        ctaLabel: st.busyOp === "action" ? "Submitting…" : left > 0 ? "Submit Request" : "Join Waitlist",
         chainNote,
         footNote: already ? "You already have a request on file for this session." :
           left > 0 ? left + " of " + detailT.seats + " seats remaining." : "This class is full — waitlist requests are still accepted.",
@@ -671,7 +671,9 @@ export default class Portal extends React.Component {
     const trainingOptions = [{value: "", label: "Select a training"}].concat(upcoming.map(t => ({value: t.id, label: t.code + " · " + t.title + " (" + this.range(t) + ")"})));
     const mailCount = m.trainingId ? audienceIds(m.audience, m.trainingId, st.requests, st.attended).length : 0;
     const audienceLabel = (AUDIENCES.find(a => a.value === m.audience) || AUDIENCES[0]).label.toLowerCase();
-    const canSend = mailInfo.configured && mailCount > 0 && m.subject.trim() && m.body.trim() && !st.busy;
+    const canSend = mailInfo.configured && mailCount > 0 && m.subject.trim() && m.body.trim();
+    const mailBusy = st.busyOp === "mail";
+    const sender = mailInfo.from || "the Outlook account connected in n8n";
     const mail = {
       selects: [
         {label: "Training", span: "1 / -1", value: m.trainingId, options: trainingOptions, onChange: e => this.setMail({trainingId: e.target.value})},
@@ -690,13 +692,14 @@ export default class Portal extends React.Component {
       subject: m.subject, body: m.body,
       onSubject: e => this.setMail({subject: e.target.value}), onBody: e => this.setMail({body: e.target.value}),
       placeholders: PLACEHOLDERS.join(" "),
-      fromLabel: !mailInfo.configured ? "Sending isn't set up yet (needs LD_MAIL_FROM and LD_N8N_EMAIL_WEBHOOK_URL in Vercel)."
-        : "From: " + mailInfo.from + (mailInfo.testRecipient ? "  ·  TEST MODE: every email goes to " + mailInfo.testRecipient : ""),
-      buttonLabel: st.busy ? "Sending…" : mailCount ? "Send to " + mailCount : "Send",
-      buttonBg: canSend ? "#2A7E4F" : "#A8ACAA", buttonCursor: canSend ? "pointer" : "not-allowed",
+      fromLabel: !mailInfo.configured ? "Sending isn't set up yet (needs LD_N8N_EMAIL_WEBHOOK_URL in Vercel)."
+        : "From: " + sender + (mailInfo.testRecipient ? "  ·  TEST MODE: every email goes to " + mailInfo.testRecipient : ""),
+      buttonLabel: mailBusy ? "Sending…" : mailCount ? "Send to " + mailCount : "Send",
+      buttonBg: canSend && !mailBusy ? "#2A7E4F" : "#A8ACAA", buttonCursor: canSend && !mailBusy ? "pointer" : "not-allowed",
       onSubmit: () => {
+        if (st.busy) return;
         if (!canSend) {
-          if (!mailInfo.configured) return this.flash("Email not set up", "Ask whoever manages Vercel to set LD_MAIL_FROM and LD_N8N_EMAIL_WEBHOOK_URL.");
+          if (!mailInfo.configured) return this.flash("Email not set up", "Ask whoever manages Vercel to set LD_N8N_EMAIL_WEBHOOK_URL.");
           if (!m.trainingId || !mailCount) return this.flash("No recipients", "Choose a training and a group that has people in it.");
           return this.flash("Message incomplete", "Write a subject and a message first.");
         }
@@ -705,8 +708,8 @@ export default class Portal extends React.Component {
           : "Send this email to " + mailCount + (mailCount === 1 ? " person" : " people") + "?";
         if (!window.confirm(question)) return;
         this.act(() => actions.sendTrainingEmail({trainingId: m.trainingId, audience: m.audience, subject: m.subject, body: m.body}),
-          "Email sent", mailCount + (mailCount === 1 ? " email" : " emails") + " handed to the mail service from " + mailInfo.from +
-          (mailInfo.testRecipient ? " — test mode, all delivered to " + mailInfo.testRecipient + "." : "."));
+          "Email sent", mailCount + (mailCount === 1 ? " email" : " emails") + " handed to n8n to send from " + sender +
+          (mailInfo.testRecipient ? " — test mode, all delivered to " + mailInfo.testRecipient + "." : "."), null, "mail");
       }
     };
 
@@ -724,7 +727,8 @@ export default class Portal extends React.Component {
     const plateCount = !pt ? 0 : pl.who === "participants" ? nAttended : pl.who === "enrolled" ? nEnrolled : pl.who === "custom" ? (pl.customName.trim() ? 1 : 0) : 1;
     const pFrom = pl.from || (pt ? pt.start : ""), pTo = pl.to || (pt ? pt.end : "");
     const plateDate = pFrom ? dateRange(pFrom, pTo && pTo >= pFrom ? pTo : pFrom) : "";
-    const canPlate = !!pt && plateCount > 0 && !st.busy;
+    const canPlate = !!pt && plateCount > 0;
+    const plateBusy = st.busyOp === "plate";
     const plate = {
       selects: [
         {label: "Training", span: "1 / -1", value: pl.trainingId, options: trainingOptions, onChange: e => this.setPlate({trainingId: e.target.value, from: "", to: ""})},
@@ -733,9 +737,10 @@ export default class Portal extends React.Component {
       showCustom: pl.who === "custom", customName: pl.customName, onCustomName: e => this.setPlate({customName: e.target.value}),
       from: pFrom, to: pTo, onFrom: e => this.setPlate({from: e.target.value}), onTo: e => this.setPlate({to: e.target.value}),
       summary: !pt ? "Select a training to start." : plateCount ? plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " · one A4 landscape page each, fold along the dashed line." : "No one to print for this choice.",
-      buttonLabel: st.busy ? "Preparing…" : "Download PDF",
-      buttonBg: canPlate ? "#2A7E4F" : "#A8ACAA", buttonCursor: canPlate ? "pointer" : "not-allowed",
+      buttonLabel: plateBusy ? "Preparing…" : "Download PDF",
+      buttonBg: canPlate && !plateBusy ? "#2A7E4F" : "#A8ACAA", buttonCursor: canPlate && !plateBusy ? "pointer" : "not-allowed",
       onSubmit: () => {
+        if (st.busy) return;
         if (!canPlate) return this.flash("Nothing to print", pt ? "Choose people who have a name to print." : "Select a training first.");
         this.downloadPlates({trainingId: pt.id, who: pl.who, customName: pl.customName, date: plateDate},
           plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " for " + pt.code + " downloaded.");
@@ -849,7 +854,7 @@ export default class Portal extends React.Component {
       onJustification: e => this.setState({justification: e.target.value}),
       submitRequest: () => this.submitRequest(),
       mail, plate,
-      editor: st.editor && Object.assign({}, st.editor, {cta: st.busy ? "Saving…" : st.editor.cta}), editorFields, saveTraining: () => this.saveTraining(),
+      editor: st.editor && Object.assign({}, st.editor, {cta: st.busyOp === "action" ? "Saving…" : st.editor.cta}), editorFields, saveTraining: () => this.saveTraining(),
       onNewTraining: () => this.setState({editorError: false, editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category:"", type:"", start:"", end:"", location:"", seats:"", instructor:"", desc:""}}),
       onExport: () => this.flash("Export coming soon", "The registration report export is not wired up yet."),
       closeModal: () => this.setState({detailId: null, editor: null, editorError: false}),

@@ -223,8 +223,9 @@ export async function sendTrainingEmail(input: { trainingId: string; audience: s
   let sent = 0;
   const result = await run(async me => {
     requireAdmin(me);
-    const from = process.env.LD_MAIL_FROM, hook = process.env.LD_N8N_EMAIL_WEBHOOK_URL;
-    if (!from || !hook) throw new UserError("Email sending isn't set up yet: LD_MAIL_FROM and LD_N8N_EMAIL_WEBHOOK_URL must be set in Vercel.");
+    // Sender: the Outlook account connected in n8n. LD_MAIL_FROM is optional and only passed along as information.
+    const from = process.env.LD_MAIL_FROM || null, hook = process.env.LD_N8N_EMAIL_WEBHOOK_URL;
+    if (!hook) throw new UserError("Email sending isn't set up yet: LD_N8N_EMAIL_WEBHOOK_URL must be set in Vercel.");
     const audience = AUDIENCES.some(a => a.value === input.audience) ? input.audience : "registered";
     const subject = str(input.subject, 300), body = String(input.body ?? "").trim().slice(0, 10000);
     if (!subject || !body) throw new UserError("Write a subject and a message first.");
