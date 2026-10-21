@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { nameplatePdf, type Nameplate } from "@/lib/nameplate";
-import { safeEqual } from "@/lib/site-gate";
+import { safeEqual } from "@/lib/safe-equal";
 
 export const runtime = "nodejs";
 

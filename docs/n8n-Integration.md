@@ -101,6 +101,6 @@ The response is `application/pdf`: an A4 landscape page per person, folded along
 
 | Vercel setting | Notes |
 |---|---|
-| `LD_NAMEPLATE_API_KEY` | Long random string. Without it, the endpoint refuses every request (401). It doesn't need the site password or a sign-in, because the key is the protection |
+| `LD_NAMEPLATE_API_KEY` | Long random string. Without it, the endpoint refuses every request (401). It needs no sign-in, because the key is the protection |
 
 Names use the standard PDF font, so non-Latin characters (e.g. Arabic) are dropped. If that's needed, the generator would need an embedded font file.
