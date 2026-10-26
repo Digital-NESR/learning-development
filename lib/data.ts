@@ -79,7 +79,7 @@ export async function loadSnapshot(meId: string) {
       id: r.id, who: r.employeeId, tid: r.trainingId,
       chain: r.steps.map(s => s.approverId), step: r.currentStep, state: r.state,
       submitted: pretty(r.submittedAt), submittedAt: r.submittedAt.toISOString(),
-      justification: r.justification || "—", form: r.form
+      justification: r.justification || "—", form: r.form, comment: r.decisionComment || ""
     })),
     attended: Object.fromEntries(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended])),
     templatesOff: Object.fromEntries(templates.filter(t => !t.isActive).map(t => [t.id, true])),

@@ -128,6 +128,12 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "12px", marginTop: "3px", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{r.justification}</div>
 </div>
 </div>
+{r.comment ? (<>
+<div style={{ marginTop: "10px", background: "#FBF2F2", border: "1px solid #F0DADA", borderRadius: "4px", padding: "10px 12px" }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#8A8F8C", color: "#8A2B2B" }}>Reason given</div>
+<div style={{ fontSize: "12px", marginTop: "3px", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{r.comment}</div>
+</div>
+</>) : null}
 </div>
 </React.Fragment>))}
 </div>
@@ -306,6 +312,19 @@ export default function PortalView({ v }) {
 </>) : null}
 </div>
 </div>
+{r.rejecting ? (<>
+<div style={{ marginTop: "14px", borderTop: "1px solid #EEF1EF", paddingTop: "12px", animation: "fadeIn .15s ease" }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#8A8F8C", marginBottom: "5px" }}>Reason for declining *</div>
+<textarea value={r.rejectText} onChange={r.onRejectText} placeholder={`Explain why, so ${r.employeeFirst} knows what to do next. This is included in the email they receive.`} rows="3" style={{ width: "100%", padding: "9px 10px", border: `1px solid ${r.rejectBorder}`, borderRadius: "4px", resize: "vertical", lineHeight: "1.5" }}></textarea>
+<div style={{ display: "flex", gap: "8px", marginTop: "8px", justifyContent: "flex-end" }}>
+<button onClick={r.onCancelReject} style={{ padding: "8px 14px", border: "1px solid #D1D3D4", background: "#fff", color: "#58595B", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Cancel</button>
+<button onClick={r.onConfirmReject} style={{ padding: "8px 14px", border: "0", background: "#8A2B2B", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{r.rejectCta}</button>
+</div>
+</div>
+</>) : null}
+{r.comment ? (<>
+<div style={{ marginTop: "12px", fontSize: "12px", color: "#8A2B2B", background: "#FBF2F2", border: "1px solid #F0DADA", borderRadius: "4px", padding: "8px 11px", lineHeight: "1.5", whiteSpace: "pre-wrap" }}><b>Reason given:</b> {r.comment}</div>
+</>) : null}
 </div>
 </React.Fragment>))}
 </div>

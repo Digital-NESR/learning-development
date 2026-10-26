@@ -80,6 +80,24 @@ Each is filled per recipient, in both the subject and the message:
 | `{{dates}}` | e.g. `7–8 Sep 2026` |
 | `{{location}}` | Training location |
 
+### Automatic emails
+
+The portal also sends these by itself, through the same webhook and in the same format. `audience` is `auto:<template id>`:
+
+| Template (id) | Sent when | To |
+|---|---|---|
+| Request Submitted (`submitted`) | Employee submits a request | Employee |
+| Manager Approval Needed (`manager`) | Employee submits a request | Their manager |
+| Enrollment Confirmed (`enrolled`) | Manager approves with a seat free; L&D enrolls or adds someone | Employee |
+| Added to Waitlist (`waitlisted`) | Manager approves but the class is full or registration is closed | Employee |
+| Request Not Approved (`declined`) | Manager or L&D declines (the manager's reason is included) | Employee |
+| Training Cancelled (`cancelled`) | L&D deletes a training | Everyone still registered |
+
+- **Pause** on a template (Notifications page) stops its automatic emails.
+- If n8n is unreachable, the portal action still succeeds and the failure is logged as `[email] … failed` in Vercel logs.
+- Test mode (`LD_MAIL_TEST_RECIPIENT`) applies to automatic emails too.
+- `{{comment}}` can be used in templates for the decline reason; if a template doesn't use it, the reason is added at the end.
+
 ## 2. Nameplate PDFs (n8n → portal)
 
 The admin page **Notifications → Nameplate Generator** downloads these directly. For automation, n8n can request one with an **HTTP Request** node:

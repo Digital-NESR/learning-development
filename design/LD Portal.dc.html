@@ -149,6 +149,12 @@
                     <div style="font-size:12px;margin-top:3px;line-height:1.5;white-space:pre-wrap">{{ r.justification }}</div>
                   </div>
                 </div>
+                <sc-if value="{{ r.comment }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:10px;background:#FBF2F2;border:1px solid #F0DADA;border-radius:4px;padding:10px 12px">
+                    <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;color:#8A2B2B">Reason given</div>
+                    <div style="font-size:12px;margin-top:3px;line-height:1.5;white-space:pre-wrap">{{ r.comment }}</div>
+                  </div>
+                </sc-if>
               </div>
             </sc-for>
           </div>
@@ -329,13 +335,26 @@
                   <sc-if value="{{ r.actionable }}" hint-placeholder-val="{{ true }}">
                     <div style="display:flex;flex-direction:column;gap:7px">
                       <button onClick="{{ r.onApprove }}" style="padding:9px 14px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">Approve</button>
-                      <button onClick="{{ r.onReject }}" style="padding:9px 14px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Reject</button>
-                    </div>
-                  </sc-if>
-                </div>
-              </div>
-            </div>
-          </sc-for>
+                       <button onClick="{{ r.onReject }}" style="padding:9px 14px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Reject</button>
+                     </div>
+                   </sc-if>
+                 </div>
+               </div>
+               <sc-if value="{{ r.rejecting }}" hint-placeholder-val="{{ false }}">
+                 <div style="margin-top:14px;border-top:1px solid #EEF1EF;padding-top:12px;animation:fadeIn .15s ease">
+                   <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;margin-bottom:5px">Reason for declining *</div>
+                   <textarea value="{{ r.rejectText }}" onChange="{{ r.onRejectText }}" placeholder="Explain why, so {{ r.employeeFirst }} knows what to do next. This is included in the email they receive." rows="3" style="width:100%;padding:9px 10px;border:1px solid {{ r.rejectBorder }};border-radius:4px;resize:vertical;line-height:1.5"></textarea>
+                   <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+                     <button onClick="{{ r.onCancelReject }}" style="padding:8px 14px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Cancel</button>
+                     <button onClick="{{ r.onConfirmReject }}" style="padding:8px 14px;border:0;background:#8A2B2B;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">{{ r.rejectCta }}</button>
+                   </div>
+                 </div>
+               </sc-if>
+               <sc-if value="{{ r.comment }}" hint-placeholder-val="{{ false }}">
+                 <div style="margin-top:12px;font-size:12px;color:#8A2B2B;background:#FBF2F2;border:1px solid #F0DADA;border-radius:4px;padding:8px 11px;line-height:1.5;white-space:pre-wrap"><b>Reason given:</b> {{ r.comment }}</div>
+               </sc-if>
+             </div>
+           </sc-for>
         </div>
       </sc-if>
 

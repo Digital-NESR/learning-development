@@ -5,11 +5,9 @@ import { currentEmployee, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { approvalChain, loadSnapshot, type Snapshot } from "@/lib/data";
 import { CATEGORIES, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js";
-import { AUDIENCES, audienceIds, fillPlaceholders } from "@/lib/audience.js";
-import { dateRange } from "@/lib/training-format.js";
-import { trainingEmailHtml } from "@/lib/email-template";
+import { AUDIENCES, audienceIds } from "@/lib/audience.js";
+import { buildMessage, notify, portalUrl, postToN8n } from "@/lib/notify";
 import { ensureManager } from "@/lib/graph";
-import { headers } from "next/headers";
 
 type Result = { ok: true; data: Snapshot } | { ok: false; error: string };
 
@@ -108,7 +106,19 @@ export async function submitRequest(input: { trainingId: string; justification: 
       });
       await audit(tx, me, "submit", "request", req.id, { trainingId: t.id, approvers: chain.map(c => c.email) });
     });
+    // Automatic emails: confirmation to the employee, action request to the manager
+    await notify("submitted", t, [{ to: me, managerName: chain[0].name }], me.id);
+    await notify("manager", t, [{ to: chain[0], employeeName: me.name, managerName: chain[0].name }], me.id);
   });
+}
+
+/** Name of whoever approves (or approved) a request: the last approver in its chain, else the employee's manager. */
+async function approverNameFor(requestId: string) {
+  const r = await prisma.trainingRequest.findUnique({
+    where: { id: requestId },
+    include: { steps: { orderBy: { stepNo: "desc" }, take: 1, include: { approver: true } }, employee: { include: { manager: true } } }
+  });
+  return r?.steps[0]?.approver.name || r?.employee.manager?.name || "your manager";
 }
 
 export async function approveRequest(id: string): Promise<Result> {
@@ -117,6 +127,7 @@ export async function approveRequest(id: string): Promise<Result> {
     const step = r?.steps[r.currentStep];
     if (!r || r.state !== "pending" || !step || step.approverId !== me.id) throw new UserError("This request is not waiting on your approval.");
     const done = r.currentStep + 1 >= r.steps.length;
+    let outcome: "enrolled" | "waitlist" | null = null;
     await prisma.$transaction(async tx => {
       await tx.approvalStep.update({ where: { id: step.id }, data: { status: "approved", decidedAt: new Date() } });
       if (!done) {
@@ -126,13 +137,19 @@ export async function approveRequest(id: string): Promise<Result> {
       }
       // Final approval: enrolled if registration is open and a seat is left, otherwise waitlisted.
       const seated = await takeSeat(tx, r.trainingId);
-      await tx.trainingRequest.update({ where: { id }, data: { state: seated ? "enrolled" : "waitlist", currentStep: r.currentStep + 1 } });
-      await audit(tx, me, "approve", "request", id, { step: r.currentStep, outcome: seated ? "enrolled" : "waitlist" });
+      outcome = seated ? "enrolled" : "waitlist";
+      await tx.trainingRequest.update({ where: { id }, data: { state: outcome, currentStep: r.currentStep + 1 } });
+      await audit(tx, me, "approve", "request", id, { step: r.currentStep, outcome });
     });
+    if (outcome) {
+      const full = await prisma.trainingRequest.findUnique({ where: { id }, include: { employee: true, training: true } });
+      if (full) await notify(outcome === "enrolled" ? "enrolled" : "waitlisted", full.training, [{ to: full.employee, managerName: me.name }], me.id);
+    }
   });
 }
 
-export async function rejectRequest(id: string): Promise<Result> {
+/** Declines a request. The manager must give a reason; L&D may. The reason goes to the employee. */
+export async function rejectRequest(id: string, comment?: string): Promise<Result> {
   return run(async me => {
     const r = await prisma.trainingRequest.findUnique({ where: { id }, include: { steps: { orderBy: { stepNo: "asc" } } } });
     if (!r) throw new UserError("Request not found.");
@@ -140,12 +157,16 @@ export async function rejectRequest(id: string): Promise<Result> {
     const isApprover = r.state === "pending" && step?.approverId === me.id;
     if (!isApprover && !me.isAdmin) throw new UserError("You can't decline this request.");
     if (r.state === "rejected" || r.state === "completed") throw new UserError("This request is already closed.");
+    const reason = str(comment, 2000);
+    if (isApprover && reason.length < 3) throw new UserError("Please add a short reason for declining.");
     await prisma.$transaction(async tx => {
-      if (isApprover) await tx.approvalStep.update({ where: { id: step.id }, data: { status: "rejected", decidedAt: new Date() } });
+      if (isApprover) await tx.approvalStep.update({ where: { id: step.id }, data: { status: "rejected", decidedAt: new Date(), comment: reason || null } });
       await moveSeat(tx, r.trainingId, r.state, "rejected");
-      await tx.trainingRequest.update({ where: { id }, data: { state: "rejected" } });
-      await audit(tx, me, "reject", "request", id);
+      await tx.trainingRequest.update({ where: { id }, data: { state: "rejected", decisionComment: reason || null } });
+      await audit(tx, me, "reject", "request", id, reason ? { comment: reason } : undefined);
     });
+    const full = await prisma.trainingRequest.findUnique({ where: { id }, include: { employee: true, training: true } });
+    if (full) await notify("declined", full.training, [{ to: full.employee, managerName: isApprover ? me.name : "the L&D team", comment: reason || null }], me.id);
   });
 }
 
@@ -161,6 +182,8 @@ export async function enrollRequest(id: string): Promise<Result> {
       await tx.trainingRequest.update({ where: { id }, data: { state: "enrolled" } });
       await audit(tx, me, "enroll", "request", id, { from: r.state });
     });
+    const full = await prisma.trainingRequest.findUnique({ where: { id }, include: { employee: true, training: true } });
+    if (full) await notify("enrolled", full.training, [{ to: full.employee, managerName: await approverNameFor(id) }], me.id);
   });
 }
 
@@ -189,6 +212,7 @@ export async function addParticipant(trainingId: string, who: string): Promise<R
         : await tx.trainingRequest.create({ data: { employeeId: person.id, trainingId, state: "enrolled", form, justification: "Added by the L&D team" } });
       await audit(tx, me, "add_participant", "request", req.id, { trainingId, email: person.email, from: existing?.state ?? null });
     });
+    await notify("enrolled", t, [{ to: person, managerName: "the L&D team" }], me.id);
   });
 }
 
@@ -250,10 +274,17 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
 export async function deleteTraining(id: string): Promise<Result> {
   return run(async me => {
     requireAdmin(me);
+    const t = await prisma.training.findUnique({ where: { id } });
+    if (!t) throw new UserError("Training not found.");
+    // Everyone still registered (not declined, not already completed) is told it's cancelled
+    const registered = await prisma.trainingRequest.findMany({
+      where: { trainingId: id, state: { in: ["pending", "enrolled", "waitlist"] } }, include: { employee: true }
+    });
     await prisma.$transaction(async tx => {
       await tx.training.update({ where: { id }, data: { isActive: false } });
-      await audit(tx, me, "withdraw", "training", id);
+      await audit(tx, me, "withdraw", "training", id, { notified: registered.length });
     });
+    await notify("cancelled", t, registered.map(r => ({ to: r.employee })), me.id);
   });
 }
 
@@ -300,22 +331,11 @@ export async function saveTemplate(input: { id: string; name: string; trigger: s
  * Emails everyone in the chosen audience of a training, personalised per person, via the n8n webhook.
  * Recipients are resolved here on the server and never sent to the browser.
  */
-/** Public address of the portal, for links in emails. */
-async function portalUrl() {
-  if (process.env.LD_PUBLIC_URL) return process.env.LD_PUBLIC_URL.replace(/[/]+$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") || h.get("host") || "localhost:3000";
-  const proto = h.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
-
 export async function sendTrainingEmail(input: { trainingId: string; audience: string; subject: string; body: string; templateId?: string }): Promise<Result & { sent?: number }> {
   let sent = 0;
   const result = await run(async me => {
     requireAdmin(me);
-    // Sender: the Outlook account connected in n8n. LD_MAIL_FROM is optional and only passed along as information.
-    const from = process.env.LD_MAIL_FROM || null, hook = process.env.LD_N8N_EMAIL_WEBHOOK_URL;
-    if (!hook) throw new UserError("Email sending isn't set up yet: LD_N8N_EMAIL_WEBHOOK_URL must be set in Vercel.");
+    if (!process.env.LD_N8N_EMAIL_WEBHOOK_URL) throw new UserError("Email sending isn't set up yet: LD_N8N_EMAIL_WEBHOOK_URL must be set in Vercel.");
     const audience = AUDIENCES.some(a => a.value === input.audience) ? input.audience : "registered";
     const subject = str(input.subject, 300), body = String(input.body ?? "").trim().slice(0, 10000);
     if (!subject || !body) throw new UserError("Write a subject and a message first.");
@@ -333,32 +353,14 @@ export async function sendTrainingEmail(input: { trainingId: string; audience: s
 
     const people = await prisma.employee.findMany({ where: { id: { in: ids } }, include: { manager: true } });
     const template = input.templateId ? await prisma.notificationTemplate.findUnique({ where: { id: String(input.templateId) } }) : null;
-    const tag = (template?.name || "Training Update").toUpperCase();
     const link = await portalUrl();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    const shared = { training_title: t.title, session_code: t.code, dates: dateRange(iso(t.startDate), iso(t.endDate)), location: t.location };
-    const messages = people.map(p => {
-      const values = { ...shared, first_name: p.firstName, employee_name: p.name, manager_name: p.manager?.name || "your manager" };
-      const text = fillPlaceholders(body, values);
-      const filledSubject = fillPlaceholders(subject, values);
-      // Test mode: everything goes to one inbox; the subject shows who it was meant for.
-      const testTo = (process.env.LD_MAIL_TEST_RECIPIENT || "").trim();
-      const html = trainingEmailHtml({
-        tag, eyebrow: `${t.code} · NESR Training Portal`, title: filledSubject, firstName: p.firstName, message: text,
-        details: [["Session", t.code], ["Training", t.title], ["Dates", shared.dates], ["Location", t.location]],
-        buttonText: "Open Training Portal", buttonUrl: link
-      });
-      return { to: testTo || p.email, intendedTo: p.email, name: p.name,
-        subject: testTo ? `[TEST → ${p.email}] ${filledSubject}` : filledSubject, text, html };
-    });
-
-    const res = await fetch(hook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...(process.env.LD_N8N_EMAIL_WEBHOOK_SECRET ? { "x-webhook-secret": process.env.LD_N8N_EMAIL_WEBHOOK_SECRET } : {}) },
-      body: JSON.stringify({ from, testMode: !!process.env.LD_MAIL_TEST_RECIPIENT, training: { id: t.id, ...shared }, audience, count: messages.length, messages })
-    }).catch(() => null);
-    if (!res || !res.ok) throw new UserError(`The email service didn't accept the request${res ? ` (HTTP ${res.status})` : ""}. Nothing was sent.`);
-
+    const messages = people.map(p => buildMessage(t, template?.name || "Training Update", subject, body,
+      { to: p, managerName: p.manager?.name || "your manager" }, link));
+    try {
+      await postToN8n(t, audience, messages);
+    } catch (e) {
+      throw new UserError(`The email service didn't accept the request (${(e as Error).message}). Nothing was sent.`);
+    }
     sent = messages.length;
     await prisma.auditLog.create({ data: { actorId: me.id, action: "email", entity: "training", entityId: t.id, details: { audience, count: sent, subject } } });
   });

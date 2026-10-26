@@ -39,6 +39,7 @@ export default class Portal extends React.Component {
     const now = new Date();
     this.state = Object.assign({
       teamOpen: {},
+      rejectFor: null, rejectText: "", rejectError: false,
       dashCard: null,
       editorError: false,
       screen: "dashboard",
@@ -420,7 +421,26 @@ export default class Portal extends React.Component {
           if (after && after.state === "waitlist") return ["Approved — waitlisted", name + " is on the waitlist for " + t.code + " (class full or registration closed). L&D can enroll them."];
           return ["Approved", nextIdx < chainPeople.length ? name + " approved — routed to " + chainPeople[nextIdx].name + "." : name + " approved."];
         }),
-        onReject: () => this.act(() => actions.rejectRequest(r.id), "Request declined", name + "'s request for " + t.code + " was declined."),
+        // Manager decline: opens a comment box; the reason is required and goes to the employee
+        employeeFirst: (person.first || name.split(" ")[0]),
+        comment: r.comment || "",
+        rejecting: st.rejectFor === r.id,
+        rejectText: st.rejectFor === r.id ? st.rejectText : "",
+        rejectBorder: st.rejectFor === r.id && st.rejectError ? "#8A2B2B" : "#D1D3D4",
+        rejectCta: st.busyOp === "action" && st.rejectFor === r.id ? "Declining…" : "Decline request",
+        onRejectText: e => this.setState({rejectText: e.target.value, rejectError: false}),
+        onCancelReject: () => this.setState({rejectFor: null, rejectText: "", rejectError: false}),
+        onReject: () => this.setState({rejectFor: r.id, rejectText: "", rejectError: false}),
+        onConfirmReject: () => {
+          const reason = st.rejectText.trim();
+          if (reason.length < 3) {
+            this.setState({rejectError: true});
+            return this.flash("Reason needed", "Please add a short reason so " + (person.first || name) + " knows why.");
+          }
+          this.act(() => actions.rejectRequest(r.id, reason), "Request declined",
+            name + "'s request for " + t.code + " was declined. They'll be emailed with your reason.",
+            {rejectFor: null, rejectText: "", rejectError: false});
+        },
         onEnroll: () => {
           const full = t.enrolled >= t.seats;
           if (full && !window.confirm(t.code + " is full (" + t.enrolled + " of " + t.seats + " seats). Enroll " + name + " anyway?")) return;
@@ -448,6 +468,7 @@ export default class Portal extends React.Component {
       const chainNote = "Approval: " + (myChain.length
         ? myChain.map(p => p.first + (p.title ? " (" + p.title + ")" : "")).join(" → ")
         : myForm.mgr || "your line manager") + " — final approval";
+      // (approval chain note above uses first names; the Approver field below shows the full name)
       detail = {
         code: detailT.code, type: detailT.type, title: detailT.title, desc: detailT.desc, photo: this.photoFor(detailT),
         canApply,
@@ -488,7 +509,7 @@ export default class Portal extends React.Component {
           choosePrompt:"Select from dropdown", fg: myForm.nat ? "#1F1F1D" : "#8A8F8C",
           border: natMissing ? "#8A2B2B" : "#D9DDDB", hint: natMissing ? "Required" : ""}),
         lockedMgr
-          ? field({label:"Approver *", isText:true, value: lockedMgr.email, readOnly:true, bg:"#F2F4F3", fg:"#58595B", onChange: () => {},
+          ? field({label:"Approver *", isText:true, value: lockedMgr.name + (lockedMgr.title ? " (" + lockedMgr.title + ")" : ""), readOnly:true, bg:"#F2F4F3", fg:"#58595B", onChange: () => {},
               hint:"Your line manager, from your Microsoft profile. If it's wrong, ask HR to update it."})
           : reqText("Approver email", "mgr", {placeholder: "name@nesr.com",
               hint: st.formError && !String(myForm.mgr || "").trim() ? "Required" : "No manager is listed on your Microsoft profile. Enter who should approve."})
@@ -535,8 +556,10 @@ export default class Portal extends React.Component {
       r.regButton = t.registrationOpen ? "Close" : "Re-open";
       r.onToggleReg = () => this.toggleRegistration(t);
       r.onDelete = () => {
-        if (!window.confirm("Withdraw " + t.code + " — " + t.title + " from the calendar?")) return;
-        this.act(() => actions.deleteTraining(t.id), "Training removed", t.code + " was withdrawn from the calendar.");
+        const n = st.requests.filter(x => x.tid === t.id && ["pending", "enrolled", "waitlist"].includes(x.state)).length;
+        if (!window.confirm("Delete " + t.code + " — " + t.title + "?" + (n ? "\n\n" + n + (n === 1 ? " registered person" : " registered people") + " will be emailed that it's cancelled." : ""))) return;
+        this.act(() => actions.deleteTraining(t.id), "Training deleted",
+          t.code + " was removed from the calendar" + (n ? " and " + n + (n === 1 ? " person was" : " people were") + " notified." : "."));
       };
       return r;
     });
