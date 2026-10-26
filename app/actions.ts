@@ -8,6 +8,7 @@ import { CATEGORIES, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js"
 import { AUDIENCES, audienceIds, fillPlaceholders } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
 import { trainingEmailHtml } from "@/lib/email-template";
+import { ensureManager } from "@/lib/graph";
 import { headers } from "next/headers";
 
 type Result = { ok: true; data: Snapshot } | { ok: false; error: string };
@@ -81,6 +82,7 @@ export async function submitRequest(input: { trainingId: string; justification: 
 
     const form = Object.fromEntries(["nesrId", "name", "loc", "dept", "nat", "mgr"].map(k => [k, str(input.form?.[k])]));
     const justification = str(input.justification, 2000);
+    await ensureManager(me); // fills in the line manager from Entra ID if sign-in couldn't
     let chain = await approvalChain(me.id);
     // Record who actually approves, not whatever was typed.
     if (chain.length) form.mgr = chain[0].email;
