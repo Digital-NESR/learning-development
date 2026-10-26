@@ -67,8 +67,14 @@ export async function loadSnapshot(meId: string) {
     trainings: trainings.map(t => ({
       id: t.id, code: t.code, title: t.title, category: t.category, type: t.type,
       start: iso(t.startDate), end: iso(t.endDate), location: t.location,
-      seats: t.seats, enrolled: t.enrolled, instructor: t.instructor || "", desc: t.description || ""
+      seats: t.seats, enrolled: t.enrolled, instructor: t.instructor || "", desc: t.description || "",
+      registrationOpen: t.registrationOpen
     })),
+    // L&D only: everyone known to the portal, for the "Add person" picker on a session
+    directory: me.isAdmin
+      ? (await prisma.employee.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: "asc" } }))
+          .map(e => ({ value: `${e.name} <${e.email}>`, id: e.id }))
+      : [],
     requests: requests.map(r => ({
       id: r.id, who: r.employeeId, tid: r.trainingId,
       chain: r.steps.map(s => s.approverId), step: r.currentStep, state: r.state,

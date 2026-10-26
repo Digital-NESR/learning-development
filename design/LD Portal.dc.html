@@ -115,48 +115,42 @@
               </sc-for>
             </div>
           </sc-if>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px">
-            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
-              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Your Requests</div>
-              <sc-if value="{{ empty.myRequests }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No requests yet. Pick a session from Recommended For You or the Training Calendar.</div>
-              </sc-if>
-              <sc-for list="{{ myRequests }}" as="r" hint-placeholder-count="3">
-                <div style="padding:14px 16px;border-bottom:1px solid #F0F2F1">
-                  <div style="display:flex;gap:10px;align-items:flex-start">
-                    <div style="flex:1">
-                      <div style="font-size:13px;font-weight:bold">{{ r.title }}</div>
-                      <div style="font-size:11px;color:#58595B;margin-top:2px">{{ r.meta }}</div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
+            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Your Requests</div>
+            <sc-if value="{{ empty.myRequests }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">You haven't requested any training yet. Open the Training Calendar, choose a session and click Submit Request.</div>
+            </sc-if>
+            <sc-for list="{{ myRequests }}" as="r" hint-placeholder-count="3">
+              <div style="padding:16px 18px;border-bottom:1px solid #F0F2F1">
+                <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+                  <div style="flex:1;min-width:220px">
+                    <div style="font-size:11px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
+                    <div style="font-size:14.5px;font-weight:bold;margin-top:2px">{{ r.title }}</div>
+                    <div style="font-size:12px;color:#58595B;margin-top:3px">{{ r.meta }}</div>
+                  </div>
+                  <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:11px;font-weight:bold;padding:5px 11px;border-radius:3px;white-space:nowrap">{{ r.st.label }}</span>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:14px">
+                  <sc-for list="{{ r.steps }}" as="stp" hint-placeholder-count="3">
+                    <div style="flex:1;min-width:0">
+                      <div style="height:5px;border-radius:3px;background:{{ stp.bar }}"></div>
+                      <div style="font-size:10.5px;font-weight:bold;color:{{ stp.fg }};margin-top:5px">{{ stp.label }}</div>
+                      <div style="font-size:10.5px;color:#8A8F8C">{{ stp.note }}</div>
                     </div>
-                    <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ r.st.label }}</span>
+                  </sc-for>
+                </div>
+                <div style="display:grid;grid-template-columns:minmax(160px,1fr) minmax(220px,2fr);gap:12px;margin-top:14px;background:#FAFBFA;border:1px solid #EEF1EF;border-radius:4px;padding:10px 12px">
+                  <div>
+                    <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C">Approver</div>
+                    <div style="font-size:12px;margin-top:3px">{{ r.approver }}</div>
                   </div>
-                  <div style="display:flex;align-items:center;gap:6px;margin-top:11px">
-                    <sc-for list="{{ r.steps }}" as="stp" hint-placeholder-count="4">
-                      <div style="flex:1;min-width:0">
-                        <div style="height:4px;border-radius:2px;background:{{ stp.bar }}"></div>
-                        <div style="font-size:9.5px;color:{{ stp.fg }};margin-top:4px;font-weight:bold;letter-spacing:.3px">{{ stp.label }}</div>
-                      </div>
-                    </sc-for>
+                  <div>
+                    <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C">Business justification</div>
+                    <div style="font-size:12px;margin-top:3px;line-height:1.5;white-space:pre-wrap">{{ r.justification }}</div>
                   </div>
                 </div>
-              </sc-for>
-            </div>
-            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
-              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Recommended For You</div>
-              <sc-for list="{{ recommended }}" as="t" hint-placeholder-count="3">
-                <div onClick="{{ t.onClick }}" style="padding:13px 16px;border-bottom:1px solid #F0F2F1;cursor:pointer;display:flex;gap:12px;align-items:center" style-hover="background:#F7F9F8">
-                  <div style="width:42px;height:42px;border-radius:4px;background:{{ t.tint }};color:{{ t.tintFg }};display:flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 auto">
-                    <div style="font-size:14px;font-weight:bold;line-height:1">{{ t.day }}</div>
-                    <div style="font-size:9px;letter-spacing:.5px;text-transform:uppercase">{{ t.mon }}</div>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:bold">{{ t.title }}</div>
-                    <div style="font-size:11px;color:#58595B;margin-top:2px">{{ t.sub }}</div>
-                  </div>
-                  <div style="font-size:11px;color:#2A7E4F;font-weight:bold;white-space:nowrap">{{ t.seatsLabel }}</div>
-                </div>
-              </sc-for>
-            </div>
+              </div>
+            </sc-for>
           </div>
         </div>
       </sc-if>
@@ -181,7 +175,15 @@
               <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Search</div>
               <input value="{{ q }}" onChange="{{ onSearch }}" placeholder="Title, code or keyword" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px" />
             </div>
-            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+            <div>
+              <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Type</div>
+              <div style="display:flex;gap:2px;background:#E7EBE9;padding:3px;border-radius:4px">
+                <sc-for list="{{ typeTabs }}" as="tt" hint-placeholder-count="4">
+                  <button onClick="{{ tt.onClick }}" style="border:0;cursor:pointer;padding:6px 12px;border-radius:3px;font-size:12px;font-weight:bold;white-space:nowrap;background:{{ tt.bg }};color:{{ tt.fg }}">{{ tt.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="2">
               <div style="min-width:150px">
                 <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
                 <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 8px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
@@ -196,29 +198,26 @@
 
           <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
-              <div style="display:grid;min-width:880px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,.85fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr);background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
+              <div style="display:grid;min-width:800px;grid-template-columns:86px minmax(0,2.3fr) minmax(0,1.3fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1.1fr);background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
                 <div style="padding:11px 12px">Code</div>
                 <div style="padding:11px 12px">Training Title</div>
                 <div style="padding:11px 12px">Category</div>
                 <div style="padding:11px 12px">Type</div>
                 <div style="padding:11px 12px">Dates</div>
                 <div style="padding:11px 12px">Location</div>
-                <div style="padding:11px 12px">Seats</div>
               </div>
               <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
-                <div onClick="{{ r.onClick }}" style="display:grid;min-width:880px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,.85fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr);border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
+                <div onClick="{{ r.onClick }}" style="display:grid;min-width:800px;grid-template-columns:86px minmax(0,2.3fr) minmax(0,1.3fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1.1fr);border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
                   <div style="padding:11px 12px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
-                  <div style="padding:11px 12px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
+                  <div style="padding:11px 12px;font-size:12.5px;font-weight:bold">{{ r.title }}
+                    <sc-if value="{{ r.closed }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-block;margin-left:6px;background:#EEF1EF;color:#58595B;font-size:9.5px;font-weight:bold;padding:2px 6px;border-radius:3px;vertical-align:middle">Registration closed</span>
+                    </sc-if>
+                  </div>
                   <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.category }}</div>
                   <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.type }}</div>
                   <div style="padding:11px 12px;font-size:12px">{{ r.dates }}</div>
                   <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.location }}</div>
-                  <div style="padding:9px 12px">
-                    <div style="font-size:11px;font-weight:bold;color:{{ r.st.fg }}">{{ r.seatsLabel }}</div>
-                    <div style="height:4px;background:#E7EBE9;border-radius:2px;margin-top:4px;overflow:hidden">
-                      <div style="height:4px;background:{{ r.st.bar }};width:{{ r.fillPct }}%"></div>
-                    </div>
-                  </div>
                 </div>
               </sc-for>
               <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
@@ -235,9 +234,8 @@
                 <button onClick="{{ nextMonth }}" style="width:30px;height:30px;border:1px solid #D1D3D4;background:#fff;border-radius:4px;cursor:pointer;font-weight:bold">&#8594;</button>
                 <div style="flex:1"></div>
                 <div style="display:flex;gap:14px;font-size:11px;color:#58595B;align-items:center">
-                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#2A7E4F;display:inline-block"></span>Seats open</span>
-                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#6AAF8E;display:inline-block"></span>Filling up</span>
-                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#58595B;display:inline-block"></span>Class full</span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#2A7E4F;display:inline-block"></span>Registration open</span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#8A8F8C;display:inline-block"></span>Registration closed</span>
                 </div>
               </div>
               <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#F7F9F8;border-bottom:1px solid #E1E5E3">
@@ -277,7 +275,7 @@
                       <span style="color:#58595B">{{ r.location }}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;align-items:center">
-                      <span style="font-size:11px;color:#58595B">{{ r.seatsLabel }}</span>
+                      <span style="font-size:11px;color:#58595B">{{ r.duration }}</span>
                       <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.cta }}</span>
                     </div>
                   </div>
@@ -285,37 +283,6 @@
               </sc-for>
             </div>
           </sc-if>
-        </div>
-      </sc-if>
-
-      <sc-if value="{{ s.myReq }}" hint-placeholder-val="{{ false }}">
-        <div>
-          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">My Requests</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:18px">Every registration you have submitted, and where it sits in the approval chain.</div>
-          <sc-if value="{{ empty.myRequests }}" hint-placeholder-val="{{ false }}">
-            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">You haven't requested any training yet. Open the Training Calendar, choose a session and click Submit Request.</div>
-          </sc-if>
-          <sc-for list="{{ myRequests }}" as="r" hint-placeholder-count="3">
-            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:16px 18px;margin-bottom:12px">
-              <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
-                <div style="flex:1;min-width:220px">
-                  <div style="font-size:11px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
-                  <div style="font-size:15px;font-weight:bold;margin-top:2px">{{ r.title }}</div>
-                  <div style="font-size:12px;color:#58595B;margin-top:3px">{{ r.meta }}</div>
-                </div>
-                <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:11px;font-weight:bold;padding:5px 11px;border-radius:3px">{{ r.st.label }}</span>
-              </div>
-              <div style="display:flex;gap:8px;margin-top:16px">
-                <sc-for list="{{ r.steps }}" as="stp" hint-placeholder-count="4">
-                  <div style="flex:1">
-                    <div style="height:5px;border-radius:3px;background:{{ stp.bar }}"></div>
-                    <div style="font-size:10.5px;font-weight:bold;color:{{ stp.fg }};margin-top:5px">{{ stp.label }}</div>
-                    <div style="font-size:10.5px;color:#8A8F8C">{{ stp.note }}</div>
-                  </div>
-                </sc-for>
-              </div>
-            </div>
-          </sc-for>
         </div>
       </sc-if>
 
@@ -354,7 +321,7 @@
                   <div style="font-size:11.5px;color:#58595B">{{ r.empMeta }}</div>
                   <div style="font-size:13.5px;font-weight:bold;margin-top:9px">{{ r.title }}</div>
                   <div style="font-size:11.5px;color:#58595B;margin-top:2px">{{ r.meta }}</div>
-                  <div style="font-size:11px;color:#1F5E3A;font-weight:bold;margin-top:5px">Chain: {{ r.chainNote }}</div>
+                  <div style="font-size:11px;color:#1F5E3A;font-weight:bold;margin-top:5px">Approver: {{ r.approver }}</div>
                   <div style="font-size:12px;color:#1F1F1D;margin-top:9px;background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:9px 11px;line-height:1.55">{{ r.justification }}</div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:150px">
@@ -537,26 +504,30 @@
             <button onClick="{{ onNewTraining }}" style="padding:10px 16px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">+ Add Training</button>
           </div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
-            <div style="display:grid;min-width:960px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,.9fr) 200px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
+            <div style="display:grid;min-width:1040px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1fr) 270px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
               <div style="padding:11px 12px">Code</div>
               <div style="padding:11px 12px">Title</div>
               <div style="padding:11px 12px">Category</div>
               <div style="padding:11px 12px">Dates</div>
               <div style="padding:11px 12px">Location</div>
-              <div style="padding:11px 12px">Seats</div>
+              <div style="padding:11px 12px">Seats &middot; Registration</div>
               <div style="padding:11px 12px">Actions</div>
             </div>
             <sc-for list="{{ adminRows }}" as="r" hint-placeholder-count="8">
-              <div style="display:grid;min-width:960px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,.9fr) 200px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
+              <div style="display:grid;min-width:1040px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1fr) 270px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
                 <div style="padding:10px 12px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
                 <div style="padding:10px 12px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
                 <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.category }}</div>
                 <div style="padding:10px 12px;font-size:12px">{{ r.dates }}</div>
                 <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.location }}</div>
-                <div style="padding:10px 12px;font-size:12px;font-weight:bold;color:{{ r.st.fg }}">{{ r.seatsLabel }}</div>
+                <div style="padding:10px 12px">
+                  <div style="font-size:12px;font-weight:bold;color:{{ r.seatFg }}">{{ r.seatsLabel }}</div>
+                  <span style="display:inline-block;margin-top:3px;background:{{ r.regBg }};color:{{ r.regFg }};font-size:10px;font-weight:bold;padding:2px 7px;border-radius:3px">{{ r.regLabel }}</span>
+                </div>
                 <div style="padding:8px 12px;display:flex;gap:6px">
                   <button onClick="{{ r.onView }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">View</button>
                   <button onClick="{{ r.onEdit }}" style="padding:6px 11px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Edit</button>
+                  <button onClick="{{ r.onToggleReg }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px;white-space:nowrap">{{ r.regButton }}</button>
                   <button onClick="{{ r.onDelete }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Delete</button>
                 </div>
               </div>
@@ -587,12 +558,13 @@
             </div>
             <div style="position:relative;display:flex;flex-direction:column;gap:8px">
               <button onClick="{{ session.onEdit }}" style="padding:9px 15px;border:0;background:#fff;color:#1F5E3A;border-radius:4px;cursor:pointer;font-weight:bold">Edit Session</button>
+              <button onClick="{{ session.onToggleReg }}" style="padding:9px 15px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">{{ session.regButton }}</button>
               <button onClick="{{ session.onExport }}" style="padding:9px 15px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">Export List</button>
             </div>
           </div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px">
-            <sc-for list="{{ session.kpis }}" as="k" hint-placeholder-count="6">
+            <sc-for list="{{ session.kpis }}" as="k" hint-placeholder-count="4">
               <div style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid #2A7E4F;border-radius:5px;padding:13px 15px">
                 <div style="font-size:10.5px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#58595B">{{ k.label }}</div>
                 <div style="font-size:27px;font-weight:bold;color:#2A7E4F;line-height:1.2;margin-top:3px">{{ k.value }}</div>
@@ -603,55 +575,41 @@
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;margin-bottom:18px">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
-              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Registration Funnel</div>
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Session Details</div>
               <div style="padding:14px 16px">
-                <sc-for list="{{ session.funnel }}" as="b" hint-placeholder-count="5">
-                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">
-                    <div style="width:130px;font-size:11.5px">{{ b.label }}</div>
-                    <div style="flex:1;height:16px;background:#F3F5F4;border-radius:3px;overflow:hidden">
-                      <div style="height:16px;background:{{ b.color }};width:{{ b.pct }}%"></div>
-                    </div>
-                    <div style="width:26px;text-align:right;font-size:12px;font-weight:bold">{{ b.n }}</div>
-                  </div>
-                </sc-for>
-                <div style="border-top:1px solid #F0F2F1;margin-top:6px;padding-top:12px">
-                  <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px">
-                    <span style="font-weight:bold">Seat capacity</span>
-                    <span style="color:#58595B">{{ session.fillLabel }}</span>
-                  </div>
-                  <div style="height:10px;background:#EEF1EF;border-radius:5px;overflow:hidden">
-                    <div style="height:10px;background:{{ session.fillColor }};width:{{ session.fillPct }}%"></div>
-                  </div>
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px">
+                  <span style="font-weight:bold">Seat capacity</span>
+                  <span style="color:#58595B">{{ session.fillLabel }}</span>
+                </div>
+                <div style="height:10px;background:#EEF1EF;border-radius:5px;overflow:hidden">
+                  <div style="height:10px;background:{{ session.fillColor }};width:{{ session.fillPct }}%"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;margin-top:12px">
+                  <span style="font-weight:bold">Registration</span>
+                  <span style="background:{{ session.regBg }};color:{{ session.regFg }};font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ session.regLabel }}</span>
                 </div>
                 <div style="font-size:12px;line-height:1.6;color:#58595B;margin-top:14px">{{ session.desc }}</div>
               </div>
             </div>
 
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
-              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Pending Approvals</div>
-              <sc-for list="{{ session.pending }}" as="r" hint-placeholder-count="2">
-                <div style="padding:13px 16px;border-bottom:1px solid #F0F2F1">
-                  <div style="display:flex;gap:11px;align-items:flex-start">
-                    <div style="width:32px;height:32px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:bold;flex:0 0 auto">{{ r.initials }}</div>
-                    <div style="flex:1;min-width:0">
-                      <div style="font-size:12.5px;font-weight:bold">{{ r.employee }}</div>
-                      <div style="font-size:11px;color:#58595B">{{ r.empMeta }}</div>
-                      <div style="font-size:11px;color:#1F5E3A;font-weight:bold;margin-top:4px">With {{ r.manager }}</div>
-                    </div>
-                    <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10px;font-weight:bold;padding:3px 8px;border-radius:3px;white-space:nowrap">{{ r.st.label }}</span>
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Waitlist Queue</div>
+              <sc-for list="{{ session.waitlist }}" as="r" hint-placeholder-count="2">
+                <div style="padding:13px 16px;border-bottom:1px solid #F0F2F1;display:flex;gap:11px;align-items:center;flex-wrap:wrap">
+                  <div style="width:32px;height:32px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:bold;flex:0 0 auto">{{ r.initials }}</div>
+                  <div style="flex:1;min-width:160px">
+                    <div style="font-size:12.5px;font-weight:bold">{{ r.employee }}</div>
+                    <div style="font-size:11px;color:#58595B">{{ r.empMeta }}</div>
+                    <div style="font-size:11px;color:#58595B;margin-top:2px">Approved by {{ r.manager }}</div>
                   </div>
-                  <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+                  <div style="display:flex;gap:7px">
                     <button onClick="{{ r.onEnroll }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Enroll</button>
-                    <button onClick="{{ r.onWaitlist }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Waitlist</button>
-                    <button onClick="{{ r.onDeclineLnd }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
+                    <button onClick="{{ r.onDecline }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
                   </div>
                 </div>
               </sc-for>
-              <sc-if value="{{ session.hasPending }}" hint-placeholder-val="{{ true }}">
-                <div style="padding:10px 16px;font-size:11px;color:#8A8F8C">Enrolling overrides the remaining approval steps and notifies the requester and their manager.</div>
-              </sc-if>
-              <sc-if value="{{ session.noPending }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:30px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">Nothing waiting on an approver for this session.</div>
+              <sc-if value="{{ session.noWaitlist }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:30px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">No one is waitlisted for this session.</div>
               </sc-if>
             </div>
           </div>
@@ -667,6 +625,15 @@
               <sc-if value="{{ session.showAttendance }}" hint-placeholder-val="{{ false }}">
                 <div style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ session.completionLabel }}</div>
               </sc-if>
+            </div>
+            <div style="padding:10px 16px;border-bottom:1px solid #F0F2F1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#FAFBFA">
+              <input list="ld-directory" value="{{ session.addValue }}" onChange="{{ session.onAddValue }}" placeholder="Add a person: type a name or email" style="flex:1;min-width:220px;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              <datalist id="ld-directory">
+                <sc-for list="{{ session.directory }}" as="o" hint-placeholder-count="3">
+                  <option value="{{ o }}"></option>
+                </sc-for>
+              </datalist>
+              <button onClick="{{ session.onAdd }}" style="padding:8px 14px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Add &amp; enroll</button>
             </div>
             <sc-for list="{{ session.roster }}" as="p" hint-placeholder-count="3">
               <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid #F4F6F5">
@@ -684,6 +651,9 @@
                     <button onClick="{{ p.onNoShow }}" title="Mark as no show" style="padding:6px 12px;border:0;border-left:1px solid #D1D3D4;background:{{ p.noBg }};color:{{ p.noFg }};cursor:pointer;font-weight:bold;font-size:11.5px">No show</button>
                   </div>
                 </sc-if>
+                <sc-if value="{{ p.canRemove }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ p.onRemove }}" title="Remove from this training" style="padding:6px 10px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Remove</button>
+                </sc-if>
               </div>
             </sc-for>
             <sc-if value="{{ session.hasRosterNote }}" hint-placeholder-val="{{ false }}">
@@ -698,18 +668,18 @@
 
       <sc-if value="{{ s.aApp }}" hint-placeholder-val="{{ false }}">
         <div>
-          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Approval Queue</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Manager-approved requests awaiting L&amp;D enrollment, plus overrides.</div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Waitlist Queue</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Manager-approved requests that couldn't be enrolled because the class was full or registration had closed.</div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
             <div style="display:grid;min-width:880px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
               <div style="padding:11px 12px">Employee</div>
               <div style="padding:11px 12px">Training</div>
-              <div style="padding:11px 12px">Current Approver</div>
-              <div style="padding:11px 12px">Stage</div>
+              <div style="padding:11px 12px">Approved by</div>
+              <div style="padding:11px 12px">Status</div>
               <div style="padding:11px 12px">L&amp;D Action</div>
             </div>
             <sc-if value="{{ empty.queueRows }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">Nothing in the queue. Requests appear here once managers approve them.</div>
+                <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No one is waitlisted. People land here when their manager approves but the class is full or registration has closed.</div>
               </sc-if>
               <sc-for list="{{ queueRows }}" as="r" hint-placeholder-count="6">
               <div style="display:grid;min-width:880px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
@@ -725,8 +695,7 @@
                 <div style="padding:10px 12px"><span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ r.st.label }}</span></div>
                 <div style="padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap">
                   <button onClick="{{ r.onEnroll }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Enroll</button>
-                  <button onClick="{{ r.onWaitlist }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Waitlist</button>
-                  <button onClick="{{ r.onReject }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
+                  <button onClick="{{ r.onDecline }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
                 </div>
               </div>
             </sc-for>
@@ -921,7 +890,7 @@
             <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px">
               <div>
                 <div style="font-size:14px;font-weight:bold">Registration</div>
-                <div style="font-size:11.5px;color:#58595B;margin-top:3px;line-height:1.55">Your request goes to your own line manager &mdash; managers included &mdash; then to L&amp;D for enrollment.</div>
+                <div style="font-size:11.5px;color:#58595B;margin-top:3px;line-height:1.55">Your request goes to your line manager. Their approval is final: you're enrolled if a seat is free, or placed on the waitlist if the class is full or registration has closed. All fields are required.</div>
               </div>
               <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px;padding:10px 12px">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>
@@ -951,8 +920,8 @@
                 </sc-for>
               </div>
               <div>
-                <div style="font-size:10px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;color:#8A8F8C;margin-bottom:4px">Business justification</div>
-                <textarea value="{{ justification }}" onChange="{{ onJustification }}" placeholder="Why this training supports your role and objectives" style="width:100%;min-height:82px;padding:9px 10px;border:1px solid #D9DDDB;border-radius:4px;resize:vertical"></textarea>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.6px;text-transform:uppercase;color:#8A8F8C;margin-bottom:4px">Business justification *</div>
+                <textarea value="{{ justification }}" onChange="{{ onJustification }}" placeholder="Why this training supports your role and objectives" style="width:100%;min-height:82px;padding:9px 10px;border:1px solid {{ justificationBorder }};border-radius:4px;resize:vertical"></textarea>
               </div>
             </div>
           </sc-if>

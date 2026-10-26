@@ -41,9 +41,9 @@ The left panel has up to three sections. Each person only sees the sections they
 
 Managers see all of their direct reports' requests. Team Development lists each report's trainings and attendance.
 
-**Seats:** a seat is reserved as soon as someone registers (`trainings.enrolled` goes up immediately). It stays reserved while the request is with a manager, with L&D or enrolled, and is released if the request is declined or moved to the waitlist. If no seats are left, the request goes straight to the waitlist.
+**Seats:** a seat is taken when the manager approves (or when L&D enrolls or adds someone). Pending requests don't hold a seat. Seat numbers are only shown to the L&D team.
 
-**Approval chain:** employee → line manager (from Entra ID) → L&D team. If Entra ID has no manager for a person, they can enter an approver email on the form. To require more levels, change `APPROVAL_LEVELS` in `lib/constants.js`.
+**Approval flow:** employee requests (only while registration is open) → line manager approves or declines. **The manager's approval is final:** the person is **enrolled** if registration is still open and a seat is free, otherwise **waitlisted**. L&D enrolls or declines waitlisted people (Waitlist Queue), can add or remove anyone on a session, and can open, close or re-open registration. If Entra ID has no manager for a person, they must enter an approver email on the form.
 
 ## Database
 
@@ -139,7 +139,7 @@ Open http://localhost:3000.
 
 | Page | What it does |
 |---|---|
-| Manage Trainings | Add, edit (date pickers), delete (withdraw) sessions. **View** opens the session with **Registered** / **Participants** tabs. Mark attendance on the Registered tab once the session has started; Participants lists only people marked attended |
+| Manage Trainings | Add, edit (date pickers), delete (withdraw) sessions, open/close registration. **Export List** downloads a participant PDF. **View** opens the session with **Registered** / **Participants** tabs. Mark attendance on the Registered tab once the session has started; Participants lists only people marked attended |
 | Notifications → Send Training Email | Email everyone registered, enrolled or attended for a training. Only a count is shown. Sent through n8n |
 | Notifications → Nameplate Generator | Fold-in-half A4 desk nameplates as a PDF, for one person, all enrolled, all participants or a typed name |
 | Notifications → Email Templates | Edit name, trigger, subject and message (saved to `notification_templates`), pause or activate |

@@ -11,7 +11,7 @@ datasource db {
 
 enum RequestState {
   pending   // awaiting a manager in the approval chain
-  lnd       // approved by managers, with the L&D team
+  lnd       // no longer used (manager approval is final since migration 0006)
   enrolled
   waitlist
   rejected
@@ -65,6 +65,8 @@ model Training {
   instructor  String?
   description String?
   isActive    Boolean  @default(true) @map("is_active")
+  /// L&D can close registration; requests are then refused and late approvals go to the waitlist
+  registrationOpen Boolean @default(true) @map("registration_open")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

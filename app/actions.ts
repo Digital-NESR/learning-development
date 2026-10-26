@@ -37,9 +37,28 @@ const audit = (tx: Prisma.TransactionClient, me: Employee, action: string, entit
 
 const str = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 
-/** Request states that hold a seat in the training (seat is reserved as soon as someone registers). */
-const SEAT_STATES = ["pending", "lnd", "enrolled", "completed"];
+/** Request states that hold a seat. A seat is taken when the manager approves (or L&D enrolls), not on request. */
+const SEAT_STATES = ["enrolled", "completed"];
 const holdsSeat = (state: string) => SEAT_STATES.includes(state);
+
+/** Takes a seat if registration is open and one is left. Atomic, so two approvals can't take the last seat. */
+async function takeSeat(tx: Prisma.TransactionClient, trainingId: string) {
+  const n = await tx.$executeRaw`UPDATE "trainings" SET "enrolled" = "enrolled" + 1
+    WHERE "id" = ${trainingId} AND "enrolled" < "seats" AND "registration_open" = true`;
+  return n > 0;
+}
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** Finds an employee by email, or creates a placeholder that is completed when they first sign in. */
+async function employeeByEmail(email: string) {
+  const local = email.split("@")[0].split(/[._-]/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1));
+  return prisma.employee.upsert({
+    where: { email },
+    update: {},
+    create: { email, name: local.join(" ") || email, firstName: local[0] || email }
+  });
+}
 
 /** Adjusts the training's taken-seat count when a request moves between states. */
 async function moveSeat(tx: Prisma.TransactionClient, trainingId: string, from: string, to: string) {
@@ -56,34 +75,32 @@ export async function submitRequest(input: { trainingId: string; justification: 
   return run(async me => {
     const t = await prisma.training.findFirst({ where: { id: input.trainingId, isActive: true } });
     if (!t) throw new UserError("That session is no longer available.");
+    if (!t.registrationOpen) throw new UserError("Registration for this session is closed.");
     if (await prisma.trainingRequest.findUnique({ where: { employeeId_trainingId: { employeeId: me.id, trainingId: t.id } } }))
       throw new UserError("You already have a request on file for this session.");
 
     const form = Object.fromEntries(["nesrId", "name", "loc", "dept", "nat", "mgr"].map(k => [k, str(input.form?.[k])]));
-    if (!NATIONALITIES.includes(form.nat)) throw new UserError("Choose your nationality.");
+    const justification = str(input.justification, 2000);
     let chain = await approvalChain(me.id);
     // Record who actually approves, not whatever was typed.
     if (chain.length) form.mgr = chain[0].email;
+    const missing = [!form.nesrId && "NESR ID", !form.name && "full name", !form.loc && "work location", !form.dept && "department",
+      !NATIONALITIES.includes(form.nat) && "nationality", !chain.length && !EMAIL_RE.test(form.mgr) && "approver email",
+      !justification && "business justification"].filter(Boolean);
+    if (missing.length) throw new UserError("Please fill in: " + missing.join(", ") + ".");
 
-    // No manager known from Entra ID: use the approver email from the form, if it names someone else.
+    // No manager known from Entra ID: the approver email from the form becomes the approver.
     const mgrEmail = form.mgr.toLowerCase();
-    if (!chain.length && mgrEmail && mgrEmail !== me.email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mgrEmail)) {
-      const local = mgrEmail.split("@")[0].split(/[._-]/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1));
-      const approver = await prisma.employee.upsert({
-        where: { email: mgrEmail },
-        update: {},
-        create: { email: mgrEmail, name: local.join(" ") || mgrEmail, firstName: local[0] || mgrEmail }
-      });
-      chain = [approver];
+    if (!chain.length) {
+      if (mgrEmail === me.email) throw new UserError("You can't approve your own request. Enter your line manager's email.");
+      chain = [await employeeByEmail(mgrEmail)];
     }
 
     await prisma.$transaction(async tx => {
-      // Reserve a seat now; only succeeds while seats are left, so two people can't take the last one.
-      const reserved = await tx.$executeRaw`UPDATE "trainings" SET "enrolled" = "enrolled" + 1 WHERE "id" = ${t.id} AND "enrolled" < "seats"`;
       const req = await tx.trainingRequest.create({
         data: {
-          employeeId: me.id, trainingId: t.id, form, justification: str(input.justification, 2000) || null,
-          state: !reserved ? "waitlist" : chain.length ? "pending" : "lnd",
+          employeeId: me.id, trainingId: t.id, form, justification,
+          state: "pending",
           steps: { create: chain.map((a, i) => ({ stepNo: i, approverId: a.id })) }
         }
       });
@@ -100,8 +117,15 @@ export async function approveRequest(id: string): Promise<Result> {
     const done = r.currentStep + 1 >= r.steps.length;
     await prisma.$transaction(async tx => {
       await tx.approvalStep.update({ where: { id: step.id }, data: { status: "approved", decidedAt: new Date() } });
-      await tx.trainingRequest.update({ where: { id }, data: done ? { state: "lnd", currentStep: r.currentStep + 1 } : { currentStep: r.currentStep + 1 } });
-      await audit(tx, me, "approve", "request", id, { step: r.currentStep });
+      if (!done) {
+        await tx.trainingRequest.update({ where: { id }, data: { currentStep: r.currentStep + 1 } });
+        await audit(tx, me, "approve", "request", id, { step: r.currentStep });
+        return;
+      }
+      // Final approval: enrolled if registration is open and a seat is left, otherwise waitlisted.
+      const seated = await takeSeat(tx, r.trainingId);
+      await tx.trainingRequest.update({ where: { id }, data: { state: seated ? "enrolled" : "waitlist", currentStep: r.currentStep + 1 } });
+      await audit(tx, me, "approve", "request", id, { step: r.currentStep, outcome: seated ? "enrolled" : "waitlist" });
     });
   });
 }
@@ -123,21 +147,74 @@ export async function rejectRequest(id: string): Promise<Result> {
   });
 }
 
-async function setLndState(id: string, state: "enrolled" | "waitlist"): Promise<Result> {
+/** L&D enrolls someone from the waitlist. L&D may go over capacity or enroll after registration closed. */
+export async function enrollRequest(id: string): Promise<Result> {
   return run(async me => {
     requireAdmin(me);
     const r = await prisma.trainingRequest.findUnique({ where: { id } });
     if (!r) throw new UserError("Request not found.");
-    if (r.state === state) return;
+    if (r.state === "enrolled" || r.state === "completed") return;
     await prisma.$transaction(async tx => {
-      await moveSeat(tx, r.trainingId, r.state, state);
-      await tx.trainingRequest.update({ where: { id }, data: { state } });
-      await audit(tx, me, state === "enrolled" ? "enroll" : "waitlist", "request", id);
+      await moveSeat(tx, r.trainingId, r.state, "enrolled");
+      await tx.trainingRequest.update({ where: { id }, data: { state: "enrolled" } });
+      await audit(tx, me, "enroll", "request", id, { from: r.state });
     });
   });
 }
-export async function enrollRequest(id: string) { return setLndState(id, "enrolled"); }
-export async function waitlistRequest(id: string) { return setLndState(id, "waitlist"); }
+
+/** L&D adds a person straight into a training (enrolled), by employee id or email. */
+export async function addParticipant(trainingId: string, who: string): Promise<Result> {
+  return run(async me => {
+    requireAdmin(me);
+    const t = await prisma.training.findFirst({ where: { id: trainingId, isActive: true } });
+    if (!t) throw new UserError("Training not found.");
+    const key = str(who, 200).toLowerCase();
+    if (!key) throw new UserError("Choose a person or type their email.");
+    // Accept "Name <email>" from the picker, a bare email, or an employee id
+    const email = (key.match(/<([^>]+)>/)?.[1] || key).trim();
+    const person = EMAIL_RE.test(email)
+      ? await employeeByEmail(email)
+      : await prisma.employee.findUnique({ where: { id: str(who, 64) } });
+    if (!person) throw new UserError("No one found with that email.");
+
+    const existing = await prisma.trainingRequest.findUnique({ where: { employeeId_trainingId: { employeeId: person.id, trainingId } } });
+    if (existing && holdsSeat(existing.state)) throw new UserError(person.name + " is already enrolled.");
+    await prisma.$transaction(async tx => {
+      await tx.training.update({ where: { id: trainingId }, data: { enrolled: { increment: 1 } } });
+      const form = { nesrId: person.nesrId || "", name: person.name, loc: person.location || "", dept: person.department || "", nat: "", mgr: "" };
+      const req = existing
+        ? await tx.trainingRequest.update({ where: { id: existing.id }, data: { state: "enrolled" } })
+        : await tx.trainingRequest.create({ data: { employeeId: person.id, trainingId, state: "enrolled", form, justification: "Added by the L&D team" } });
+      await audit(tx, me, "add_participant", "request", req.id, { trainingId, email: person.email, from: existing?.state ?? null });
+    });
+  });
+}
+
+/** L&D removes someone's registration entirely (any status). The seat is released; the audit log keeps the record. */
+export async function removeParticipant(requestId: string): Promise<Result> {
+  return run(async me => {
+    requireAdmin(me);
+    const r = await prisma.trainingRequest.findUnique({ where: { id: requestId }, include: { employee: true } });
+    if (!r) throw new UserError("Registration not found.");
+    await prisma.$transaction(async tx => {
+      if (holdsSeat(r.state)) await tx.$executeRaw`UPDATE "trainings" SET "enrolled" = GREATEST("enrolled" - 1, 0) WHERE "id" = ${r.trainingId}`;
+      await tx.attendance.deleteMany({ where: { trainingId: r.trainingId, employeeId: r.employeeId } });
+      await tx.trainingRequest.delete({ where: { id: requestId } });
+      await audit(tx, me, "remove_participant", "request", requestId, { trainingId: r.trainingId, email: r.employee.email, state: r.state });
+    });
+  });
+}
+
+/** Opens or closes registration for a training. */
+export async function setRegistrationOpen(trainingId: string, open: boolean): Promise<Result> {
+  return run(async me => {
+    requireAdmin(me);
+    await prisma.$transaction(async tx => {
+      await tx.training.update({ where: { id: trainingId }, data: { registrationOpen: open } });
+      await audit(tx, me, open ? "registration_open" : "registration_close", "training", trainingId);
+    });
+  });
+}
 
 export async function saveTraining(ed: Record<string, unknown>): Promise<Result> {
   return run(async me => {
@@ -157,7 +234,8 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
       code: str(ed.code, 20), title: str(ed.title), instructor: str(ed.instructor),
       category: String(ed.category), type: String(ed.type), location: String(ed.location),
       startDate: new Date(start), endDate: new Date(end), seats,
-      description: str(ed.desc, 4000)
+      description: str(ed.desc, 4000),
+      registrationOpen: ed.registration !== "Closed"
     };
     await prisma.$transaction(async tx => {
       const id = ed.id ? String(ed.id) : null;
