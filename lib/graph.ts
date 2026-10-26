@@ -22,12 +22,15 @@ const clientSecret = () => env.LD_AZURE_AD_CLIENT_SECRET || env.AZURE_AD_CLIENT_
 export async function graphGet<T>(path: string, token: string, label: string): Promise<T | null> {
   try {
     const res = await fetch(GRAPH + path, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
-    if (res.ok) return (await res.json()) as T;
-    if (res.status !== 404) {
-      const body = await res.text().catch(() => "");
-      const code = body.match(/"code"\s*:\s*"([^"]+)"/)?.[1] || "";
-      console.warn(`[graph] ${label} failed: HTTP ${res.status} ${code}`);
+    if (res.ok) {
+      console.info(`[graph] ${label}: ok`);
+      return (await res.json()) as T;
     }
+    const body = await res.text().catch(() => "");
+    const code = body.match(/"code"\s*:\s*"([^"]+)"/)?.[1] || "";
+    console.warn(res.status === 404
+      ? `[graph] ${label}: not found (HTTP 404 ${code}) — for /manager this means no manager is set in Entra ID`
+      : `[graph] ${label} failed: HTTP ${res.status} ${code}`);
     return null;
   } catch (e) {
     console.warn(`[graph] ${label} failed: ${(e as Error).message}`);
