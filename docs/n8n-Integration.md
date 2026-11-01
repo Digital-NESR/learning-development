@@ -91,11 +91,13 @@ The portal also sends these by itself, through the same webhook and in the same 
 | Enrollment Confirmed (`enrolled`) | Manager approves with a seat free; L&D enrolls or adds someone | Employee |
 | Added to Waitlist (`waitlisted`) | Manager approves but the class is full or registration is closed | Employee |
 | Request Not Approved (`declined`) | Manager or L&D declines (the manager's reason is included) | Employee |
-| Training Cancelled (`cancelled`) | L&D deletes a training | Everyone still registered |
+| Training Cancelled (`cancelled`) | L&D sets a training to Cancelled | Everyone still registered |
+| Approval Reminder (`reminder`) | Daily job: a request has waited for the manager (see CRON_SECRET) | The manager |
 
 - **Pause** on a template (Notifications page) stops its automatic emails.
 - If n8n is unreachable, the portal action still succeeds and the failure is logged as `[email] … failed` in Vercel logs.
 - Test mode (`LD_MAIL_TEST_RECIPIENT`) applies to automatic emails too.
+- External participants (e.g. CPVEN, added by L&D) are never emailed.
 - `{{comment}}` can be used in templates for the decline reason; if a template doesn't use it, the reason is added at the end.
 
 ## 2. Nameplate PDFs (n8n → portal)

@@ -18,6 +18,16 @@ enum RequestState {
   completed
 }
 
+/// Training status chosen by L&D. Only "open" accepts new requests.
+enum TrainingStatus {
+  open
+  ongoing
+  completed
+  class_full
+  registration_closed
+  cancelled
+}
+
 enum StepStatus {
   waiting
   approved
@@ -37,6 +47,9 @@ model Employee {
   location    String?
   country     String?
   isAdmin     Boolean   @default(false) @map("is_admin")
+  /// Non-NESR participant (e.g. CPVEN) added by L&D: never emailed, can't sign in
+  isExternal  Boolean   @default(false) @map("is_external")
+  organization String?
   managerId   String?   @map("manager_id")
   manager     Employee? @relation("Reports", fields: [managerId], references: [id], onDelete: SetNull)
   reports     Employee[] @relation("Reports")
@@ -65,8 +78,11 @@ model Training {
   instructor  String?
   description String?
   isActive    Boolean  @default(true) @map("is_active")
-  /// L&D can close registration; requests are then refused and late approvals go to the waitlist
-  registrationOpen Boolean @default(true) @map("registration_open")
+  /// Set by L&D. Only "open" accepts requests; manager approvals while not open go to the waitlist
+  status      TrainingStatus @default(open)
+  targetAudience     String? @map("target_audience")
+  provider           String?
+  instructorLocation String? @map("instructor_location")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -91,6 +107,8 @@ model TrainingRequest {
   /// Registration form snapshot: nesrId, name, loc, dept, nat, mgr
   form          Json?
   submittedAt   DateTime     @default(now()) @map("submitted_at")
+  /// Last time the approver was reminded about this pending request
+  lastRemindedAt DateTime?   @map("last_reminded_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
   steps         ApprovalStep[]

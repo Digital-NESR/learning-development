@@ -204,26 +204,28 @@
 
           <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
-              <div style="display:grid;min-width:800px;grid-template-columns:86px minmax(0,2.3fr) minmax(0,1.3fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1.1fr);background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
-                <div style="padding:11px 12px">Code</div>
-                <div style="padding:11px 12px">Training Title</div>
-                <div style="padding:11px 12px">Category</div>
-                <div style="padding:11px 12px">Type</div>
-                <div style="padding:11px 12px">Dates</div>
-                <div style="padding:11px 12px">Location</div>
+              <div style="display:grid;min-width:1020px;grid-template-columns:minmax(0,1.2fr) 74px minmax(0,2.1fr) 118px 58px 58px 94px 94px minmax(0,1fr);background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
+                <div style="padding:11px 10px">Training Category</div>
+                <div style="padding:11px 10px">Training Code</div>
+                <div style="padding:11px 10px">Training Name</div>
+                <div style="padding:11px 10px">Training Status</div>
+                <div style="padding:11px 10px">Quarter</div>
+                <div style="padding:11px 10px">Month</div>
+                <div style="padding:11px 10px">Start Date</div>
+                <div style="padding:11px 10px">End Date</div>
+                <div style="padding:11px 10px">Location</div>
               </div>
               <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
-                <div onClick="{{ r.onClick }}" style="display:grid;min-width:800px;grid-template-columns:86px minmax(0,2.3fr) minmax(0,1.3fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,1.1fr);border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
-                  <div style="padding:11px 12px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
-                  <div style="padding:11px 12px;font-size:12.5px;font-weight:bold">{{ r.title }}
-                    <sc-if value="{{ r.closed }}" hint-placeholder-val="{{ false }}">
-                      <span style="display:inline-block;margin-left:6px;background:#EEF1EF;color:#58595B;font-size:9.5px;font-weight:bold;padding:2px 6px;border-radius:3px;vertical-align:middle">Registration closed</span>
-                    </sc-if>
-                  </div>
-                  <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.category }}</div>
-                  <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.type }}</div>
-                  <div style="padding:11px 12px;font-size:12px">{{ r.dates }}</div>
-                  <div style="padding:11px 12px;font-size:12px;color:#58595B">{{ r.location }}</div>
+                <div onClick="{{ r.onClick }}" style="display:grid;min-width:1020px;grid-template-columns:minmax(0,1.2fr) 74px minmax(0,2.1fr) 118px 58px 58px 94px 94px minmax(0,1fr);border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
+                  <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.category }}</div>
+                  <div style="padding:11px 10px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
+                  <div style="padding:11px 10px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
+                  <div style="padding:11px 10px"><span style="display:inline-block;background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px;white-space:nowrap">{{ r.st.label }}</span></div>
+                  <div style="padding:11px 10px;font-size:12px">{{ r.quarter }}</div>
+                  <div style="padding:11px 10px;font-size:12px">{{ r.month }}</div>
+                  <div style="padding:11px 10px;font-size:12px">{{ r.startLabel }}</div>
+                  <div style="padding:11px 10px;font-size:12px">{{ r.endLabel }}</div>
+                  <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.location }}</div>
                 </div>
               </sc-for>
               <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
@@ -520,20 +522,21 @@
             </div>
             <div style="flex:1"></div>
             <input value="{{ q }}" onChange="{{ onSearch }}" placeholder="Search catalog" style="padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;min-width:200px" />
+            <button onClick="{{ onExport }}" style="padding:10px 16px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold">Export Excel Report</button>
             <button onClick="{{ onNewTraining }}" style="padding:10px 16px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">+ Add Training</button>
           </div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
-            <div style="display:grid;min-width:1040px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1fr) 270px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
+            <div style="display:grid;min-width:1040px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1.3fr) 130px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
               <div style="padding:11px 12px">Code</div>
               <div style="padding:11px 12px">Title</div>
               <div style="padding:11px 12px">Category</div>
               <div style="padding:11px 12px">Dates</div>
               <div style="padding:11px 12px">Location</div>
-              <div style="padding:11px 12px">Seats &middot; Registration</div>
+              <div style="padding:11px 12px">Seats &middot; Status</div>
               <div style="padding:11px 12px">Actions</div>
             </div>
             <sc-for list="{{ adminRows }}" as="r" hint-placeholder-count="8">
-              <div style="display:grid;min-width:1040px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1fr) 270px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
+              <div style="display:grid;min-width:1040px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1.3fr) 130px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
                 <div style="padding:10px 12px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
                 <div style="padding:10px 12px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
                 <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.category }}</div>
@@ -541,13 +544,16 @@
                 <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.location }}</div>
                 <div style="padding:10px 12px">
                   <div style="font-size:12px;font-weight:bold;color:{{ r.seatFg }}">{{ r.seatsLabel }}</div>
-                  <span style="display:inline-block;margin-top:3px;background:{{ r.regBg }};color:{{ r.regFg }};font-size:10px;font-weight:bold;padding:2px 7px;border-radius:3px">{{ r.regLabel }}</span>
+                  <select value="{{ r.statusValue }}" onChange="{{ r.onStatus }}" title="Training status" style="margin-top:4px;width:100%;padding:4px 6px;border:1px solid #D1D3D4;border-radius:3px;background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:11px;font-weight:bold">
+                    <sc-for list="{{ statusOptions }}" as="o" hint-placeholder-count="6">
+                      <option value="{{ o.value }}">{{ o.label }}</option>
+                    </sc-for>
+                  </select>
                 </div>
                 <div style="padding:8px 12px;display:flex;gap:6px">
                   <button onClick="{{ r.onView }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">View</button>
                   <button onClick="{{ r.onEdit }}" style="padding:6px 11px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Edit</button>
-                  <button onClick="{{ r.onToggleReg }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px;white-space:nowrap">{{ r.regButton }}</button>
-                  <button onClick="{{ r.onDelete }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Delete</button>
+
                 </div>
               </div>
             </sc-for>
@@ -577,7 +583,11 @@
             </div>
             <div style="position:relative;display:flex;flex-direction:column;gap:8px">
               <button onClick="{{ session.onEdit }}" style="padding:9px 15px;border:0;background:#fff;color:#1F5E3A;border-radius:4px;cursor:pointer;font-weight:bold">Edit Session</button>
-              <button onClick="{{ session.onToggleReg }}" style="padding:9px 15px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">{{ session.regButton }}</button>
+              <select value="{{ session.statusValue }}" onChange="{{ session.onStatus }}" title="Training status" style="padding:9px 10px;border:1px solid rgba(255,255,255,.55);background:#fff;color:#1F5E3A;border-radius:4px;font-weight:bold">
+                <sc-for list="{{ statusOptions }}" as="o" hint-placeholder-count="6">
+                  <option value="{{ o.value }}">Status: {{ o.label }}</option>
+                </sc-for>
+              </select>
               <button onClick="{{ session.onExport }}" style="padding:9px 15px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">Export List</button>
             </div>
           </div>
@@ -604,7 +614,7 @@
                   <div style="height:10px;background:{{ session.fillColor }};width:{{ session.fillPct }}%"></div>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;margin-top:12px">
-                  <span style="font-weight:bold">Registration</span>
+                  <span style="font-weight:bold">Status</span>
                   <span style="background:{{ session.regBg }};color:{{ session.regFg }};font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ session.regLabel }}</span>
                 </div>
                 <div style="font-size:12px;line-height:1.6;color:#58595B;margin-top:14px">{{ session.desc }}</div>
@@ -652,7 +662,19 @@
                   <option value="{{ o }}"></option>
                 </sc-for>
               </datalist>
-              <button onClick="{{ session.onAdd }}" style="padding:8px 14px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Add &amp; enroll</button>
+              <button onClick="{{ session.onAdd }}" style="padding:8px 14px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Add NESR employee</button>
+            </div>
+            <div style="padding:10px 16px;border-bottom:1px solid #F0F2F1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#FAFBFA">
+              <span style="font-size:11px;font-weight:bold;color:#58595B;white-space:nowrap">External (e.g. CPVEN):</span>
+              <input value="{{ session.extName }}" onChange="{{ session.onExtName }}" placeholder="Full name" style="flex:2;min-width:160px;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              <input list="ld-orgs" value="{{ session.extOrg }}" onChange="{{ session.onExtOrg }}" placeholder="Organisation" style="flex:1;min-width:110px;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              <datalist id="ld-orgs">
+                <sc-for list="{{ session.orgOptions }}" as="o" hint-placeholder-count="2">
+                  <option value="{{ o }}"></option>
+                </sc-for>
+              </datalist>
+              <input value="{{ session.extEmail }}" onChange="{{ session.onExtEmail }}" placeholder="Email (optional, for records)" style="flex:2;min-width:180px;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              <button onClick="{{ session.onAddExternal }}" style="padding:8px 14px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Add external</button>
             </div>
             <sc-for list="{{ session.roster }}" as="p" hint-placeholder-count="3">
               <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid #F4F6F5">
@@ -811,12 +833,35 @@
                   </select>
                 </div>
               </sc-for>
-              <sc-if value="{{ plate.showCustom }}" hint-placeholder-val="{{ false }}">
-                <div style="grid-column:1 / -1">
-                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Name on nameplate</div>
-                  <input value="{{ plate.customName }}" onChange="{{ plate.onCustomName }}" placeholder="Full name" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              <sc-if value="{{ plate.showPick }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:1 / -1;border:1px solid #E1E5E3;border-radius:4px;max-height:180px;overflow:auto;padding:4px 0">
+                  <sc-for list="{{ plate.people }}" as="pp" hint-placeholder-count="4">
+                    <label style="display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:12px;cursor:pointer">
+                      <input type="checkbox" checked="{{ pp.checked }}" onChange="{{ pp.onToggle }}" />
+                      <span style="flex:1">{{ pp.name }}</span>
+                      <span style="font-size:10.5px;color:#8A8F8C">{{ pp.note }}</span>
+                    </label>
+                  </sc-for>
+                  <sc-if value="{{ plate.noPeople }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:10px;font-size:12px;color:#8A8F8C">No one is registered for this training yet.</div>
+                  </sc-if>
                 </div>
               </sc-if>
+              <sc-if value="{{ plate.showTyped }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Names (one per line)</div>
+                  <textarea value="{{ plate.typedNames }}" onChange="{{ plate.onTypedNames }}" rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
+                </div>
+              </sc-if>
+              <div style="grid-column:1 / -1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;white-space:nowrap">
+                  <input type="checkbox" checked="{{ plate.withInstructor }}" onChange="{{ plate.onWithInstructor }}" />
+                  Also an instructor nameplate
+                </label>
+                <sc-if value="{{ plate.withInstructor }}" hint-placeholder-val="{{ false }}">
+                  <input value="{{ plate.instructorName }}" onChange="{{ plate.onInstructorName }}" placeholder="Instructor name" style="flex:1;min-width:160px;padding:6px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </sc-if>
+              </div>
               <div>
                 <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date from</div>
                 <input type="date" value="{{ plate.from }}" onChange="{{ plate.onFrom }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />

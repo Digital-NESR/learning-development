@@ -1,10 +1,10 @@
 "use server";
 
-import type { Employee, Prisma } from "@prisma/client";
+import type { Employee, Prisma, TrainingStatus } from "@prisma/client";
 import { currentEmployee, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { approvalChain, loadSnapshot, type Snapshot } from "@/lib/data";
-import { CATEGORIES, LOCATIONS, NATIONALITIES, TYPES } from "@/lib/constants.js";
+import { CATEGORIES, LOCATIONS, NATIONALITIES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
 import { AUDIENCES, audienceIds } from "@/lib/audience.js";
 import { buildMessage, notify, portalUrl, postToN8n } from "@/lib/notify";
 import { ensureManager } from "@/lib/graph";
@@ -43,7 +43,7 @@ const holdsSeat = (state: string) => SEAT_STATES.includes(state);
 /** Takes a seat if registration is open and one is left. Atomic, so two approvals can't take the last seat. */
 async function takeSeat(tx: Prisma.TransactionClient, trainingId: string) {
   const n = await tx.$executeRaw`UPDATE "trainings" SET "enrolled" = "enrolled" + 1
-    WHERE "id" = ${trainingId} AND "enrolled" < "seats" AND "registration_open" = true`;
+    WHERE "id" = ${trainingId} AND "enrolled" < "seats" AND "status" = 'open'`;
   return n > 0;
 }
 
@@ -74,7 +74,7 @@ export async function submitRequest(input: { trainingId: string; justification: 
   return run(async me => {
     const t = await prisma.training.findFirst({ where: { id: input.trainingId, isActive: true } });
     if (!t) throw new UserError("That session is no longer available.");
-    if (!t.registrationOpen) throw new UserError("Registration for this session is closed.");
+    if (t.status !== "open") throw new UserError(`This session isn't taking registrations (${statusLabel(t.status)}).`);
     if (await prisma.trainingRequest.findUnique({ where: { employeeId_trainingId: { employeeId: me.id, trainingId: t.id } } }))
       throw new UserError("You already have a request on file for this session.");
 
@@ -231,13 +231,55 @@ export async function removeParticipant(requestId: string): Promise<Result> {
   });
 }
 
-/** Opens or closes registration for a training. */
-export async function setRegistrationOpen(trainingId: string, open: boolean): Promise<Result> {
+/** Everyone still registered for a training (not declined, not completed). */
+const stillRegistered = (trainingId: string) =>
+  prisma.trainingRequest.findMany({ where: { trainingId, state: { in: ["pending", "enrolled", "waitlist"] } }, include: { employee: true } });
+
+/** Sets a training's status. Cancelling emails everyone still registered; the training stays visible as Cancelled. */
+export async function setTrainingStatus(trainingId: string, status: string): Promise<Result> {
   return run(async me => {
     requireAdmin(me);
+    if (!TRAINING_STATUSES.some(s => s.value === status)) throw new UserError("Unknown status.");
+    const t = await prisma.training.findUnique({ where: { id: trainingId } });
+    if (!t) throw new UserError("Training not found.");
+    if (t.status === status) return;
+    const cancelling = status === "cancelled";
+    const registered = cancelling ? await stillRegistered(trainingId) : [];
+    const updated = await prisma.$transaction(async tx => {
+      const u = await tx.training.update({ where: { id: trainingId }, data: { status: status as TrainingStatus } });
+      await audit(tx, me, "status", "training", trainingId, { from: t.status, to: status, notified: registered.length });
+      return u;
+    });
+    if (cancelling) await notify("cancelled", updated, registered.map(r => ({ to: r.employee })), me.id);
+  });
+}
+
+/** L&D adds a non-NESR participant (e.g. CPVEN). They're registered directly and never emailed by the portal. */
+export async function addExternalParticipant(trainingId: string, input: { name: string; organization: string; email?: string }): Promise<Result> {
+  return run(async me => {
+    requireAdmin(me);
+    const t = await prisma.training.findFirst({ where: { id: trainingId, isActive: true } });
+    if (!t) throw new UserError("Training not found.");
+    const name = str(input.name, 120), organization = str(input.organization, 80) || "External";
+    const given = str(input.email, 200).toLowerCase();
+    if (!name) throw new UserError("Enter the participant's name.");
+    if (given && !EMAIL_RE.test(given)) throw new UserError("That email address doesn't look right.");
+    // Email is optional for externals; a private placeholder keeps the record unique
+    const email = given || `external-${crypto.randomUUID()}@external.invalid`;
     await prisma.$transaction(async tx => {
-      await tx.training.update({ where: { id: trainingId }, data: { registrationOpen: open } });
-      await audit(tx, me, open ? "registration_open" : "registration_close", "training", trainingId);
+      const person = await tx.employee.upsert({
+        where: { email },
+        update: { name, firstName: name.split(" ")[0], organization, isExternal: true },
+        create: { email, name, firstName: name.split(" ")[0], organization, isExternal: true }
+      });
+      const existing = await tx.trainingRequest.findUnique({ where: { employeeId_trainingId: { employeeId: person.id, trainingId } } });
+      if (existing && holdsSeat(existing.state)) throw new UserError(name + " is already registered.");
+      await tx.training.update({ where: { id: trainingId }, data: { enrolled: { increment: 1 } } });
+      const form = { nesrId: "", name, loc: "", dept: organization, nat: "", mgr: "" };
+      const req = existing
+        ? await tx.trainingRequest.update({ where: { id: existing.id }, data: { state: "enrolled" } })
+        : await tx.trainingRequest.create({ data: { employeeId: person.id, trainingId, state: "enrolled", form, justification: `External participant (${organization}) added by the L&D team` } });
+      await audit(tx, me, "add_external", "request", req.id, { trainingId, name, organization, hasEmail: !!given });
     });
   });
 }
@@ -261,13 +303,21 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
       category: String(ed.category), type: String(ed.type), location: String(ed.location),
       startDate: new Date(start), endDate: new Date(end), seats,
       description: str(ed.desc, 4000),
-      registrationOpen: ed.registration !== "Closed"
+      status: (TRAINING_STATUSES.some(s => s.value === ed.status) ? ed.status : "open") as TrainingStatus,
+      targetAudience: str(ed.targetAudience, 200) || null,
+      provider: str(ed.provider, 200) || null,
+      instructorLocation: str(ed.instructorLocation, 200) || null
     };
-    await prisma.$transaction(async tx => {
-      const id = ed.id ? String(ed.id) : null;
+    const id = ed.id ? String(ed.id) : null;
+    const before = id ? await prisma.training.findUnique({ where: { id } }) : null;
+    const cancelling = data.status === "cancelled" && before?.status !== "cancelled";
+    const registered = cancelling && id ? await stillRegistered(id) : [];
+    const saved = await prisma.$transaction(async tx => {
       const t = id ? await tx.training.update({ where: { id }, data }) : await tx.training.create({ data });
-      await audit(tx, me, id ? "update" : "create", "training", t.id, { code: t.code });
+      await audit(tx, me, id ? "update" : "create", "training", t.id, { code: t.code, status: t.status });
+      return t;
     });
+    if (cancelling) await notify("cancelled", saved, registered.map(r => ({ to: r.employee })), me.id);
   });
 }
 
@@ -351,7 +401,8 @@ export async function sendTrainingEmail(input: { trainingId: string; audience: s
       Object.fromEntries(attendance.map(a => [`${t.id}:${a.employeeId}`, a.attended])));
     if (!ids.length) throw new UserError("No one in that group for this training.");
 
-    const people = await prisma.employee.findMany({ where: { id: { in: ids } }, include: { manager: true } });
+    const people = await prisma.employee.findMany({ where: { id: { in: ids }, isExternal: false }, include: { manager: true } });
+    if (!people.length) throw new UserError("Everyone in that group is an external participant. The portal doesn't email them; contact their HR instead.");
     const template = input.templateId ? await prisma.notificationTemplate.findUnique({ where: { id: String(input.templateId) } }) : null;
     const link = await portalUrl();
     const messages = people.map(p => buildMessage(t, template?.name || "Training Update", subject, body,

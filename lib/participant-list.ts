@@ -3,7 +3,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 
 // Participant list for one training, A4 landscape, table that continues across pages.
 
-export type ListRow = { name: string; nesrId: string; department: string; email: string; status: string; attendance: string };
+export type ListRow = { name: string; nesrId: string; department: string; email: string; status: string; approval: string; attendance: string };
 export type ListInfo = { code: string; title: string; dates: string; location: string; instructor: string; seats: string; summary: string };
 
 const W = 841.89, H = 595.28, M = 36;
@@ -15,12 +15,13 @@ const ZEBRA = rgb(0.98, 0.984, 0.98);
 
 const COLS: { key: keyof ListRow | "n"; label: string; w: number }[] = [
   { key: "n", label: "#", w: 28 },
-  { key: "name", label: "Name", w: 170 },
-  { key: "nesrId", label: "NESR ID", w: 70 },
-  { key: "department", label: "Department", w: 130 },
-  { key: "email", label: "Email", w: 196 },
-  { key: "status", label: "Status", w: 90 },
-  { key: "attendance", label: "Attendance", w: W - 2 * M - 684 }
+  { key: "name", label: "Name", w: 160 },
+  { key: "nesrId", label: "NESR ID", w: 58 },
+  { key: "department", label: "Department", w: 110 },
+  { key: "email", label: "Email", w: 168 },
+  { key: "status", label: "Status", w: 84 },
+  { key: "approval", label: "Manager (approval)", w: 116 },
+  { key: "attendance", label: "Attendance", w: W - 2 * M - 724 }
 ];
 
 /** Keeps only characters the standard PDF font can draw. */

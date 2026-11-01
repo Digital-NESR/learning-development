@@ -9,12 +9,13 @@ const pretty = (d: Date) => `${String(d.getUTCDate()).padStart(2, "0")} ${SHORT[
 
 export type Person = {
   key: string; name: string; first: string; nesrId: string; title: string; dept: string; loc: string;
-  email: string; boss: string | null; admin: boolean;
+  email: string; boss: string | null; admin: boolean; external: boolean; org: string;
 };
 
 export const toPerson = (e: Employee): Person => ({
   key: e.id, name: e.name, first: e.firstName, nesrId: e.nesrId || "—", title: e.title || "",
-  dept: e.department || "", loc: e.location || "", email: e.email, boss: e.managerId, admin: e.isAdmin
+  dept: e.department || "", loc: e.location || "", email: e.email, boss: e.managerId, admin: e.isAdmin,
+  external: e.isExternal, org: e.organization || ""
 });
 
 /** Managers above `employeeId`, nearest first, up to APPROVAL_LEVELS. */
@@ -68,16 +69,20 @@ export async function loadSnapshot(meId: string) {
       id: t.id, code: t.code, title: t.title, category: t.category, type: t.type,
       start: iso(t.startDate), end: iso(t.endDate), location: t.location,
       seats: t.seats, enrolled: t.enrolled, instructor: t.instructor || "", desc: t.description || "",
-      registrationOpen: t.registrationOpen
+      status: t.status, registrationOpen: t.status === "open",
+      targetAudience: t.targetAudience || "", provider: t.provider || "", instructorLocation: t.instructorLocation || ""
     })),
     // L&D only: everyone known to the portal, for the "Add person" picker on a session
     directory: me.isAdmin
-      ? (await prisma.employee.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: "asc" } }))
+      ? (await prisma.employee.findMany({ where: { isExternal: false }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } }))
           .map(e => ({ value: `${e.name} <${e.email}>`, id: e.id }))
       : [],
     requests: requests.map(r => ({
       id: r.id, who: r.employeeId, tid: r.trainingId,
       chain: r.steps.map(s => s.approverId), step: r.currentStep, state: r.state,
+      // Final approval decision, for L&D traceability: "approved" | "rejected" | "waiting" | "" (no approver, e.g. added by L&D)
+      approval: r.steps.length ? r.steps[r.steps.length - 1].status : "",
+      approvedAt: r.steps.length && r.steps[r.steps.length - 1].decidedAt ? pretty(r.steps[r.steps.length - 1].decidedAt!) : "",
       submitted: pretty(r.submittedAt), submittedAt: r.submittedAt.toISOString(),
       justification: r.justification || "—", form: r.form, comment: r.decisionComment || ""
     })),

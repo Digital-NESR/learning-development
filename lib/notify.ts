@@ -25,7 +25,7 @@ export function trainingValues(t: Training) {
 }
 
 export type Recipient = {
-  to: Pick<Employee, "email" | "name" | "firstName">;
+  to: Pick<Employee, "email" | "name" | "firstName"> & { isExternal?: boolean };
   employeeName?: string;   // the person the email is about ({{employee_name}}), defaults to the recipient
   managerName?: string;    // their approver / manager ({{manager_name}})
   comment?: string | null; // decline reason ({{comment}})
@@ -80,7 +80,8 @@ export async function postToN8n(t: Training, audience: string, messages: Message
  * so a mail problem is logged instead of undoing it. Skipped if the template is paused.
  */
 export async function notify(templateId: string, training: Training, recipients: Recipient[], actorId?: string) {
-  const list = recipients.filter(r => r.to?.email);
+  // External participants (e.g. CPVEN) are never emailed: L&D communicates with them through their HR
+  const list = recipients.filter(r => r.to?.email && !r.to.isExternal && !r.to.email.endsWith("@external.invalid"));
   if (!list.length) return;
   try {
     const tpl = await prisma.notificationTemplate.findUnique({ where: { id: templateId } });

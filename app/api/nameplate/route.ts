@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentEmployee } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { nameplatePdf, type Nameplate } from "@/lib/nameplate";
+import { nameplatePdf, type Nameplate, type Brand } from "@/lib/nameplate";
 import { audienceIds } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
 
@@ -9,7 +9,15 @@ export const runtime = "nodejs";
 
 /**
  * Admin download from the Notifications page.
- * Body: { trainingId, who: "participants" | "enrolled" | "custom" | <employeeId>, customName?, date? }
+ * Body: {
+ *   trainingId,
+ *   who: "enrolled" | "participants" | "selected" | "typed",
+ *   ids?: string[]          (who = "selected": employee ids, e.g. some NESR people and some CPVEN externals)
+ *   names?: string          (who = "typed": one name per line)
+ *   instructor?: string     (also print a nameplate for this instructor)
+ *   brand?: "nesr" | "cpven",
+ *   date?: string
+ * }
  */
 export async function POST(req: Request) {
   const me = await currentEmployee();
@@ -21,11 +29,16 @@ export async function POST(req: Request) {
 
   const iso = (d: Date) => d.toISOString().slice(0, 10);
   const date = String(body.date || "").trim().slice(0, 80) || dateRange(iso(t.startDate), iso(t.endDate));
+  const brand: Brand = body.brand === "cpven" ? "cpven" : "nesr";
   const who = String(body.who || "");
 
   let names: string[] = [];
-  if (who === "custom") {
-    names = [String(body.customName || "").trim().slice(0, 120)].filter(Boolean);
+  if (who === "typed") {
+    names = String(body.names || "").split(/\r?\n/).map(s => s.trim().slice(0, 120)).filter(Boolean).slice(0, 200);
+  } else if (who === "selected") {
+    const ids = (Array.isArray(body.ids) ? body.ids : []).map(String).slice(0, 500);
+    const people = await prisma.employee.findMany({ where: { id: { in: ids } }, orderBy: { name: "asc" } });
+    names = people.map(p => p.name);
   } else if (who === "participants" || who === "enrolled") {
     const [requests, attendance] = await Promise.all([
       prisma.trainingRequest.findMany({ where: { trainingId: t.id }, select: { employeeId: true, state: true } }),
@@ -39,21 +52,21 @@ export async function POST(req: Request) {
     );
     const people = await prisma.employee.findMany({ where: { id: { in: ids } }, orderBy: { name: "asc" } });
     names = people.map(p => p.name);
-  } else if (who) {
-    const p = await prisma.employee.findUnique({ where: { id: who } });
-    if (p) names = [p.name];
   }
-  if (!names.length) return NextResponse.json({ error: "No one to print a nameplate for." }, { status: 400 });
 
   const plates: Nameplate[] = names.map(name => ({ name, course: t.title, date }));
-  const pdf = await nameplatePdf(plates);
-  await prisma.auditLog.create({ data: { actorId: me.id, action: "nameplates", entity: "training", entityId: t.id, details: { count: plates.length } } });
+  const instructor = String(body.instructor || "").trim().slice(0, 120);
+  if (instructor) plates.unshift({ name: instructor, course: t.title, date, role: "Instructor" });
+  if (!plates.length) return NextResponse.json({ error: "No one to print a nameplate for." }, { status: 400 });
 
-  const file = names.length === 1 ? `Nameplate - ${names[0]}.pdf` : `Nameplates - ${t.code}.pdf`;
+  const pdf = await nameplatePdf(plates, brand);
+  await prisma.auditLog.create({ data: { actorId: me.id, action: "nameplates", entity: "training", entityId: t.id, details: { count: plates.length, brand } } });
+
+  const file = plates.length === 1 ? `Nameplate - ${plates[0].name}.pdf` : `Nameplates - ${t.code}${brand === "cpven" ? " (CPVEN)" : ""}.pdf`;
   return new NextResponse(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${file.replace(/[^\w .-]/g, "_")}"`,
+      "Content-Disposition": `attachment; filename="${file.replace(/[^\w .()-]/g, "_")}"`,
       "Cache-Control": "no-store"
     }
   });

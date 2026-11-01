@@ -93,6 +93,8 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 | `LD_N8N_EMAIL_WEBHOOK_URL` | For email | n8n webhook that actually sends the emails. See [docs/n8n-Integration.md](docs/n8n-Integration.md) |
 | `LD_N8N_EMAIL_WEBHOOK_SECRET` | Optional | Sent to n8n as `x-webhook-secret` |
 | `LD_PUBLIC_URL` | Optional | Address used for the "Open Training Portal" button in emails, e.g. `https://training.nesr.com`. Defaults to the address the admin is using |
+| `CRON_SECRET` | For reminders | Any long random string. Vercel uses it to call the daily approval-reminder job (06:00 UTC); without it the job refuses to run |
+| `LD_REMINDER_AFTER_DAYS` / `LD_REMINDER_EVERY_DAYS` | Optional | First reminder after N days pending (default 2), then every N days (default 2) |
 | `LD_MAIL_TEST_RECIPIENT` | Optional | Test mode: all emails go to this one address, with the real recipient shown in the subject. Remove before go-live |
 | `LD_NAMEPLATE_API_KEY` | Optional | Enables `POST /api/hooks/nameplate` for n8n. Without it the endpoint is closed |
 | `LD_DEMO_LOGIN` | Optional | `true` shows a demo login with sample people. **Testing only — remove before go-live** |
