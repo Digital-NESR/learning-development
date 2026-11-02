@@ -89,9 +89,9 @@ export default class Portal extends React.Component {
     this._tt = setTimeout(() => this.setState({toast: null}), 4200);
   }
 
-  /** Calls a server action, swaps in the fresh data and shows a toast. */
+  /** Calls a server action, swaps in the fresh data and shows a toast. Resolves to true when it saved. */
   async act(promiseFn, title, body, extra, op = "action") {
-    if (this.state.busy) return;
+    if (this.state.busy) return false;
     this.setState({busy: true, busyOp: op});
     try {
       const res = await promiseFn();
@@ -100,6 +100,7 @@ export default class Portal extends React.Component {
         // title may be a function of the fresh data returning [title, body]
         const [tt, bb] = typeof title === "function" ? title(res.data) : [title, body];
         if (tt) this.flash(tt, bb);
+        return true;
       } else {
         this.setState({busy: false, busyOp: null});
         this.flash("Couldn't save that change", res.error);
@@ -111,6 +112,7 @@ export default class Portal extends React.Component {
       else
         this.flash("Couldn't reach the server", "Check your connection and try again.");
     }
+    return false;
   }
 
   /** Re-reads data from the server in the background (e.g. latest seat counts). */
@@ -265,7 +267,6 @@ export default class Portal extends React.Component {
     reader.readAsDataURL(file);
   }
 
-  /** Downloads the nameplate PDF from /api/nameplate. */
   /** Sets a training's status (L&D). Cancelling emails everyone still registered. */
   changeStatus(t, status) {
     if (status === t.status) return;
@@ -274,8 +275,13 @@ export default class Portal extends React.Component {
       if (!window.confirm("Cancel " + t.code + " — " + t.title + "? It stays in the calendar marked Cancelled." +
         (n ? "\n\n" + n + (n === 1 ? " registered person" : " registered people") + " will be emailed that it's cancelled." : ""))) return;
     }
+    if (this.state.busy) return;
+    // Show the new status straight away; the save and data refresh follow in the background
+    const withStatus = s => this.state.trainings.map(x => x.id === t.id ? Object.assign({}, x, {status: s, registrationOpen: s === "open"}) : x);
+    this.setState({trainings: withStatus(status)});
     this.act(() => actions.setTrainingStatus(t.id, status), "Status updated", t.code + " is now " + statusLabel(status) + "." +
-      (status === "open" ? " Employees can request it." : t.status === "open" ? " New requests are closed." : ""));
+      (status === "open" ? " Employees can request it." : t.status === "open" ? " New requests are closed." : ""))
+      .then(saved => { if (!saved) this.setState({trainings: withStatus(t.status)}); });
   }
 
   /** Downloads a file (e.g. a PDF) from a GET endpoint. */
@@ -304,6 +310,7 @@ export default class Portal extends React.Component {
     }
   }
 
+  /** Downloads the nameplate PDF from /api/nameplate. */
   async downloadPlates(body, label) {
     if (this.state.busy) return;
     this.setState({busy: true, busyOp: "plate"});

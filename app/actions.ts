@@ -20,7 +20,7 @@ async function run(fn: (me: Employee) => Promise<void>): Promise<Result> {
   if (!me) return { ok: false, error: "Your session has expired. Sign in again." };
   try {
     await fn(me);
-    return { ok: true, data: await loadSnapshot(me.id) };
+    return { ok: true, data: await loadSnapshot(me.id) }; // re-reads me, in case the change updated them
   } catch (e) {
     if (e instanceof UserError) return { ok: false, error: e.message };
     console.error(e);

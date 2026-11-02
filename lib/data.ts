@@ -19,9 +19,9 @@ export const toPerson = (e: Employee): Person => ({
 });
 
 /** Managers above `employeeId`, nearest first, up to APPROVAL_LEVELS. */
-export async function approvalChain(employeeId: string): Promise<Employee[]> {
+export async function approvalChain(employeeId: string, self?: Employee): Promise<Employee[]> {
   const out: Employee[] = [];
-  let cur = await prisma.employee.findUnique({ where: { id: employeeId } });
+  let cur = self ?? await prisma.employee.findUnique({ where: { id: employeeId } });
   while (cur?.managerId && out.length < APPROVAL_LEVELS) {
     const boss = await prisma.employee.findUnique({ where: { id: cur.managerId } });
     if (!boss || out.some(b => b.id === boss.id) || boss.id === employeeId) break;
@@ -32,10 +32,11 @@ export async function approvalChain(employeeId: string): Promise<Employee[]> {
 }
 
 /** Everything the portal UI needs for one signed-in person, filtered to what they may see. */
-export async function loadSnapshot(meId: string) {
-  const me = await prisma.employee.findUniqueOrThrow({ where: { id: meId } });
+export async function loadSnapshot(meOrId: string | Employee) {
+  const me = typeof meOrId === "string" ? await prisma.employee.findUniqueOrThrow({ where: { id: meOrId } }) : meOrId;
 
-  const [trainings, requests, reports, chain, templates] = await Promise.all([
+  // Everything that doesn't depend on another query is fetched at once: each round trip to the database adds latency.
+  const [trainings, requests, reports, chain, templates, adminAttendance, attendanceDays, surveyCounts, directory] = await Promise.all([
     prisma.training.findMany({ where: { isActive: true }, orderBy: { startDate: "asc" } }),
     prisma.trainingRequest.findMany({
       // Non-admins: their own requests, requests they approve, and all requests from their direct reports.
@@ -46,26 +47,28 @@ export async function loadSnapshot(meId: string) {
       orderBy: { submittedAt: "desc" }
     }),
     prisma.employee.findMany({ where: { managerId: me.id } }),
-    approvalChain(me.id),
-    me.isAdmin ? prisma.notificationTemplate.findMany() : Promise.resolve([])
+    approvalChain(me.id, me),
+    me.isAdmin ? prisma.notificationTemplate.findMany() : Promise.resolve([]),
+    // L&D only: all attendance, per-day attendance, survey response counts and the "Add person" directory
+    me.isAdmin ? prisma.attendance.findMany() : Promise.resolve(null),
+    me.isAdmin ? prisma.attendanceDay.findMany() : Promise.resolve([]),
+    me.isAdmin ? prisma.surveyResponse.groupBy({ by: ["trainingId"], _count: { _all: true } }) : Promise.resolve([]),
+    me.isAdmin
+      ? prisma.employee.findMany({ where: { isExternal: false }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } })
+      : Promise.resolve([])
   ]);
 
-  // Admins see all attendance; others only for people whose requests they can see (themselves, their team).
-  const requesters = [...new Set(requests.map(r => r.employeeId))];
-  const attendance = await prisma.attendance.findMany({ where: me.isAdmin ? {} : { employeeId: { in: requesters } } });
-  // L&D only: per-day attendance and survey response counts
-  const [attendanceDays, surveyCounts] = me.isAdmin
-    ? await Promise.all([
-        prisma.attendanceDay.findMany(),
-        prisma.surveyResponse.groupBy({ by: ["trainingId"], _count: { _all: true } })
-      ])
-    : [[], []];
   const days: Record<string, Record<string, boolean>> = {};
   for (const d of attendanceDays) (days[`${d.trainingId}:${d.employeeId}`] ||= {})[iso(d.day)] = d.present;
 
   const ids = new Set<string>([me.id, ...reports.map(r => r.id), ...chain.map(c => c.id)]);
   requests.forEach(r => { ids.add(r.employeeId); r.steps.forEach(s => ids.add(s.approverId)); });
-  const people = await prisma.employee.findMany({ where: { id: { in: [...ids] } } });
+  // Non-admins see attendance only for people whose requests they can see (themselves, their team).
+  const requesters = [...new Set(requests.map(r => r.employeeId))];
+  const [people, attendance] = await Promise.all([
+    prisma.employee.findMany({ where: { id: { in: [...ids] } } }),
+    adminAttendance ?? prisma.attendance.findMany({ where: { employeeId: { in: requesters } } })
+  ]);
 
   const isApprover = requests.some(r => r.steps.some(s => s.approverId === me.id));
 
@@ -82,10 +85,7 @@ export async function loadSnapshot(meId: string) {
       targetAudience: t.targetAudience || "", provider: t.provider || "", instructorLocation: t.instructorLocation || ""
     })),
     // L&D only: everyone known to the portal, for the "Add person" picker on a session
-    directory: me.isAdmin
-      ? (await prisma.employee.findMany({ where: { isExternal: false }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } }))
-          .map(e => ({ value: `${e.name} <${e.email}>`, id: e.id }))
-      : [],
+    directory: directory.map(e => ({ value: `${e.name} <${e.email}>`, id: e.id })),
     requests: requests.map(r => ({
       id: r.id, who: r.employeeId, tid: r.trainingId,
       chain: r.steps.map(s => s.approverId), step: r.currentStep, state: r.state,
