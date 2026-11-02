@@ -10,6 +10,16 @@ export const dynamic = "force-dynamic";
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
+// Time zone of each training location, so a day's code only works on that calendar day where the training is held
+const ZONES: Record<string, string> = {
+  "Al Khobar, KSA": "Asia/Riyadh", "Dammam, KSA": "Asia/Riyadh", "Abu Dhabi, UAE": "Asia/Dubai", "Dubai, UAE": "Asia/Dubai",
+  "Cairo, Egypt": "Africa/Cairo", "Houston, USA": "America/Chicago"
+};
+const localDate = (tz: string) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+/** Today's date at the training's location; for virtual or unknown locations, today in any of our locations. */
+const todayAt = (location: string) => ZONES[location] ? [localDate(ZONES[location])] : [...new Set(Object.values(ZONES))].map(localDate);
+
 /** Opened by scanning a training day's QR code: marks the signed-in employee present for that day. */
 export default async function CheckIn({ searchParams }: { searchParams: Promise<{ t?: string; d?: string; k?: string }> }) {
   const { t: trainingId = "", d: day = "", k = "" } = await searchParams;
@@ -26,11 +36,13 @@ export default async function CheckIn({ searchParams }: { searchParams: Promise<
   const heading = `${t.code} · ${t.title}`;
   if (!n) return <Message tone="bad" title="This QR code isn't valid" text="Please scan the code shown in the training room again, or ask the L&D team." />;
 
-  // Only on the day itself (allowing for any time zone)
-  const start = new Date(day + "T00:00:00Z").getTime() - 14 * 3600e3, end = new Date(day + "T00:00:00Z").getTime() + 36 * 3600e3;
-  if (Date.now() < start || Date.now() > end) {
+  // Only on the day itself, in the training location's time zone
+  const today = todayAt(t.location);
+  if (!today.includes(day)) {
+    const early = today.every(d => d < day);
     return <Message tone="warn" title={`This is the code for Day ${n}`} sub={heading}
-      text={`Check-in for Day ${n} opens on ${weekdayDate(day)}. Please scan it on that day.`} />;
+      text={early ? `Check-in for Day ${n} opens on ${weekdayDate(day)}. Please scan it on that day.`
+        : `Check-in for Day ${n} (${weekdayDate(day)}) has closed. If you attended that day, please let the L&D team know.`} />;
   }
 
   const request = await prisma.trainingRequest.findFirst({ where: { trainingId: t.id, employeeId: me.id, state: { in: ["enrolled", "completed"] } } });
