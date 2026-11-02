@@ -116,21 +116,27 @@
             </div>
           </sc-if>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
-            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F">Your Requests</div>
+            <div onClick="{{ reqBox.onToggle }}" style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
+              <span style="flex:1">Your Requests <span style="font-weight:normal;color:#8A8F8C">· {{ reqBox.count }}</span></span>
+              <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ reqBox.label }}</span>
+            </div>
+            <sc-if value="{{ reqBox.open }}" hint-placeholder-val="{{ true }}">
             <sc-if value="{{ empty.myRequests }}" hint-placeholder-val="{{ false }}">
               <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">You haven't requested any training yet. Open the Training Calendar, choose a session and click Submit Request.</div>
             </sc-if>
             <sc-for list="{{ myRequests }}" as="r" hint-placeholder-count="3">
-              <div style="padding:16px 18px;border-bottom:1px solid #F0F2F1">
-                <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
-                  <div style="flex:1;min-width:220px">
-                    <div style="font-size:11px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
-                    <div style="font-size:14.5px;font-weight:bold;margin-top:2px">{{ r.title }}</div>
-                    <div style="font-size:12px;color:#58595B;margin-top:3px">{{ r.meta }}</div>
+              <div style="border-bottom:1px solid #F0F2F1">
+                <div onClick="{{ r.onToggle }}" style="padding:12px 18px;display:flex;gap:12px;align-items:center;cursor:pointer;user-select:none">
+                  <span style="width:14px;color:#8A8F8C;font-size:11px">{{ r.chev }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13.5px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#2A7E4F;font-size:11.5px;margin-right:6px">{{ r.code }}</span>{{ r.title }}</div>
+                    <div style="font-size:11.5px;color:#58595B;margin-top:2px">{{ r.meta }}</div>
                   </div>
                   <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:11px;font-weight:bold;padding:5px 11px;border-radius:3px;white-space:nowrap">{{ r.st.label }}</span>
                 </div>
-                <div style="display:flex;gap:8px;margin-top:14px">
+                <sc-if value="{{ r.open }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:0 18px 16px 44px">
+                <div style="display:flex;gap:8px;margin-top:2px">
                   <sc-for list="{{ r.steps }}" as="stp" hint-placeholder-count="3">
                     <div style="flex:1;min-width:0">
                       <div style="height:5px;border-radius:3px;background:{{ stp.bar }}"></div>
@@ -155,8 +161,11 @@
                     <div style="font-size:12px;margin-top:3px;line-height:1.5;white-space:pre-wrap">{{ r.comment }}</div>
                   </div>
                 </sc-if>
+                </div>
+                </sc-if>
               </div>
             </sc-for>
+            </sc-if>
           </div>
         </div>
       </sc-if>
@@ -632,7 +641,7 @@
                     <div style="font-size:11px;color:#58595B;margin-top:2px">Approved by {{ r.manager }}</div>
                   </div>
                   <div style="display:flex;gap:7px">
-                    <button onClick="{{ r.onEnroll }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Enroll</button>
+                    <button onClick="{{ r.onEnroll }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Register</button>
                     <button onClick="{{ r.onDecline }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
                   </div>
                 </div>
@@ -710,7 +719,7 @@
       <sc-if value="{{ s.aApp }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Waitlist Queue</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Manager-approved requests that couldn't be enrolled because the class was full or registration had closed.</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Manager-approved requests that couldn't be registered because the class was full or registration had closed.</div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
             <div style="display:grid;min-width:880px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
               <div style="padding:11px 12px">Employee</div>
@@ -735,7 +744,7 @@
                 <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.manager }}</div>
                 <div style="padding:10px 12px"><span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ r.st.label }}</span></div>
                 <div style="padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap">
-                  <button onClick="{{ r.onEnroll }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Enroll</button>
+                  <button onClick="{{ r.onEnroll }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Register</button>
                   <button onClick="{{ r.onDecline }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
                 </div>
               </div>
@@ -749,7 +758,7 @@
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Attendance &amp; Completion</div>
           <div style="font-size:13px;color:#58595B;margin-bottom:16px">Mark attendance for delivered sessions. Completion feeds the training-days KPI.</div>
           <sc-if value="{{ empty.attendance }}" hint-placeholder-val="{{ false }}">
-            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No delivered sessions with enrolled participants yet.</div>
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No delivered sessions with registered participants yet.</div>
           </sc-if>
           <sc-for list="{{ attendanceSessions }}" as="sess" hint-placeholder-count="2">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-bottom:16px;overflow:hidden">
@@ -954,7 +963,7 @@
             <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px">
               <div>
                 <div style="font-size:14px;font-weight:bold">Registration</div>
-                <div style="font-size:11.5px;color:#58595B;margin-top:3px;line-height:1.55">Your request goes to your line manager. Their approval is final: you're enrolled if a seat is free, or placed on the waitlist if the class is full or registration has closed. All fields are required.</div>
+                <div style="font-size:11.5px;color:#58595B;margin-top:3px;line-height:1.55">Your request goes to your line manager. Their approval is final: you're registered if a seat is free, or placed on the waitlist if the class is full or registration has closed. All fields are required.</div>
               </div>
               <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px;padding:10px 12px">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>

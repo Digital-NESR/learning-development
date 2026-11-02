@@ -95,21 +95,27 @@ export default function PortalView({ v }) {
 </div>
 </>) : null}
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
-<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", fontSize: "13px", fontWeight: "bold", borderLeft: "4px solid #2A7E4F" }}>Your Requests</div>
+<div onClick={v.reqBox.onToggle} style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", fontSize: "13px", fontWeight: "bold", borderLeft: "4px solid #2A7E4F", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", userSelect: "none" }}>
+<span style={{ flex: "1" }}>Your Requests <span style={{ fontWeight: "normal", color: "#8A8F8C" }}>· {v.reqBox.count}</span></span>
+<span style={{ fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{v.reqBox.label}</span>
+</div>
+{v.reqBox.open ? (<>
 {v.empty.myRequests ? (<>
 <div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>You haven't requested any training yet. Open the Training Calendar, choose a session and click Submit Request.</div>
 </>) : null}
 {(v.myRequests || []).map((r, i3) => (<React.Fragment key={i3}>
-<div style={{ padding: "16px 18px", borderBottom: "1px solid #F0F2F1" }}>
-<div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
-<div style={{ flex: "1", minWidth: "220px" }}>
-<div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{r.code}</div>
-<div style={{ fontSize: "14.5px", fontWeight: "bold", marginTop: "2px" }}>{r.title}</div>
-<div style={{ fontSize: "12px", color: "#58595B", marginTop: "3px" }}>{r.meta}</div>
+<div style={{ borderBottom: "1px solid #F0F2F1" }}>
+<div onClick={r.onToggle} style={{ padding: "12px 18px", display: "flex", gap: "12px", alignItems: "center", cursor: "pointer", userSelect: "none" }}>
+<span style={{ width: "14px", color: "#8A8F8C", fontSize: "11px" }}>{r.chev}</span>
+<div style={{ flex: "1", minWidth: "0" }}>
+<div style={{ fontSize: "13.5px", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><span style={{ color: "#2A7E4F", fontSize: "11.5px", marginRight: "6px" }}>{r.code}</span>{r.title}</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>{r.meta}</div>
 </div>
 <span style={{ background: r.st.bg, color: r.st.fg, fontSize: "11px", fontWeight: "bold", padding: "5px 11px", borderRadius: "3px", whiteSpace: "nowrap" }}>{r.st.label}</span>
 </div>
-<div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+{r.open ? (<>
+<div style={{ padding: "0 18px 16px 44px" }}>
+<div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
 {(r.steps || []).map((stp, i4) => (<React.Fragment key={i4}>
 <div style={{ flex: "1", minWidth: "0" }}>
 <div style={{ height: "5px", borderRadius: "3px", background: stp.bar }}></div>
@@ -135,7 +141,10 @@ export default function PortalView({ v }) {
 </div>
 </>) : null}
 </div>
+</>) : null}
+</div>
 </React.Fragment>))}
+</>) : null}
 </div>
 </div>
 </>) : null}
@@ -595,7 +604,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11px", color: "#58595B", marginTop: "2px" }}>Approved by {r.manager}</div>
 </div>
 <div style={{ display: "flex", gap: "7px" }}>
-<button onClick={r.onEnroll} style={{ padding: "6px 12px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Enroll</button>
+<button onClick={r.onEnroll} style={{ padding: "6px 12px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Register</button>
 <button onClick={r.onDecline} style={{ padding: "6px 12px", border: "1px solid #D1D3D4", background: "#fff", color: "#8A2B2B", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Decline</button>
 </div>
 </div>
@@ -671,7 +680,7 @@ export default function PortalView({ v }) {
 {v.s.aApp ? (<>
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Waitlist Queue</div>
-<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Manager-approved requests that couldn't be enrolled because the class was full or registration had closed.</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Manager-approved requests that couldn't be registered because the class was full or registration had closed.</div>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflowX: "auto" }}>
 <div style={{ display: "grid", minWidth: "880px", gridTemplateColumns: "minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px", background: "#2A7E4F", color: "#fff", fontSize: "11px", fontWeight: "bold" }}>
 <div style={{ padding: "11px 12px" }}>Employee</div>
@@ -696,7 +705,7 @@ export default function PortalView({ v }) {
 <div style={{ padding: "10px 12px", fontSize: "12px", color: "#58595B" }}>{r.manager}</div>
 <div style={{ padding: "10px 12px" }}><span style={{ background: r.st.bg, color: r.st.fg, fontSize: "10.5px", fontWeight: "bold", padding: "3px 8px", borderRadius: "3px" }}>{r.st.label}</span></div>
 <div style={{ padding: "8px 12px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
-<button onClick={r.onEnroll} style={{ padding: "6px 11px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Enroll</button>
+<button onClick={r.onEnroll} style={{ padding: "6px 11px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Register</button>
 <button onClick={r.onDecline} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#8A2B2B", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Decline</button>
 </div>
 </div>
@@ -709,7 +718,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Attendance &amp; Completion</div>
 <div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Mark attendance for delivered sessions. Completion feeds the training-days KPI.</div>
 {v.empty.attendance ? (<>
-<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No delivered sessions with enrolled participants yet.</div>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No delivered sessions with registered participants yet.</div>
 </>) : null}
 {(v.attendanceSessions || []).map((sess, i33) => (<React.Fragment key={i33}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "16px", overflow: "hidden" }}>
@@ -905,7 +914,7 @@ export default function PortalView({ v }) {
 <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" }}>
 <div>
 <div style={{ fontSize: "14px", fontWeight: "bold" }}>Registration</div>
-<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "3px", lineHeight: "1.55" }}>Your request goes to your line manager. Their approval is final: you're enrolled if a seat is free, or placed on the waitlist if the class is full or registration has closed. All fields are required.</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "3px", lineHeight: "1.55" }}>Your request goes to your line manager. Their approval is final: you're registered if a seat is free, or placed on the waitlist if the class is full or registration has closed. All fields are required.</div>
 </div>
 <div style={{ display: "flex", gap: "9px", alignItems: "center", flexWrap: "wrap", background: "#F2F7F4", border: "1px solid #D9E7E0", borderRadius: "5px", padding: "10px 12px" }}>
 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>

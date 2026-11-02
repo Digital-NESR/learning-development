@@ -400,7 +400,7 @@ export default class Portal extends React.Component {
       const chainPeople = (r.chain || []).map(k => this.P(k)).filter(Boolean);
       const cur = r.state === "pending" ? chainPeople[r.step] : null;
       const base = STATE_STYLE[r.state] || STATE_STYLE.pending;
-      const outcome = {enrolled: "Enrolled", completed: "Completed", waitlist: "Waitlisted"}[r.state] || "Confirmed";
+      const outcome = {enrolled: "Registered", completed: "Completed", waitlist: "Waitlisted"}[r.state] || "Confirmed";
       const stepDefs = [{label:"Submitted", note: r.submitted}]
         .concat(chainPeople.map(p => ({label: p.first + " (manager)", note: p.title})))
         .concat([{label: outcome, note: r.state === "waitlist" ? "Class full or registration closed" : "Seat confirmed"}]);
@@ -412,7 +412,7 @@ export default class Portal extends React.Component {
         const waitStep = r.state === "waitlist" && i === stepDefs.length - 1;
         return {
           label: d.label,
-          note: failed ? "Declined" : i === 0 ? r.submitted : waitStep ? d.note : active ? "Done" : (i === prog && r.state === "pending" ? "Awaiting" : ""),
+          note: failed ? "Declined" : i === 0 ? r.submitted : waitStep ? d.note : active ? "Done" : (i === prog && r.state === "pending" ? "Pending" : ""),
           bar: failed ? "#8A2B2B" : waitStep ? "#1F4E79" : active ? "#2A7E4F" : "#E1E5E3",
           fg: failed ? "#8A2B2B" : waitStep ? "#1F4E79" : active ? "#1F5E3A" : "#A8ACAA"
         };
@@ -427,13 +427,15 @@ export default class Portal extends React.Component {
         approver: approverP ? approverP.name + (approverP.title ? " (" + approverP.title + ")" : "") : (form.mgr || "Added by the L&D team"),
         justification: r.justification,
         meta: this.range(t) + " · " + t.location + " · submitted " + r.submitted,
-        st: {label: r.state === "pending" ? (cur ? "Awaiting " + cur.first : "Awaiting Manager") : base.label, bg: base.bg, fg: base.fg},
+        st: {label: base.label, bg: base.bg, fg: base.fg},
+        open: !!(st.reqOpen || {})[r.id], chev: (st.reqOpen || {})[r.id] ? "\u25BC" : "\u25B6",
+        onToggle: () => this.setState(s => ({reqOpen: Object.assign({}, s.reqOpen, {[r.id]: !(s.reqOpen || {})[r.id]})})),
         state: r.state, stage: r.state, steps,
         actionable: r.state === "pending" && (r.chain || [])[r.step] === meP.key,
         onApprove: () => this.act(() => actions.approveRequest(r.id), data => {
           const after = data.requests.find(x => x.id === r.id);
-          if (after && after.state === "enrolled") return ["Approved — enrolled", name + " is enrolled in " + t.code + "."];
-          if (after && after.state === "waitlist") return ["Approved — waitlisted", name + " is on the waitlist for " + t.code + " (class full or registration closed). L&D can enroll them."];
+          if (after && after.state === "enrolled") return ["Approved — registered", name + " is registered for " + t.code + "."];
+          if (after && after.state === "waitlist") return ["Approved — waitlisted", name + " is on the waitlist for " + t.code + " (class full or registration closed). L&D can register them."];
           return ["Approved", nextIdx < chainPeople.length ? name + " approved — routed to " + chainPeople[nextIdx].name + "." : name + " approved."];
         }),
         // Manager decline: opens a comment box; the reason is required and goes to the employee
@@ -458,8 +460,8 @@ export default class Portal extends React.Component {
         },
         onEnroll: () => {
           const full = t.enrolled >= t.seats;
-          if (full && !window.confirm(t.code + " is full (" + t.enrolled + " of " + t.seats + " seats). Enroll " + name + " anyway?")) return;
-          this.act(() => actions.enrollRequest(r.id), "Participant enrolled", name + " is enrolled in " + t.code + ".");
+          if (full && !window.confirm(t.code + " is full (" + t.enrolled + " of " + t.seats + " seats). Register " + name + " anyway?")) return;
+          this.act(() => actions.enrollRequest(r.id), "Participant registered", name + " is registered for " + t.code + ".");
         },
         onDecline: () => this.act(() => actions.rejectRequest(r.id), "Request declined", name + "'s request for " + t.code + " was declined.")
       };
@@ -609,8 +611,8 @@ export default class Portal extends React.Component {
       return {n: String(rs.length), avg: a + "d avg in system", pct: String(Math.min(100, Math.round(a / 14 * 100)))};
     };
     const timelineRows = [
-      Object.assign({label:"Awaiting manager", color:"#B07A00"}, stageAvg(["pending"])),
-      Object.assign({label:"Enrolled", color:"#2A7E4F"}, stageAvg(["enrolled"])),
+      Object.assign({label:"Pending Approval", color:"#B07A00"}, stageAvg(["pending"])),
+      Object.assign({label:"Registered", color:"#2A7E4F"}, stageAvg(["enrolled"])),
       Object.assign({label:"Waitlisted", color:"#58595B"}, stageAvg(["waitlist"])),
       Object.assign({label:"Declined", color:"#8A2B2B"}, stageAvg(["rejected"]))
     ];
@@ -901,7 +903,7 @@ export default class Portal extends React.Component {
             const v = st.addValue.trim();
             if (!v) return this.flash("Who should be added?", "Type a name from the list, or an email address.");
             const full = t.enrolled >= t.seats;
-            if (full && !window.confirm(t.code + " is full (" + t.enrolled + " of " + t.seats + " seats). Add and enroll anyway?")) return;
+            if (full && !window.confirm(t.code + " is full (" + t.enrolled + " of " + t.seats + " seats). Add and register anyway?")) return;
             this.act(() => actions.addParticipant(t.id, v), "Added", v.replace(/ <.*>$/, "") + " is registered for " + t.code + ".", {addValue: ""});
           },
           extName: st.extName, onExtName: e => this.setState({extName: e.target.value}),
@@ -944,7 +946,7 @@ export default class Portal extends React.Component {
       noResults: rows.length === 0,
       resultLabel: rows.length + " of " + st.trainings.length + " sessions in the calendar",
       catalogLabel: st.trainings.length + " sessions published",
-      pendingLabel: onMe + " request" + (onMe === 1 ? "" : "s") + " waiting on you · your approval is final: the person is enrolled, or waitlisted if the class is full or registration has closed",
+      pendingLabel: onMe + " request" + (onMe === 1 ? "" : "s") + " waiting on you · your approval is final: the person is registered, or waitlisted if the class is full or registration has closed",
       dayNames: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
       monthCells, monthLabel: MONTHS[st.month] + " " + st.calYear,
       prevMonth: () => this.setState(st.month === 0 ? {month: 11, calYear: st.calYear - 1} : {month: st.month - 1}),
@@ -954,6 +956,8 @@ export default class Portal extends React.Component {
         queueRows: queueRows.length === 0, attendance: attendanceSessions.length === 0
       },
       myRequests, teamRequests, queueRows, teamStats,
+      reqBox: {open: !st.reqBoxClosed, label: st.reqBoxClosed ? "Show" : "Hide", count: myRequests.length + (myRequests.length === 1 ? " request" : " requests"),
+        onToggle: () => this.setState(s => ({reqBoxClosed: !s.reqBoxClosed}))},
       empKpis, dashList, adminKpis, fillRows, catRows, attendanceSessions, templates, ageingRows, timelineRows,
       resources: RESOURCES,
       detail, formFields, justification: st.justification,
