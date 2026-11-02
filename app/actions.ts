@@ -322,23 +322,6 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
   });
 }
 
-export async function deleteTraining(id: string): Promise<Result> {
-  return run(async me => {
-    requireAdmin(me);
-    const t = await prisma.training.findUnique({ where: { id } });
-    if (!t) throw new UserError("Training not found.");
-    // Everyone still registered (not declined, not already completed) is told it's cancelled
-    const registered = await prisma.trainingRequest.findMany({
-      where: { trainingId: id, state: { in: ["pending", "enrolled", "waitlist"] } }, include: { employee: true }
-    });
-    await prisma.$transaction(async tx => {
-      await tx.training.update({ where: { id }, data: { isActive: false } });
-      await audit(tx, me, "withdraw", "training", id, { notified: registered.length });
-    });
-    await notify("cancelled", t, registered.map(r => ({ to: r.employee })), me.id);
-  });
-}
-
 /** Marks attendance. Attended → the request becomes "completed"; no show → back to "enrolled". */
 export async function setAttendance(trainingId: string, employeeId: string, attended: boolean): Promise<Result> {
   return run(async me => {
