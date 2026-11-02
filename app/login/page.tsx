@@ -7,20 +7,29 @@ export const dynamic = "force-dynamic";
 
 const green = "#2A7E4F";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  // Check the employee record, not just the session: a session for a deleted employee must still see this page.
-  if (await currentEmployee()) redirect("/");
-  const { error } = await searchParams;
+/** Only same-site paths, so a crafted link can't send people elsewhere after sign-in. */
+function safePath(raw: unknown) {
+  let s = String(raw || "");
+  try { if (/^https?:/i.test(s)) { const u = new URL(s); s = u.pathname + u.search; } } catch { return "/"; }
+  return s.startsWith("/") && !s.startsWith("//") && !s.startsWith("/login") ? s : "/";
+}
 
-  async function microsoft() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; callbackUrl?: string }> }) {
+  const { error, callbackUrl } = await searchParams;
+  // Where to go after sign-in, e.g. back to a QR check-in or survey page.
+  const next = safePath(callbackUrl);
+  // Check the employee record, not just the session: a session for a deleted employee must still see this page.
+  if (await currentEmployee()) redirect(next);
+
+  async function microsoft(formData: FormData) {
     "use server";
-    await signIn("microsoft-entra-id", { redirectTo: "/" });
+    await signIn("microsoft-entra-id", { redirectTo: safePath(formData.get("next")) });
   }
 
   async function demo(formData: FormData) {
     "use server";
     try {
-      await signIn("demo", { email: formData.get("email"), redirectTo: "/" });
+      await signIn("demo", { email: formData.get("email"), redirectTo: safePath(formData.get("next")) });
     } catch (e) {
       if (e instanceof AuthError) redirect("/login?error=demo");
       throw e;
@@ -44,6 +53,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
           )}
           <form action={microsoft}>
+            <input type="hidden" name="next" value={next} />
             <button type="submit" style={{ width: "100%", padding: "11px 14px", border: 0, borderRadius: 4, background: green, color: "#fff", fontWeight: "bold", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
               <svg width="16" height="16" viewBox="0 0 21 21" aria-hidden="true"><path fill="#f25022" d="M1 1h9v9H1z"/><path fill="#7fba00" d="M11 1h9v9h-9z"/><path fill="#00a4ef" d="M1 11h9v9H1z"/><path fill="#ffb900" d="M11 11h9v9h-9z"/></svg>
               Sign in with Microsoft
@@ -54,6 +64,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid #E1E5E3" }}>
               <div style={{ fontSize: 11, fontWeight: "bold", letterSpacing: ".8px", textTransform: "uppercase", color: "#8A6100", marginBottom: 8 }}>Demo login — testing only</div>
               <form action={demo} style={{ display: "flex", gap: 8 }}>
+                <input type="hidden" name="next" value={next} />
                 <select name="email" style={{ flex: 1, padding: "8px", border: "1px solid #D1D3D4", borderRadius: 4, background: "#fff" }}>
                   {DEMO_PEOPLE.map(p => <option key={p.email} value={p.email}>{p.name} — {p.title}</option>)}
                 </select>

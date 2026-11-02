@@ -60,6 +60,8 @@ model Employee {
   requests    TrainingRequest[]
   approvals   ApprovalStep[]
   attendance  Attendance[]
+  attendanceDays AttendanceDay[]
+  surveys     SurveyResponse[]
 
   @@map("employees")
 }
@@ -88,6 +90,8 @@ model Training {
 
   requests    TrainingRequest[]
   attendance  Attendance[]
+  attendanceDays AttendanceDay[]
+  surveys     SurveyResponse[]
 
   @@index([startDate])
   @@map("trainings")
@@ -172,4 +176,37 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@map("audit_log")
+}
+
+/// One row per person per training day. Filled by QR check-in (method "qr") or by L&D (method "manual").
+model AttendanceDay {
+  trainingId String   @map("training_id")
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  employeeId String   @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  day        DateTime @db.Date
+  present    Boolean
+  method     String
+  markedById String?  @map("marked_by_id")
+  at         DateTime @default(now())
+
+  @@id([trainingId, employeeId, day])
+  @@map("attendance_days")
+}
+
+/// Feedback survey answers, one per person per training. Ratings are 1-5 keyed by question id (null = not applicable).
+model SurveyResponse {
+  id         String   @id @default(cuid())
+  trainingId String   @map("training_id")
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  employeeId String   @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  ratings    Json
+  likedBest  String?  @map("liked_best")
+  actionPlan String?  @map("action_plan")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([trainingId, employeeId])
+  @@map("survey_responses")
 }

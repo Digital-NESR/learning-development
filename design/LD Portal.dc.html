@@ -756,9 +756,27 @@
       <sc-if value="{{ s.aAtt }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Attendance &amp; Completion</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Mark attendance for delivered sessions. Completion feeds the training-days KPI.</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Print a check-in QR code for each training day: participants scan it and sign in with their NESR account. You can also mark each day here. Present on every day = Attended.</div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-bottom:18px;padding:13px 16px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;border-left:4px solid #2A7E4F">
+            <div style="flex:1 1 220px">
+              <div style="font-size:13px;font-weight:bold">Attendance report</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">All trainings in the period, with every participant's days present. Excel.</div>
+            </div>
+            <sc-for list="{{ attReport.selects }}" as="f" hint-placeholder-count="3">
+              <div>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="padding:7px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                  <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                    <option value="{{ o.value }}">{{ o.label }}</option>
+                  </sc-for>
+                </select>
+              </div>
+            </sc-for>
+            <button onClick="{{ attReport.onExport }}" style="padding:8px 14px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Export attendance</button>
+            <button onClick="{{ attReport.onSurveys }}" style="padding:8px 14px;border:1px solid #D1D3D4;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">All survey results</button>
+          </div>
           <sc-if value="{{ empty.attendance }}" hint-placeholder-val="{{ false }}">
-            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No delivered sessions with registered participants yet.</div>
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No current or upcoming sessions with registered participants yet.</div>
           </sc-if>
           <sc-for list="{{ attendanceSessions }}" as="sess" hint-placeholder-count="2">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-bottom:16px;overflow:hidden">
@@ -766,8 +784,15 @@
                 <div style="font-size:11px;font-weight:bold;color:#2A7E4F">{{ sess.code }}</div>
                 <div style="font-size:13.5px;font-weight:bold">{{ sess.title }}</div>
                 <div style="font-size:11.5px;color:#58595B">{{ sess.meta }}</div>
+                <span style="background:{{ sess.whenBg }};color:{{ sess.whenFg }};font-size:10px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ sess.when }}</span>
                 <div style="flex:1"></div>
                 <div style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ sess.completionLabel }}</div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;background:#F7F9F8;border-bottom:1px solid #E1E5E3">
+                <button onClick="{{ sess.onQr }}" style="padding:6px 11px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Check-in QR codes ({{ sess.dayCount }})</button>
+                <button onClick="{{ sess.onSurveyQr }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Survey QR code</button>
+                <button onClick="{{ sess.onSheet }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Attendance sheet</button>
+                <button onClick="{{ sess.onSurvey }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Survey results · {{ sess.surveyCount }}</button>
               </div>
               <sc-for list="{{ sess.people }}" as="p" hint-placeholder-count="4">
                 <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #F4F6F5">
@@ -775,6 +800,11 @@
                   <div style="flex:1;min-width:0">
                     <div style="font-size:12.5px;font-weight:bold">{{ p.name }}</div>
                     <div style="font-size:11px;color:#58595B">{{ p.meta }}</div>
+                  </div>
+                  <div style="display:flex;gap:4px;flex-wrap:wrap;flex:0 1 auto;justify-content:flex-end">
+                    <sc-for list="{{ p.days }}" as="dy" hint-placeholder-count="3">
+                      <button onClick="{{ dy.onClick }}" title="{{ dy.title }}" style="min-width:34px;padding:5px 6px;border:1px solid {{ dy.border }};background:{{ dy.bg }};color:{{ dy.fg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:10.5px">{{ dy.label }}</button>
+                    </sc-for>
                   </div>
                   <div style="display:flex;gap:0;border:1px solid #D1D3D4;border-radius:4px;overflow:hidden;flex:0 0 auto">
                     <button onClick="{{ p.onAttended }}" title="Mark as attended" style="padding:6px 12px;border:0;background:{{ p.attBg }};color:{{ p.attFg }};cursor:pointer;font-weight:bold;font-size:11.5px">Attended</button>
@@ -790,7 +820,7 @@
       <sc-if value="{{ s.aNotify }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Notifications</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Email the people registered for a training, print nameplates, and edit the email templates.</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Email the people registered for a training, print nameplates and certificates, and edit the email templates.</div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;margin-bottom:26px">
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
@@ -883,6 +913,72 @@
             </div>
             <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end">
               <button onClick="{{ plate.onSubmit }}" style="padding:9px 18px;border:0;background:{{ plate.buttonBg }};color:#fff;border-radius:4px;cursor:{{ plate.buttonCursor }};font-weight:bold">{{ plate.buttonLabel }}</button>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
+              <div style="font-size:13px;font-weight:bold">Certificates of Completion</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">NESR or CPVEN template, one page per person. PDF to print, or PowerPoint to edit.</div>
+            </div>
+            <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;flex:1">
+              <sc-for list="{{ cert.selects }}" as="f" hint-placeholder-count="3">
+                <div style="grid-column:{{ f.span }}">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                  <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                      <option value="{{ o.value }}">{{ o.label }}</option>
+                    </sc-for>
+                  </select>
+                </div>
+              </sc-for>
+              <sc-if value="{{ cert.showPick }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:1 / -1;border:1px solid #E1E5E3;border-radius:4px;max-height:180px;overflow:auto;padding:4px 0">
+                  <sc-for list="{{ cert.people }}" as="cp" hint-placeholder-count="4">
+                    <label style="display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:12px;cursor:pointer">
+                      <input type="checkbox" checked="{{ cp.checked }}" onChange="{{ cp.onToggle }}" />
+                      <span style="flex:1">{{ cp.name }}</span>
+                      <span style="font-size:10.5px;color:#8A8F8C">{{ cp.note }}</span>
+                    </label>
+                  </sc-for>
+                  <sc-if value="{{ cert.noPeople }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:10px;font-size:12px;color:#8A8F8C">No one is registered for this training yet.</div>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{ cert.showTyped }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Names (one per line)</div>
+                  <textarea value="{{ cert.typedNames }}" onChange="{{ cert.onTypedNames }}" rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
+                </div>
+              </sc-if>
+              <div>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Instructor name</div>
+                <input value="{{ cert.instructorName }}" onChange="{{ cert.onInstructorName }}" placeholder="e.g. Anthony Mitchell" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Instructor title</div>
+                <input value="{{ cert.instructorTitle }}" onChange="{{ cert.onInstructorTitle }}" placeholder="Instructor" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              </div>
+              <div style="grid-column:1 / -1">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Instructor signature (optional)</div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <label style="padding:7px 12px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;font-weight:bold;color:#2A7E4F">
+                    {{ cert.sigButton }}
+                    <input type="file" accept="image/png,image/jpeg" onChange="{{ cert.onSignature }}" style="display:none" />
+                  </label>
+                  <sc-if value="{{ cert.sigUrl }}" hint-placeholder-val="{{ false }}">
+                    <img src="{{ cert.sigUrl }}" alt="Signature" style="height:34px;max-width:140px;object-fit:contain;border:1px dashed #D1D3D4;border-radius:3px;background:#fff;padding:2px" />
+                    <button onClick="{{ cert.onClearSignature }}" style="border:0;background:none;color:#8A2B2B;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Remove</button>
+                  </sc-if>
+                  <span style="font-size:11px;color:#8A8F8C">{{ cert.sigNote }}</span>
+                </div>
+              </div>
+              <div style="grid-column:1 / -1;font-size:11.5px;color:#58595B">{{ cert.summary }}</div>
+            </div>
+            <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end;gap:8px">
+              <button onClick="{{ cert.onPptx }}" style="padding:9px 14px;border:1px solid #D1D3D4;background:#fff;color:{{ cert.pptxFg }};border-radius:4px;cursor:{{ cert.buttonCursor }};font-weight:bold">{{ cert.pptxLabel }}</button>
+              <button onClick="{{ cert.onPdf }}" style="padding:9px 18px;border:0;background:{{ cert.buttonBg }};color:#fff;border-radius:4px;cursor:{{ cert.buttonCursor }};font-weight:bold">{{ cert.pdfLabel }}</button>
             </div>
           </div>
           </div>

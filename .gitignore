@@ -9,3 +9,6 @@ next-env.d.ts
 .claude/
 npm-debug.log*
 *.docx
+
+# L&D template files (certificate templates include a real signature) — not committed while the repo is public
+/templates/

@@ -53,6 +53,15 @@ export async function loadSnapshot(meId: string) {
   // Admins see all attendance; others only for people whose requests they can see (themselves, their team).
   const requesters = [...new Set(requests.map(r => r.employeeId))];
   const attendance = await prisma.attendance.findMany({ where: me.isAdmin ? {} : { employeeId: { in: requesters } } });
+  // L&D only: per-day attendance and survey response counts
+  const [attendanceDays, surveyCounts] = me.isAdmin
+    ? await Promise.all([
+        prisma.attendanceDay.findMany(),
+        prisma.surveyResponse.groupBy({ by: ["trainingId"], _count: { _all: true } })
+      ])
+    : [[], []];
+  const days: Record<string, Record<string, boolean>> = {};
+  for (const d of attendanceDays) (days[`${d.trainingId}:${d.employeeId}`] ||= {})[iso(d.day)] = d.present;
 
   const ids = new Set<string>([me.id, ...reports.map(r => r.id), ...chain.map(c => c.id)]);
   requests.forEach(r => { ids.add(r.employeeId); r.steps.forEach(s => ids.add(s.approverId)); });
@@ -87,6 +96,8 @@ export async function loadSnapshot(meId: string) {
       justification: r.justification || "—", form: r.form, comment: r.decisionComment || ""
     })),
     attended: Object.fromEntries(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended])),
+    days,
+    surveys: Object.fromEntries(surveyCounts.map(c => [c.trainingId, c._count._all])),
     templatesOff: Object.fromEntries(templates.filter(t => !t.isActive).map(t => [t.id, true])),
     templates: templates.map(t => ({ id: t.id, name: t.name, trigger: t.trigger, subject: t.subject, body: t.body })),
     mail: me.isAdmin

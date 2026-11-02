@@ -8,6 +8,7 @@ import { CATEGORIES, LOCATIONS, NATIONALITIES, TRAINING_STATUSES, TYPES, statusL
 import { AUDIENCES, audienceIds } from "@/lib/audience.js";
 import { buildMessage, notify, portalUrl, postToN8n } from "@/lib/notify";
 import { ensureManager } from "@/lib/graph";
+import { recordDay } from "@/lib/attendance";
 
 type Result = { ok: true; data: Snapshot } | { ok: false; error: string };
 
@@ -353,6 +354,22 @@ export async function setAttendance(trainingId: string, employeeId: string, atte
         data: { state: attended ? "completed" : "enrolled" }
       });
       await audit(tx, me, attended ? "attended" : "no_show", "attendance", `${trainingId}:${employeeId}`);
+    });
+  });
+}
+
+/** L&D marks one training day for one person: present, absent, or cleared (null). Present every day = Attended. */
+export async function setDayAttendance(trainingId: string, employeeId: string, day: string, present: boolean | null): Promise<Result> {
+  return run(async me => {
+    requireAdmin(me);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day))) throw new UserError("That day isn't valid.");
+    const t = await prisma.training.findUnique({ where: { id: String(trainingId) } });
+    if (!t) throw new UserError("Training not found.");
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    if (day < iso(t.startDate) || day > iso(t.endDate)) throw new UserError("That day isn't part of this training.");
+    await prisma.$transaction(async tx => {
+      await recordDay(tx, t, String(employeeId), day, present === null ? null : !!present, "manual", me.id);
+      await audit(tx, me, present === null ? "day_cleared" : present ? "day_present" : "day_absent", "attendance", `${t.id}:${employeeId}:${day}`);
     });
   });
 }

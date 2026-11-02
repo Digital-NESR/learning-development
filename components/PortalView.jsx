@@ -716,25 +716,55 @@ export default function PortalView({ v }) {
 {v.s.aAtt ? (<>
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Attendance &amp; Completion</div>
-<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Mark attendance for delivered sessions. Completion feeds the training-days KPI.</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Print a check-in QR code for each training day: participants scan it and sign in with their NESR account. You can also mark each day here. Present on every day = Attended.</div>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "18px", padding: "13px 16px", display: "flex", alignItems: "flex-end", gap: "12px", flexWrap: "wrap", borderLeft: "4px solid #2A7E4F" }}>
+<div style={{ flex: "1 1 220px" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>Attendance report</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>All trainings in the period, with every participant's days present. Excel.</div>
+</div>
+{(v.attReport.selects || []).map((f, i33) => (<React.Fragment key={i33}>
+<div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
+<select value={f.value} onChange={f.onChange} style={{ padding: "7px 9px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
+{(f.options || []).map((o, i34) => (<React.Fragment key={i34}>
+<option value={o.value}>{o.label}</option>
+</React.Fragment>))}
+</select>
+</div>
+</React.Fragment>))}
+<button onClick={v.attReport.onExport} style={{ padding: "8px 14px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>Export attendance</button>
+<button onClick={v.attReport.onSurveys} style={{ padding: "8px 14px", border: "1px solid #D1D3D4", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>All survey results</button>
+</div>
 {v.empty.attendance ? (<>
-<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No delivered sessions with registered participants yet.</div>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No current or upcoming sessions with registered participants yet.</div>
 </>) : null}
-{(v.attendanceSessions || []).map((sess, i33) => (<React.Fragment key={i33}>
+{(v.attendanceSessions || []).map((sess, i35) => (<React.Fragment key={i35}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "16px", overflow: "hidden" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: "1px solid #E1E5E3", flexWrap: "wrap" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{sess.code}</div>
 <div style={{ fontSize: "13.5px", fontWeight: "bold" }}>{sess.title}</div>
 <div style={{ fontSize: "11.5px", color: "#58595B" }}>{sess.meta}</div>
+<span style={{ background: sess.whenBg, color: sess.whenFg, fontSize: "10px", fontWeight: "bold", padding: "3px 8px", borderRadius: "3px" }}>{sess.when}</span>
 <div style={{ flex: "1" }}></div>
 <div style={{ fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{sess.completionLabel}</div>
 </div>
-{(sess.people || []).map((p, i34) => (<React.Fragment key={i34}>
+<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", padding: "10px 16px", background: "#F7F9F8", borderBottom: "1px solid #E1E5E3" }}>
+<button onClick={sess.onQr} style={{ padding: "6px 11px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Check-in QR codes ({sess.dayCount})</button>
+<button onClick={sess.onSurveyQr} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#1F1F1D", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Survey QR code</button>
+<button onClick={sess.onSheet} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#1F1F1D", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Attendance sheet</button>
+<button onClick={sess.onSurvey} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#1F1F1D", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Survey results · {sess.surveyCount}</button>
+</div>
+{(sess.people || []).map((p, i36) => (<React.Fragment key={i36}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px", borderBottom: "1px solid #F4F6F5" }}>
 <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "bold" }}>{p.initials}</div>
 <div style={{ flex: "1", minWidth: "0" }}>
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{p.name}</div>
 <div style={{ fontSize: "11px", color: "#58595B" }}>{p.meta}</div>
+</div>
+<div style={{ display: "flex", gap: "4px", flexWrap: "wrap", flex: "0 1 auto", justifyContent: "flex-end" }}>
+{(p.days || []).map((dy, i37) => (<React.Fragment key={i37}>
+<button onClick={dy.onClick} title={dy.title} style={{ minWidth: "34px", padding: "5px 6px", border: `1px solid ${dy.border}`, background: dy.bg, color: dy.fg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "10.5px" }}>{dy.label}</button>
+</React.Fragment>))}
 </div>
 <div style={{ display: "flex", gap: "0", border: "1px solid #D1D3D4", borderRadius: "4px", overflow: "hidden", flex: "0 0 auto" }}>
 <button onClick={p.onAttended} title="Mark as attended" style={{ padding: "6px 12px", border: "0", background: p.attBg, color: p.attFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Attended</button>
@@ -749,7 +779,7 @@ export default function PortalView({ v }) {
 {v.s.aNotify ? (<>
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Notifications</div>
-<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Email the people registered for a training, print nameplates, and edit the email templates.</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Email the people registered for a training, print nameplates and certificates, and edit the email templates.</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(360px,1fr))", gap: "16px", marginBottom: "26px" }}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
@@ -757,11 +787,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Goes only to people registered for the selected training. Each email is personalised.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: "1" }}>
-{(v.mail.selects || []).map((f, i35) => (<React.Fragment key={i35}>
+{(v.mail.selects || []).map((f, i38) => (<React.Fragment key={i38}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i36) => (<React.Fragment key={i36}>
+{(f.options || []).map((o, i39) => (<React.Fragment key={i39}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -789,11 +819,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Fold-in-half desk nameplates as a PDF, one A4 page per person.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
-{(v.plate.selects || []).map((f, i37) => (<React.Fragment key={i37}>
+{(v.plate.selects || []).map((f, i40) => (<React.Fragment key={i40}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i38) => (<React.Fragment key={i38}>
+{(f.options || []).map((o, i41) => (<React.Fragment key={i41}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -801,7 +831,7 @@ export default function PortalView({ v }) {
 </React.Fragment>))}
 {v.plate.showPick ? (<>
 <div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "180px", overflow: "auto", padding: "4px 0" }}>
-{(v.plate.people || []).map((pp, i39) => (<React.Fragment key={i39}>
+{(v.plate.people || []).map((pp, i42) => (<React.Fragment key={i42}>
 <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
 <input type="checkbox" checked={pp.checked} onChange={pp.onToggle} />
 <span style={{ flex: "1" }}>{pp.name}</span>
@@ -842,10 +872,75 @@ export default function PortalView({ v }) {
 <button onClick={v.plate.onSubmit} style={{ padding: "9px 18px", border: "0", background: v.plate.buttonBg, color: "#fff", borderRadius: "4px", cursor: v.plate.buttonCursor, fontWeight: "bold" }}>{v.plate.buttonLabel}</button>
 </div>
 </div>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>Certificates of Completion</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>NESR or CPVEN template, one page per person. PDF to print, or PowerPoint to edit.</div>
+</div>
+<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
+{(v.cert.selects || []).map((f, i43) => (<React.Fragment key={i43}>
+<div style={{ gridColumn: f.span }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
+<select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
+{(f.options || []).map((o, i44) => (<React.Fragment key={i44}>
+<option value={o.value}>{o.label}</option>
+</React.Fragment>))}
+</select>
+</div>
+</React.Fragment>))}
+{v.cert.showPick ? (<>
+<div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "180px", overflow: "auto", padding: "4px 0" }}>
+{(v.cert.people || []).map((cp, i45) => (<React.Fragment key={i45}>
+<label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
+<input type="checkbox" checked={cp.checked} onChange={cp.onToggle} />
+<span style={{ flex: "1" }}>{cp.name}</span>
+<span style={{ fontSize: "10.5px", color: "#8A8F8C" }}>{cp.note}</span>
+</label>
+</React.Fragment>))}
+{v.cert.noPeople ? (<>
+<div style={{ padding: "10px", fontSize: "12px", color: "#8A8F8C" }}>No one is registered for this training yet.</div>
+</>) : null}
+</div>
+</>) : null}
+{v.cert.showTyped ? (<>
+<div style={{ gridColumn: "1 / -1" }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Names (one per line)</div>
+<textarea value={v.cert.typedNames} onChange={v.cert.onTypedNames} rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
+</div>
+</>) : null}
+<div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Instructor name</div>
+<input value={v.cert.instructorName} onChange={v.cert.onInstructorName} placeholder="e.g. Anthony Mitchell" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+</div>
+<div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Instructor title</div>
+<input value={v.cert.instructorTitle} onChange={v.cert.onInstructorTitle} placeholder="Instructor" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+</div>
+<div style={{ gridColumn: "1 / -1" }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Instructor signature (optional)</div>
+<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+<label style={{ padding: "7px 12px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", cursor: "pointer", fontSize: "12px", fontWeight: "bold", color: "#2A7E4F" }}>
+                    {v.cert.sigButton}
+                    <input type="file" accept="image/png,image/jpeg" onChange={v.cert.onSignature} style={{ display: "none" }} />
+</label>
+{v.cert.sigUrl ? (<>
+<img src={v.cert.sigUrl} alt="Signature" style={{ height: "34px", maxWidth: "140px", objectFit: "contain", border: "1px dashed #D1D3D4", borderRadius: "3px", background: "#fff", padding: "2px" }} />
+<button onClick={v.cert.onClearSignature} style={{ border: "0", background: "none", color: "#8A2B2B", cursor: "pointer", fontSize: "11.5px", fontWeight: "bold", padding: "0" }}>Remove</button>
+</>) : null}
+<span style={{ fontSize: "11px", color: "#8A8F8C" }}>{v.cert.sigNote}</span>
+</div>
+</div>
+<div style={{ gridColumn: "1 / -1", fontSize: "11.5px", color: "#58595B" }}>{v.cert.summary}</div>
+</div>
+<div style={{ padding: "12px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+<button onClick={v.cert.onPptx} style={{ padding: "9px 14px", border: "1px solid #D1D3D4", background: "#fff", color: v.cert.pptxFg, borderRadius: "4px", cursor: v.cert.buttonCursor, fontWeight: "bold" }}>{v.cert.pptxLabel}</button>
+<button onClick={v.cert.onPdf} style={{ padding: "9px 18px", border: "0", background: v.cert.buttonBg, color: "#fff", borderRadius: "4px", cursor: v.cert.buttonCursor, fontWeight: "bold" }}>{v.cert.pdfLabel}</button>
+</div>
+</div>
 </div>
 <div style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "10px" }}>Email Templates</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: "16px" }}>
-{(v.templates || []).map((t, i40) => (<React.Fragment key={i40}>
+{(v.templates || []).map((t, i46) => (<React.Fragment key={i46}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden" }}>
 <div style={{ padding: "12px 16px", borderBottom: "1px solid #E1E5E3", display: "flex", alignItems: "center", gap: "10px" }}>
 <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#2A7E4F" }}></div>
@@ -893,7 +988,7 @@ export default function PortalView({ v }) {
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(288px,1fr))" }}>
 <div style={{ padding: "20px 22px", background: v.detail.railBg, borderRight: v.detail.railBorder, display: "flex", flexDirection: "column", gap: "16px" }}>
 <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
-{(v.detail.facts || []).map((f, i41) => (<React.Fragment key={i41}>
+{(v.detail.facts || []).map((f, i47) => (<React.Fragment key={i47}>
 <div style={{ display: "flex", gap: "11px", alignItems: "center" }}>
 <div style={{ width: "30px", height: "30px", flex: "0 0 30px", borderRadius: "5px", background: "#EDF5F0", border: "1px solid #DCEAE2", display: "flex", alignItems: "center", justifyContent: "center" }}>
 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2A7E4F" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={f.d}></path></svg>
@@ -921,7 +1016,7 @@ export default function PortalView({ v }) {
 <span style={{ fontSize: "12px", fontWeight: "bold", color: "#1F5E3A" }}>{v.detail.chainNote}</span>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "11px" }}>
-{(v.formFields || []).map((fl, i42) => (<React.Fragment key={i42}>
+{(v.formFields || []).map((fl, i48) => (<React.Fragment key={i48}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#8A8F8C", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
@@ -929,7 +1024,7 @@ export default function PortalView({ v }) {
 {fl.choosePrompt ? (<>
 <option value="" disabled>{fl.choosePrompt}</option>
 </>) : null}
-{(fl.options || []).map((o, i43) => (<React.Fragment key={i43}>
+{(fl.options || []).map((o, i49) => (<React.Fragment key={i49}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>
@@ -969,7 +1064,7 @@ export default function PortalView({ v }) {
 <button onClick={v.closeModal} style={{ border: "0", background: "rgba(255,255,255,.18)", color: "#fff", width: "28px", height: "28px", borderRadius: "4px", cursor: "pointer", fontSize: "15px", fontWeight: "bold" }}>&times;</button>
 </div>
 <div style={{ padding: "18px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "13px" }}>
-{(v.editorFields || []).map((fl, i44) => (<React.Fragment key={i44}>
+{(v.editorFields || []).map((fl, i50) => (<React.Fragment key={i50}>
 <div style={{ gridColumn: fl.span }}>
 <div style={{ fontSize: "10.5px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
@@ -977,7 +1072,7 @@ export default function PortalView({ v }) {
 {fl.choosePrompt ? (<>
 <option value="" disabled>{fl.choosePrompt}</option>
 </>) : null}
-{(fl.options || []).map((o, i45) => (<React.Fragment key={i45}>
+{(fl.options || []).map((o, i51) => (<React.Fragment key={i51}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>

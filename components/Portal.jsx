@@ -7,6 +7,7 @@ import * as actions from "@/app/actions";
 import { APPROVAL_LEVELS, CATEGORIES, DEPTS, EXTERNAL_ORGS, LOCATIONS, NATIONALITIES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
 import { AUDIENCES, ENROLLED_STATES, PLACEHOLDERS, REGISTERED_STATES, audienceIds } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
+import { trainingDays, weekdayDate } from "@/lib/training-days.js";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -66,6 +67,8 @@ export default class Portal extends React.Component {
       rosterTab: "registered",
       mail: {trainingId: "", audience: "registered", templateId: "", subject: "", body: ""},
       plate: {trainingId: "", who: "enrolled", brand: "nesr", picked: {}, typedNames: "", withInstructor: false, instructorName: "", from: "", to: ""},
+      cert: {trainingId: "", who: "participants", brand: "nesr", picked: {}, typedNames: "", instructorName: "", instructorTitle: "Instructor", signature: "", sigName: ""},
+      attRep: {year: String(new Date().getFullYear()), quarter: "", type: ""},
       toast: null
     }, this.fromSnapshot(d));
   }
@@ -73,7 +76,7 @@ export default class Portal extends React.Component {
   fromSnapshot(d) {
     return {
       meId: d.meId, isAdminUser: d.isAdmin, canManage: d.canManage, people: d.people,
-      trainings: d.trainings, requests: d.requests, attended: d.attended,
+      trainings: d.trainings, requests: d.requests, attended: d.attended, days: d.days || {}, surveys: d.surveys || {},
       templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || []
     };
   }
@@ -248,6 +251,19 @@ export default class Portal extends React.Component {
 
   setMail(patch) { this.setState({mail: Object.assign({}, this.state.mail, patch)}); }
   setPlate(patch) { this.setState({plate: Object.assign({}, this.state.plate, patch)}); }
+  setCert(patch) { this.setState({cert: Object.assign({}, this.state.cert, patch)}); }
+
+  /** Reads the chosen signature image into a data URL (kept in the browser until certificates are made). */
+  pickSignature(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!/^image\/(png|jpeg)$/.test(file.type)) return this.flash("Use a PNG or JPG", "The signature must be an image file (PNG works best, ideally with a transparent background).");
+    if (file.size > 1500000) return this.flash("Image too large", "Use a signature image under 1.5 MB.");
+    const reader = new FileReader();
+    reader.onload = () => this.setCert({signature: String(reader.result), sigName: file.name});
+    reader.readAsDataURL(file);
+  }
 
   /** Downloads the nameplate PDF from /api/nameplate. */
   /** Sets a training's status (L&D). Cancelling emails everyone still registered. */
@@ -263,11 +279,11 @@ export default class Portal extends React.Component {
   }
 
   /** Downloads a file (e.g. a PDF) from a GET endpoint. */
-  async downloadFile(url, label) {
+  async downloadFile(url, label, opts = {}) {
     if (this.state.busy) return;
-    this.setState({busy: true, busyOp: "download"});
+    this.setState({busy: true, busyOp: opts.op || "download"});
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, opts.body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(opts.body)} : undefined);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         this.flash("Couldn't create the file", err.error || "Try again in a moment.");
@@ -658,14 +674,59 @@ export default class Portal extends React.Component {
       };
     };
 
-    const delivered = st.trainings.filter(t => t.start <= TODAY);
-    const attendanceSessions = delivered.map(t => {
+    // Sessions running now, delivered, or starting within 30 days (QR codes can be printed in advance)
+    const soon = new Date(isoMs(TODAY) + 30 * 86400000).toISOString().slice(0, 10);
+    const attSessions = st.trainings.filter(t => t.start <= soon && t.status !== "cancelled")
+      .sort((a, b) => Math.abs(isoMs(a.start) - isoMs(TODAY)) - Math.abs(isoMs(b.start) - isoMs(TODAY)));
+    const attendanceSessions = attSessions.map(t => {
+      const tDays = trainingDays(t.start, t.end);
       const booked = st.requests.filter(r => r.tid === t.id && (r.state === "enrolled" || r.state === "completed")).map(r => r.who);
-      const people = booked.map(pk => attendee(t, pk));
+      const people = booked.map(pk => {
+        const a = attendee(t, pk);
+        const marks = st.days[t.id + ":" + pk] || {};
+        const name = (this.P(pk) || {}).name || "";
+        a.days = tDays.map((d, i) => {
+          const v = marks[d]; // true present, false absent, undefined not marked
+          const next = v === undefined ? true : v === true ? false : null;
+          return {
+            label: (v === true ? "✓ " : v === false ? "✗ " : "") + "D" + (i + 1),
+            title: "Day " + (i + 1) + " · " + weekdayDate(d) + " — " + (v === true ? "present" : v === false ? "absent" : "not marked") + " (click to change)",
+            bg: v === true ? "#C5E0D2" : v === false ? "#F7DEDE" : "#FFFFFF",
+            fg: v === true ? "#1F5E3A" : v === false ? "#8A2B2B" : "#8A8F8C",
+            border: v === true ? "#2A7E4F" : v === false ? "#E3B5B5" : "#D1D3D4",
+            onClick: () => this.act(() => actions.setDayAttendance(t.id, pk, d, next),
+              next === true ? "Marked present" : next === false ? "Marked absent" : "Day cleared", name + " · " + t.code + " · Day " + (i + 1), {}, "day")
+          };
+        });
+        return a;
+      });
       const n = people.filter(p => p.label === "Attended").length;
+      const running = t.start <= TODAY && t.end >= TODAY, past = t.end < TODAY;
       return {code: t.code, title: t.title, meta: this.range(t) + " · " + t.location,
-        completionLabel: n + " of " + people.length + " completed", people};
+        when: running ? "Running now" : past ? "Delivered" : "Upcoming",
+        whenBg: running ? "#C5E0D2" : past ? "#EEF1EF" : "#E3EEFA", whenFg: running ? "#1F5E3A" : past ? "#58595B" : "#1F4E79",
+        completionLabel: n + " of " + people.length + " attended", people,
+        dayCount: tDays.length + (tDays.length === 1 ? " day" : " days"),
+        surveyCount: String(st.surveys[t.id] || 0),
+        onQr: () => this.downloadFile("/api/qr?kind=checkin&id=" + encodeURIComponent(t.id), "Check-in QR codes for " + t.code + ": one page per day. Print them and put up the right day's code in the room."),
+        onSurveyQr: () => this.downloadFile("/api/qr?kind=survey&id=" + encodeURIComponent(t.id), "Survey QR code for " + t.code + " downloaded."),
+        onSheet: () => this.downloadFile("/api/export/attendance?id=" + encodeURIComponent(t.id), "Attendance sheet for " + t.code + " downloaded."),
+        onSurvey: () => this.downloadFile("/api/export/survey?id=" + encodeURIComponent(t.id), "Survey results for " + t.code + " downloaded.")};
     }).filter(a => a.people.length > 0);
+
+    const ar = st.attRep;
+    const setAr = patch => this.setState({attRep: Object.assign({}, ar, patch)});
+    const years = [...new Set(st.trainings.map(t => t.start.slice(0, 4)).concat([ar.year]))].sort();
+    const attReport = {
+      selects: [
+        {label: "Year", value: ar.year, options: years.map(y => ({value: y, label: y})), onChange: e => setAr({year: e.target.value})},
+        {label: "Quarter", value: ar.quarter, options: [{value: "", label: "Whole year"}, {value: "Q1", label: "Q1"}, {value: "Q2", label: "Q2"}, {value: "Q3", label: "Q3"}, {value: "Q4", label: "Q4"}], onChange: e => setAr({quarter: e.target.value})},
+        {label: "Type", value: ar.type, options: [{value: "", label: "All types"}].concat(TYPES.map(x => ({value: x, label: x}))), onChange: e => setAr({type: e.target.value})}
+      ],
+      onExport: () => this.downloadFile("/api/export/attendance?year=" + ar.year + "&quarter=" + ar.quarter + "&type=" + encodeURIComponent(ar.type),
+        "Attendance report for " + ar.year + (ar.quarter ? " " + ar.quarter : "") + (ar.type ? " · " + ar.type : "") + " downloaded."),
+      onSurveys: () => this.downloadFile("/api/export/survey", "Survey results for all trainings downloaded.")
+    };
 
     const templates = (st.templateRows || []).map(t => {
       const off = st.templatesOff[t.id];
@@ -834,6 +895,57 @@ export default class Portal extends React.Component {
       }
     };
 
+    // ---- Certificates ----
+    const ce = st.cert;
+    const ctr = ce.trainingId ? this.t(ce.trainingId) : null;
+    const ctReqs = ctr ? st.requests.filter(r => r.tid === ctr.id && ENROLLED_STATES.includes(r.state)) : [];
+    const cAttended = ctr ? audienceIds("participants", ctr.id, st.requests, st.attended).length : 0;
+    const cEnrolled = ctr ? audienceIds("enrolled", ctr.id, st.requests, st.attended).length : 0;
+    const certPeople = ctReqs.map(r => this.P(r.who)).filter(Boolean).sort((a, b) => a.name < b.name ? -1 : 1);
+    const certPicked = certPeople.filter(p => ce.picked[p.key]).map(p => p.key);
+    const certTyped = ce.typedNames.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    const certCount = !ctr ? 0 : ce.who === "participants" ? cAttended : ce.who === "enrolled" ? cEnrolled : ce.who === "selected" ? certPicked.length : certTyped.length;
+    const canCert = !!ctr && certCount > 0;
+    const certBusy = st.busyOp === "cert";
+    const certDownload = format => {
+      if (st.busy) return;
+      if (!canCert) return this.flash("No certificates to make", ctr ? (ce.who === "participants" ? "No one is marked as attended yet. Mark attendance first, or choose people." : "Choose people who should get a certificate.") : "Select a training first.");
+      this.downloadFile("/api/certificates", certCount + (certCount === 1 ? " certificate" : " certificates") + " for " + ctr.code + (format === "pptx" ? " (PowerPoint, editable)" : "") + " downloaded.", {op: "cert", body: {
+        trainingId: ctr.id, who: ce.who, ids: certPicked, names: ce.typedNames, brand: ce.brand, format,
+        instructorName: ce.instructorName.trim(), instructorTitle: ce.instructorTitle.trim(), signature: ce.signature || undefined}});
+    };
+    const cert = {
+      selects: [
+        {label: "Training", span: "1 / -1", value: ce.trainingId, options: trainingOptions, onChange: e => {
+          const nt = this.t(e.target.value);
+          this.setCert({trainingId: e.target.value, picked: {}, instructorName: nt ? nt.instructor : ""});
+        }},
+        {label: "Template", span: "auto", value: ce.brand, options: [{value: "nesr", label: "NESR"}, {value: "cpven", label: "CPVEN"}], onChange: e => this.setCert({brand: e.target.value})},
+        {label: "Certificates for", span: "auto", value: ce.who, options: [
+          {value: "participants", label: "All who attended — " + cAttended},
+          {value: "enrolled", label: "All registered — " + cEnrolled},
+          {value: "selected", label: "Choose people…"},
+          {value: "typed", label: "Type names (e.g. CPVEN)…"}
+        ], onChange: e => this.setCert({who: e.target.value})}
+      ],
+      showPick: !!ctr && ce.who === "selected", noPeople: certPeople.length === 0,
+      people: certPeople.map(p => ({name: p.name, note: p.external ? p.org || "External" : (st.attended[ctr.id + ":" + p.key] === true ? "Attended" : p.dept),
+        checked: !!ce.picked[p.key], onToggle: () => this.setCert({picked: Object.assign({}, ce.picked, {[p.key]: !ce.picked[p.key]})})})),
+      showTyped: ce.who === "typed", typedNames: ce.typedNames, onTypedNames: e => this.setCert({typedNames: e.target.value}),
+      instructorName: ce.instructorName, onInstructorName: e => this.setCert({instructorName: e.target.value}),
+      instructorTitle: ce.instructorTitle, onInstructorTitle: e => this.setCert({instructorTitle: e.target.value}),
+      sigUrl: ce.signature, sigButton: ce.signature ? "Change image" : "Upload image",
+      sigNote: ce.signature ? ce.sigName : "PNG with a transparent background looks best. Leave empty to sign by hand.",
+      onSignature: e => this.pickSignature(e), onClearSignature: () => this.setCert({signature: "", sigName: ""}),
+      summary: !ctr ? "Select a training to start." : certCount
+        ? certCount + (certCount === 1 ? " certificate" : " certificates") + " · " + (ce.brand === "cpven" ? "signed by Nadiah Alessa, CPVEN Country Director" : "signed by Yasmine El Shishiny, Global L&D Manager") + "."
+        : ce.who === "participants" ? "No one is marked as attended yet." : "No one to make a certificate for.",
+      pdfLabel: certBusy ? "Preparing…" : "Download PDF", pptxLabel: "PowerPoint",
+      pptxFg: canCert && !certBusy ? "#2A7E4F" : "#A8ACAA",
+      buttonBg: canCert && !certBusy ? "#2A7E4F" : "#A8ACAA", buttonCursor: canCert && !certBusy ? "pointer" : "not-allowed",
+      onPdf: () => certDownload("pdf"), onPptx: () => certDownload("pptx")
+    };
+
     let session = null;
     if (s.aSession) {
       const t = this.t(st.sessionId);
@@ -958,7 +1070,7 @@ export default class Portal extends React.Component {
       myRequests, teamRequests, queueRows, teamStats,
       reqBox: {open: !st.reqBoxClosed, label: st.reqBoxClosed ? "Show" : "Hide", count: myRequests.length + (myRequests.length === 1 ? " request" : " requests"),
         onToggle: () => this.setState(s => ({reqBoxClosed: !s.reqBoxClosed}))},
-      empKpis, dashList, adminKpis, fillRows, catRows, attendanceSessions, templates, ageingRows, timelineRows,
+      empKpis, dashList, adminKpis, fillRows, catRows, attendanceSessions, attReport, cert, templates, ageingRows, timelineRows,
       resources: RESOURCES,
       detail, formFields, justification: st.justification,
       justificationBorder: st.formError && !String(st.justification || "").trim() ? "#8A2B2B" : "#D9DDDB",
