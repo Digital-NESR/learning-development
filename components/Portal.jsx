@@ -4,7 +4,7 @@
 import React from "react";
 import PortalView from "./PortalView";
 import * as actions from "@/app/actions";
-import { APPROVAL_LEVELS, CATEGORIES, DEPTS, EXTERNAL_ORGS, LOCATIONS, NATIONALITIES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
+import { APPROVAL_LEVELS, CATEGORIES, DEPTS, EXTERNAL_ORGS, LOCATIONS, NATIONALITIES, SHEET_TEMPLATES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
 import { AUDIENCES, ENROLLED_STATES, PLACEHOLDERS, REGISTERED_STATES, audienceIds } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
 import { trainingDays, weekdayDate } from "@/lib/training-days.js";
@@ -66,8 +66,11 @@ export default class Portal extends React.Component {
       busy: false,
       rosterTab: "registered",
       mail: {trainingId: "", audience: "registered", templateId: "", subject: "", body: ""},
-      plate: {trainingId: "", who: "enrolled", brand: "nesr", picked: {}, typedNames: "", withInstructor: false, instructorName: "", from: "", to: ""},
-      cert: {trainingId: "", who: "participants", brand: "nesr", picked: {}, typedNames: "", instructorName: "", instructorTitle: "Instructor", signature: "", sigName: ""},
+      plate: {trainingId: "", who: "enrolled", brand: "nesr", picked: {}, typedNames: "", withInstructor: false, instructorName: "", instructorRole: "Instructor", from: "", to: ""},
+      cert: {trainingId: "", who: "participants", brand: "nesr", picked: {}, typedNames: "", instructorName: "", instructorTitle: "Instructor", signature: "", sigName: "",
+        third: false, thirdName: "", thirdTitle: "", thirdSig: "", thirdSigName: ""},
+      sheet: {trainingId: "", template: "nesr"},
+      surveyOpen: {},
       attRep: {year: String(new Date().getFullYear()), quarter: "", type: ""},
       toast: null
     }, this.fromSnapshot(d));
@@ -76,7 +79,7 @@ export default class Portal extends React.Component {
   fromSnapshot(d) {
     return {
       meId: d.meId, isAdminUser: d.isAdmin, canManage: d.canManage, people: d.people,
-      trainings: d.trainings, requests: d.requests, attended: d.attended, days: d.days || {}, surveys: d.surveys || {},
+      trainings: d.trainings, requests: d.requests, attended: d.attended, days: d.days || {}, surveyAnswered: d.surveyAnswered || {},
       templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || []
     };
   }
@@ -193,6 +196,7 @@ export default class Portal extends React.Component {
     return {
       id: t.id, code: t.code, title: t.title, category: t.category, type: t.type,
       dates: this.range(t), location: t.location, st: reg, photo: this.photoFor(t), closed: !t.registrationOpen,
+      targetAudience: t.targetAudience || "—", provider: t.provider || "—", instructor: t.instructor || "—",
       quarter: "Q" + (Math.floor((Number(t.start.slice(5, 7)) - 1) / 3) + 1), month: MONTH_SHORT[Number(t.start.slice(5, 7)) - 1],
       startLabel: fmtDate(t.start), endLabel: fmtDate(t.end),
       duration: this.days(t) + (this.days(t) === 1 ? " day" : " days"),
@@ -256,14 +260,14 @@ export default class Portal extends React.Component {
   setCert(patch) { this.setState({cert: Object.assign({}, this.state.cert, patch)}); }
 
   /** Reads the chosen signature image into a data URL (kept in the browser until certificates are made). */
-  pickSignature(e) {
+  pickSignature(e, which = "instructor") {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
     if (!file) return;
     if (!/^image\/(png|jpeg)$/.test(file.type)) return this.flash("Use a PNG or JPG", "The signature must be an image file (PNG works best, ideally with a transparent background).");
     if (file.size > 1500000) return this.flash("Image too large", "Use a signature image under 1.5 MB.");
     const reader = new FileReader();
-    reader.onload = () => this.setCert({signature: String(reader.result), sigName: file.name});
+    reader.onload = () => this.setCert(which === "third" ? {thirdSig: String(reader.result), thirdSigName: file.name} : {signature: String(reader.result), sigName: file.name});
     reader.readAsDataURL(file);
   }
 
@@ -370,7 +374,8 @@ export default class Portal extends React.Component {
       [{isHeader: true, isItem: false, label, pad: first ? "0 16px 8px" : "18px 16px 8px"}].concat(items.map(navItem));
     const nav = section("Employee", [["dashboard","My Dashboard"],["calendar","Training Calendar"],["resources","Resources"]], true)
       .concat(canManage ? section("Manager", [["approvals","Team Approvals"],["team","Team Development"]]) : [])
-      .concat(isAdmin ? section("L&D Team", [["adminDash","Dashboard"],["trainings","Manage Trainings"],["queue","Waitlist Queue"],["attendance","Attendance"],["templates","Notifications"]]) : []);
+      .concat(isAdmin ? section("L&D Team", [["adminDash","Dashboard"],["trainings","Manage Trainings"],["queue","Waitlist Queue"],["attendance","Attendance"],
+        ["surveys","Surveys"],["certificates","Certificates"],["nametags","Name Tags"],["templates","Notifications"]]) : []);
 
     const s = {
       empDash: scr === "dashboard",
@@ -383,6 +388,9 @@ export default class Portal extends React.Component {
       aSession: isAdmin && scr === "session",
       aApp: isAdmin && scr === "queue",
       aAtt: isAdmin && scr === "attendance",
+      aSurveys: isAdmin && scr === "surveys",
+      aCerts: isAdmin && scr === "certificates",
+      aPlates: isAdmin && scr === "nametags",
       aNotify: isAdmin && scr === "templates"
     };
 
@@ -681,10 +689,12 @@ export default class Portal extends React.Component {
       };
     };
 
-    // Sessions running now, delivered, or starting within 30 days (QR codes can be printed in advance)
+    // Sessions running now, delivered, or starting within 30 days (so the sheet can be printed in advance)
     const soon = new Date(isoMs(TODAY) + 30 * 86400000).toISOString().slice(0, 10);
     const attSessions = st.trainings.filter(t => t.start <= soon && t.status !== "cancelled")
       .sort((a, b) => Math.abs(isoMs(a.start) - isoMs(TODAY)) - Math.abs(isoMs(b.start) - isoMs(TODAY)));
+    const sheetUrl = (t, template) => "/api/attendance-sheet?id=" + encodeURIComponent(t.id) + "&template=" + template;
+    const sheetLabel = v => (SHEET_TEMPLATES.find(x => x.value === v) || SHEET_TEMPLATES[0]).label;
     const attendanceSessions = attSessions.map(t => {
       const tDays = trainingDays(t.start, t.end);
       const booked = st.requests.filter(r => r.tid === t.id && (r.state === "enrolled" || r.state === "completed")).map(r => r.who);
@@ -696,7 +706,7 @@ export default class Portal extends React.Component {
           const v = marks[d]; // true present, false absent, undefined not marked
           const next = v === undefined ? true : v === true ? false : null;
           return {
-            label: (v === true ? "✓ " : v === false ? "✗ " : "") + "D" + (i + 1),
+            label: v === true ? "✓ Present" : v === false ? "✗ Absent" : "–",
             title: "Day " + (i + 1) + " · " + weekdayDate(d) + " — " + (v === true ? "present" : v === false ? "absent" : "not marked") + " (click to change)",
             bg: v === true ? "#C5E0D2" : v === false ? "#F7DEDE" : "#FFFFFF",
             fg: v === true ? "#1F5E3A" : v === false ? "#8A2B2B" : "#8A8F8C",
@@ -713,13 +723,84 @@ export default class Portal extends React.Component {
         when: running ? "Running now" : past ? "Delivered" : "Upcoming",
         whenBg: running ? "#C5E0D2" : past ? "#EEF1EF" : "#E3EEFA", whenFg: running ? "#1F5E3A" : past ? "#58595B" : "#1F4E79",
         completionLabel: n + " of " + people.length + " attended", people,
-        dayCount: tDays.length + (tDays.length === 1 ? " day" : " days"),
-        surveyCount: String(st.surveys[t.id] || 0),
-        onQr: () => this.downloadFile("/api/qr?kind=checkin&id=" + encodeURIComponent(t.id), "Check-in QR codes for " + t.code + ": one page per day. Print them and put up the right day's code in the room."),
-        onSurveyQr: () => this.downloadFile("/api/qr?kind=survey&id=" + encodeURIComponent(t.id), "Survey QR code for " + t.code + " downloaded."),
-        onSheet: () => this.downloadFile("/api/export/attendance?id=" + encodeURIComponent(t.id), "Attendance sheet for " + t.code + " downloaded."),
-        onSurvey: () => this.downloadFile("/api/export/survey?id=" + encodeURIComponent(t.id), "Survey results for " + t.code + " downloaded.")};
+        // One column per training day, then the overall result
+        cols: "minmax(210px,1fr) repeat(" + tDays.length + ",92px) 176px", minW: (210 + 92 * tDays.length + 176 + 32) + "px",
+        dayHeads: tDays.map((d, i) => ({label: "Day " + (i + 1), date: fmtDate(d).replace(/ \d{4}$/, "")})),
+        sheetLabel: "Attendance sheet (" + sheetLabel(st.sheet.template) + ")",
+        onSheet: () => this.downloadFile(sheetUrl(t, st.sheet.template), "Attendance sheet for " + t.code + " (" + sheetLabel(st.sheet.template) + " template) downloaded. Print it for the instructor."),
+        onRecord: () => this.downloadFile("/api/export/attendance?id=" + encodeURIComponent(t.id), "Attendance record for " + t.code + " downloaded.")};
     }).filter(a => a.people.length > 0);
+
+    // ---- Attendance sheet generator (Word, from L&D's templates) ----
+    const sh = st.sheet;
+    const setSheet = patch => this.setState({sheet: Object.assign({}, sh, patch)});
+    const shT = sh.trainingId ? this.t(sh.trainingId) : null;
+    const shN = shT ? st.requests.filter(r => r.tid === shT.id && ENROLLED_STATES.includes(r.state)).length : 0;
+    const sheet = {
+      selects: [
+        {label: "Training", span: "1 / -1", value: sh.trainingId,
+          options: [{value: "", label: "Select a training"}].concat(upcoming.map(t => ({value: t.id, label: t.code + " · " + t.title + " (" + this.range(t) + ")"}))),
+          onChange: e => setSheet({trainingId: e.target.value})},
+        {label: "Template", span: "1 / -1", value: sh.template, options: SHEET_TEMPLATES, onChange: e => setSheet({template: e.target.value})}
+      ],
+      summary: !shT ? "Select a training to start." : shN + (shN === 1 ? " registered participant" : " registered participants") + " · "
+        + trainingDays(shT.start, shT.end).length + " day columns · Word, A4 landscape. Blank rows are added for walk-ins.",
+      buttonBg: shT ? "#2A7E4F" : "#A8ACAA", buttonCursor: shT ? "pointer" : "not-allowed",
+      onSubmit: () => {
+        if (!shT) return this.flash("Select a training", "Choose the training to print an attendance sheet for.");
+        this.downloadFile(sheetUrl(shT, sh.template), "Attendance sheet for " + shT.code + " (" + sheetLabel(sh.template) + " template) downloaded.");
+      }
+    };
+
+    // ---- Feedback surveys: emailed the day after a training ends, reminders until answered ----
+    const dayAfter = iso => new Date(isoMs(iso) + 86400000).toISOString().slice(0, 10);
+    const surveySessions = st.trainings.filter(t => t.start <= TODAY && t.status !== "cancelled")
+      .sort((a, b) => a.end < b.end ? 1 : -1)
+      .map(t => {
+        const reqs = st.requests.filter(r => r.tid === t.id && ENROLLED_STATES.includes(r.state));
+        let answered = 0, eligible = 0, unsent = 0, waiting = 0;
+        const rows = reqs.map(r => {
+          const p = this.P(r.who) || {name: "Unknown"};
+          const ans = st.surveyAnswered[t.id + ":" + r.who];
+          const noShow = st.attended[t.id + ":" + r.who] === false;
+          const skip = !ans && (p.external || noShow);
+          if (!skip) eligible++;
+          if (ans) answered++;
+          else if (!skip && !r.surveySent) unsent++;
+          else if (!skip) waiting++;
+          const reminders = r.surveyReminders ? " · " + r.surveyReminders + (r.surveyReminders === 1 ? " reminder" : " reminders") : "";
+          const [label, bg, fg] = ans ? ["Answered " + ans, "#C5E0D2", "#1F5E3A"]
+            : p.external ? ["External · not emailed", "#EEF1EF", "#58595B"]
+            : noShow ? ["No show · not sent", "#EEF1EF", "#58595B"]
+            : r.surveySent ? ["Sent " + r.surveySent + reminders, "#FDF2D9", "#8A6100"]
+            : ["Not sent yet", "#FFFFFF", "#8A8F8C"];
+          return {name: p.name, initials: initialsOf(p.name), meta: p.external ? p.org || "External" : [p.title, p.dept].filter(Boolean).join(" · "), label, bg, fg};
+        }).sort((a, b) => a.name < b.name ? -1 : 1);
+        const open = !!st.surveyOpen[t.id];
+        const ended = t.end < TODAY;
+        const pct = eligible ? Math.round(answered / eligible * 100) : 0;
+        return {
+          code: t.code, title: t.title, meta: this.range(t) + " · " + t.location, rows,
+          answeredLabel: answered + " of " + eligible + " answered", pct: String(pct), pctLabel: pct + "%",
+          autoNote: ended ? "Survey emailed automatically the day after the training ended; reminders every few days until answered."
+            : "Will be emailed automatically on " + fmtDate(dayAfter(t.end)) + ". You can send it now.",
+          open, chev: open ? "▼" : "▶", toggleLabel: open ? "Hide participants" : "Show participants (" + rows.length + ")",
+          onToggle: () => this.setState(s2 => ({surveyOpen: Object.assign({}, s2.surveyOpen, {[t.id]: !s2.surveyOpen[t.id]})})),
+          sendLabel: "Send survey link" + (unsent ? " (" + unsent + ")" : ""), sendFg: unsent ? "#FFFFFF" : "#A8ACAA", sendBg: unsent ? "#2A7E4F" : "#EEF1EF",
+          remindLabel: "Send reminder" + (waiting ? " (" + waiting + ")" : ""), remindFg: waiting ? "#2A7E4F" : "#A8ACAA",
+          onSend: () => {
+            if (!unsent) return this.flash("Nothing to send", "Everyone has been sent the survey, or has already answered.");
+            if (!window.confirm("Email the feedback survey link to " + unsent + (unsent === 1 ? " person" : " people") + " for " + t.code + "?")) return;
+            this.act(() => actions.sendSurvey(t.id, "send"), "Survey sent", "The survey link was emailed to " + unsent + (unsent === 1 ? " person" : " people") + ".");
+          },
+          onRemind: () => {
+            if (!waiting) return this.flash("No one to remind", "No one who was sent the survey is still waiting to answer.");
+            if (!window.confirm("Send a survey reminder to " + waiting + (waiting === 1 ? " person" : " people") + " for " + t.code + "?")) return;
+            this.act(() => actions.sendSurvey(t.id, "remind"), "Reminder sent", "A reminder was emailed to " + waiting + (waiting === 1 ? " person" : " people") + ".");
+          },
+          onResults: () => this.downloadFile("/api/export/survey?id=" + encodeURIComponent(t.id), "Survey results for " + t.code + " downloaded.")
+        };
+      }).filter(x => x.rows.length > 0);
 
     const ar = st.attRep;
     const setAr = patch => this.setState({attRep: Object.assign({}, ar, patch)});
@@ -889,6 +970,7 @@ export default class Portal extends React.Component {
       showTyped: pl.who === "typed", typedNames: pl.typedNames, onTypedNames: e => this.setPlate({typedNames: e.target.value}),
       withInstructor: pl.withInstructor, onWithInstructor: () => this.setPlate({withInstructor: !pl.withInstructor, instructorName: pl.instructorName || (pt ? pt.instructor : "")}),
       instructorName: pl.instructorName, onInstructorName: e => this.setPlate({instructorName: e.target.value}),
+      instructorRole: pl.instructorRole, onInstructorRole: e => this.setPlate({instructorRole: e.target.value}),
       from: pFrom, to: pTo, onFrom: e => this.setPlate({from: e.target.value}), onTo: e => this.setPlate({to: e.target.value}),
       summary: !pt ? "Select a training to start." : plateCount ? plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " · one A4 landscape page each, fold along the dashed line." : "No one to print for this choice.",
       buttonLabel: plateBusy ? "Preparing…" : "Download PDF",
@@ -897,7 +979,7 @@ export default class Portal extends React.Component {
         if (st.busy) return;
         if (!canPlate) return this.flash("Nothing to print", pt ? "Choose people who have a name to print." : "Select a training first.");
         this.downloadPlates({trainingId: pt.id, who: pl.who, ids: pickedIds, names: pl.typedNames, brand: pl.brand,
-            instructor: pl.withInstructor ? pl.instructorName.trim() : "", date: plateDate},
+            instructor: pl.withInstructor ? pl.instructorName.trim() : "", instructorRole: pl.instructorRole.trim(), date: plateDate},
           plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " for " + pt.code + " downloaded.");
       }
     };
@@ -919,7 +1001,8 @@ export default class Portal extends React.Component {
       if (!canCert) return this.flash("No certificates to make", ctr ? (ce.who === "participants" ? "No one is marked as attended yet. Mark attendance first, or choose people." : "Choose people who should get a certificate.") : "Select a training first.");
       this.downloadFile("/api/certificates", certCount + (certCount === 1 ? " certificate" : " certificates") + " for " + ctr.code + (format === "pptx" ? " (PowerPoint, editable)" : "") + " downloaded.", {op: "cert", body: {
         trainingId: ctr.id, who: ce.who, ids: certPicked, names: ce.typedNames, brand: ce.brand, format,
-        instructorName: ce.instructorName.trim(), instructorTitle: ce.instructorTitle.trim(), signature: ce.signature || undefined}});
+        instructorName: ce.instructorName.trim(), instructorTitle: ce.instructorTitle.trim(), signature: ce.signature || undefined,
+        third: ce.third && ce.thirdName.trim() ? {name: ce.thirdName.trim(), title: ce.thirdTitle.trim(), signature: ce.thirdSig || undefined} : undefined}});
     };
     const cert = {
       selects: [
@@ -944,8 +1027,15 @@ export default class Portal extends React.Component {
       sigUrl: ce.signature, sigButton: ce.signature ? "Change image" : "Upload image",
       sigNote: ce.signature ? ce.sigName : "PNG with a transparent background looks best. Leave empty to sign by hand.",
       onSignature: e => this.pickSignature(e), onClearSignature: () => this.setCert({signature: "", sigName: ""}),
+      third: ce.third, onThird: () => this.setCert({third: !ce.third}),
+      thirdName: ce.thirdName, onThirdName: e => this.setCert({thirdName: e.target.value}),
+      thirdTitle: ce.thirdTitle, onThirdTitle: e => this.setCert({thirdTitle: e.target.value}),
+      thirdSigUrl: ce.thirdSig, thirdSigButton: ce.thirdSig ? "Change image" : "Upload image",
+      thirdSigNote: ce.thirdSig ? ce.thirdSigName : "Optional. Leave empty to sign by hand.",
+      onThirdSignature: e => this.pickSignature(e, "third"), onClearThirdSignature: () => this.setCert({thirdSig: "", thirdSigName: ""}),
       summary: !ctr ? "Select a training to start." : certCount
-        ? certCount + (certCount === 1 ? " certificate" : " certificates") + " · " + (ce.brand === "cpven" ? "signed by Nadiah Alessa, CPVEN Country Director" : "signed by Yasmine El Shishiny, Global L&D Manager") + "."
+        ? certCount + (certCount === 1 ? " certificate" : " certificates") + " · " + (ce.brand === "cpven" ? "signed by Nadiah Alessa, CPVEN Country Director" : "signed by Yasmine El Shishiny, Global L&D Manager")
+          + (ce.third && ce.thirdName.trim() ? ", the instructor and " + ce.thirdName.trim() : "") + "."
         : ce.who === "participants" ? "No one is marked as attended yet." : "No one to make a certificate for.",
       pdfLabel: certBusy ? "Preparing…" : "Download PDF", pptxLabel: "PowerPoint",
       pptxFg: canCert && !certBusy ? "#2A7E4F" : "#A8ACAA",
@@ -1061,6 +1151,7 @@ export default class Portal extends React.Component {
       rows, adminRows, viewTabs, typeTabs, filters, q: st.q,
       onSearch: e => this.setState({q: e.target.value}),
       clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All"}),
+      onCalExport: () => this.downloadFile("/api/export/calendar", "Training calendar (" + list.length + (list.length === 1 ? " session" : " sessions") + ") downloaded as Excel.", {body: {ids: list.map(t => t.id)}}),
       isTable: st.calView === "table", isMonth: st.calView === "month", isCards: st.calView === "cards",
       noResults: rows.length === 0,
       resultLabel: rows.length + " of " + st.trainings.length + " sessions in the calendar",
@@ -1072,12 +1163,12 @@ export default class Portal extends React.Component {
       nextMonth: () => this.setState(st.month === 11 ? {month: 0, calYear: st.calYear + 1} : {month: st.month + 1}),
       empty: {
         myRequests: myRequests.length === 0, teamRequests: teamRequests.length === 0, teamStats: teamStats.length === 0,
-        queueRows: queueRows.length === 0, attendance: attendanceSessions.length === 0
+        queueRows: queueRows.length === 0, attendance: attendanceSessions.length === 0, surveys: surveySessions.length === 0
       },
       myRequests, teamRequests, queueRows, teamStats,
       reqBox: {open: !st.reqBoxClosed, label: st.reqBoxClosed ? "Show" : "Hide", count: myRequests.length + (myRequests.length === 1 ? " request" : " requests"),
         onToggle: () => this.setState(s => ({reqBoxClosed: !s.reqBoxClosed}))},
-      empKpis, dashList, adminKpis, fillRows, catRows, attendanceSessions, attReport, cert, templates, ageingRows, timelineRows,
+      empKpis, dashList, adminKpis, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
       resources: RESOURCES,
       detail, formFields, justification: st.justification,
       justificationBorder: st.formError && !String(st.justification || "").trim() ? "#8A2B2B" : "#D9DDDB",

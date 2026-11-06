@@ -36,7 +36,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
   const me = typeof meOrId === "string" ? await prisma.employee.findUniqueOrThrow({ where: { id: meOrId } }) : meOrId;
 
   // Everything that doesn't depend on another query is fetched at once: each round trip to the database adds latency.
-  const [trainings, requests, reports, chain, templates, adminAttendance, attendanceDays, surveyCounts, directory] = await Promise.all([
+  const [trainings, requests, reports, chain, templates, adminAttendance, attendanceDays, surveyResponses, directory] = await Promise.all([
     prisma.training.findMany({ where: { isActive: true }, orderBy: { startDate: "asc" } }),
     prisma.trainingRequest.findMany({
       // Non-admins: their own requests, requests they approve, and all requests from their direct reports.
@@ -52,7 +52,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
     // L&D only: all attendance, per-day attendance, survey response counts and the "Add person" directory
     me.isAdmin ? prisma.attendance.findMany() : Promise.resolve(null),
     me.isAdmin ? prisma.attendanceDay.findMany() : Promise.resolve([]),
-    me.isAdmin ? prisma.surveyResponse.groupBy({ by: ["trainingId"], _count: { _all: true } }) : Promise.resolve([]),
+    me.isAdmin ? prisma.surveyResponse.findMany({ select: { trainingId: true, employeeId: true, createdAt: true } }) : Promise.resolve([]),
     me.isAdmin
       ? prisma.employee.findMany({ where: { isExternal: false }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } })
       : Promise.resolve([])
@@ -93,11 +93,14 @@ export async function loadSnapshot(meOrId: string | Employee) {
       approval: r.steps.length ? r.steps[r.steps.length - 1].status : "",
       approvedAt: r.steps.length && r.steps[r.steps.length - 1].decidedAt ? pretty(r.steps[r.steps.length - 1].decidedAt!) : "",
       submitted: pretty(r.submittedAt), submittedAt: r.submittedAt.toISOString(),
-      justification: r.justification || "—", form: r.form, comment: r.decisionComment || ""
+      justification: r.justification || "—", form: r.form, comment: r.decisionComment || "",
+      // Feedback survey email (L&D's Surveys page)
+      surveySent: r.surveySentAt ? pretty(r.surveySentAt) : "", surveyReminders: r.surveyReminders
     })),
     attended: Object.fromEntries(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended])),
     days,
-    surveys: Object.fromEntries(surveyCounts.map(c => [c.trainingId, c._count._all])),
+    // L&D only: who has answered each training's feedback survey ("tid:emp" → date)
+    surveyAnswered: Object.fromEntries(surveyResponses.map(r => [`${r.trainingId}:${r.employeeId}`, pretty(r.createdAt)])),
     templatesOff: Object.fromEntries(templates.filter(t => !t.isActive).map(t => [t.id, true])),
     templates: templates.map(t => ({ id: t.id, name: t.name, trigger: t.trigger, subject: t.subject, body: t.body })),
     mail: me.isAdmin

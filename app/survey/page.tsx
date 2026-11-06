@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { currentEmployee } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { qrValid } from "@/lib/qr-token";
+import { linkValid } from "@/lib/link-token";
 import { longDateRange } from "@/lib/training-days.js";
 import PublicCard from "@/components/PublicCard";
 import SurveyForm from "@/components/SurveyForm";
@@ -10,14 +10,14 @@ export const dynamic = "force-dynamic";
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
-/** Training feedback survey, reached by scanning the training's survey QR code. */
+/** Training feedback survey, reached from the link in the survey email. */
 export default async function Survey({ searchParams }: { searchParams: Promise<{ t?: string; k?: string }> }) {
   const { t: trainingId = "", k = "" } = await searchParams;
   const me = await currentEmployee();
   if (!me) redirect("/login?callbackUrl=" + encodeURIComponent(`/survey?t=${trainingId}&k=${k}`));
 
-  const t = qrValid("survey", trainingId, "", k) ? await prisma.training.findUnique({ where: { id: trainingId } }) : null;
-  if (!t) return <Note title="This survey link isn't valid" text="Please scan the survey QR code again, or ask the L&D team." />;
+  const t = linkValid("survey", trainingId, k) ? await prisma.training.findUnique({ where: { id: trainingId } }) : null;
+  if (!t) return <Note title="This survey link isn't valid" text="Please open the link from your survey email again, or ask the L&D team." />;
 
   const registered = await prisma.trainingRequest.findFirst({ where: { trainingId: t.id, employeeId: me.id, state: { in: ["enrolled", "completed"] } } });
   if (!registered) return <Note title="Only participants can give feedback" text={`You aren't on the participant list for ${t.code} · ${t.title}. If you attended, please let the L&D team know.`} />;

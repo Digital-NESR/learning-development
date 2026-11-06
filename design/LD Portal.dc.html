@@ -178,6 +178,7 @@
               <div style="font-size:13px;color:#58595B;margin-top:3px">{{ resultLabel }}</div>
             </div>
             <div style="flex:1"></div>
+            <button onClick="{{ onCalExport }}" style="padding:8px 14px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Export to Excel</button>
             <div style="display:flex;gap:2px;background:#E7EBE9;padding:3px;border-radius:4px">
               <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="3">
                 <button onClick="{{ v.onClick }}" style="border:0;cursor:pointer;padding:7px 15px;border-radius:3px;font-size:12px;font-weight:bold;background:{{ v.bg }};color:{{ v.fg }}">{{ v.label }}</button>
@@ -213,7 +214,7 @@
 
           <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
-              <div style="display:grid;min-width:1020px;grid-template-columns:minmax(0,1.2fr) 74px minmax(0,2.1fr) 118px 58px 58px 94px 94px minmax(0,1fr);background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
+              <div style="display:grid;min-width:1480px;grid-template-columns:minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr);background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
                 <div style="padding:11px 10px">Training Category</div>
                 <div style="padding:11px 10px">Training Code</div>
                 <div style="padding:11px 10px">Training Name</div>
@@ -223,9 +224,12 @@
                 <div style="padding:11px 10px">Start Date</div>
                 <div style="padding:11px 10px">End Date</div>
                 <div style="padding:11px 10px">Location</div>
+                <div style="padding:11px 10px">Target Audience</div>
+                <div style="padding:11px 10px">Training Provider</div>
+                <div style="padding:11px 10px">Instructor</div>
               </div>
               <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
-                <div onClick="{{ r.onClick }}" style="display:grid;min-width:1020px;grid-template-columns:minmax(0,1.2fr) 74px minmax(0,2.1fr) 118px 58px 58px 94px 94px minmax(0,1fr);border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
+                <div onClick="{{ r.onClick }}" style="display:grid;min-width:1480px;grid-template-columns:minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr);border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.category }}</div>
                   <div style="padding:11px 10px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
                   <div style="padding:11px 10px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
@@ -235,6 +239,9 @@
                   <div style="padding:11px 10px;font-size:12px">{{ r.startLabel }}</div>
                   <div style="padding:11px 10px;font-size:12px">{{ r.endLabel }}</div>
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.location }}</div>
+                  <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.targetAudience }}</div>
+                  <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.provider }}</div>
+                  <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.instructor }}</div>
                 </div>
               </sc-for>
               <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
@@ -756,24 +763,51 @@
       <sc-if value="{{ s.aAtt }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Attendance &amp; Completion</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Print a check-in QR code for each training day: participants scan it and sign in with their NESR account. You can also mark each day here. Present on every day = Attended.</div>
-          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-bottom:18px;padding:13px 16px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;border-left:4px solid #2A7E4F">
-            <div style="flex:1 1 220px">
-              <div style="font-size:13px;font-weight:bold">Attendance report</div>
-              <div style="font-size:11.5px;color:#58595B;margin-top:2px">All trainings in the period, with every participant's days present. Excel.</div>
-            </div>
-            <sc-for list="{{ attReport.selects }}" as="f" hint-placeholder-count="3">
-              <div>
-                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
-                <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="padding:7px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
-                  <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
-                    <option value="{{ o.value }}">{{ o.label }}</option>
-                  </sc-for>
-                </select>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Print the attendance sheet for the instructor. When the signed sheet comes back, mark each day here (click a day: present → absent → clear) and the overall result. Present on every day marks the person Attended automatically.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:18px">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
+                <div style="font-size:13px;font-weight:bold">Attendance Sheet</div>
+                <div style="font-size:11.5px;color:#58595B;margin-top:2px">Printable sign-in sheet with the participants and one column per day. Word, to print with the certificates and name tags.</div>
               </div>
-            </sc-for>
-            <button onClick="{{ attReport.onExport }}" style="padding:8px 14px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Export attendance</button>
-            <button onClick="{{ attReport.onSurveys }}" style="padding:8px 14px;border:1px solid #D1D3D4;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">All survey results</button>
+              <div style="padding:14px 16px;display:grid;grid-template-columns:1fr;gap:12px;flex:1;align-content:start">
+                <sc-for list="{{ sheet.selects }}" as="f" hint-placeholder-count="2">
+                  <div>
+                    <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                    <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                      <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                        <option value="{{ o.value }}">{{ o.label }}</option>
+                      </sc-for>
+                    </select>
+                  </div>
+                </sc-for>
+                <div style="font-size:11.5px;color:#58595B">{{ sheet.summary }}</div>
+              </div>
+              <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end">
+                <button onClick="{{ sheet.onSubmit }}" style="padding:9px 18px;border:0;background:{{ sheet.buttonBg }};color:#fff;border-radius:4px;cursor:{{ sheet.buttonCursor }};font-weight:bold">Download Word</button>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
+              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
+                <div style="font-size:13px;font-weight:bold">Attendance Report</div>
+                <div style="font-size:11.5px;color:#58595B;margin-top:2px">All trainings in the period, with every participant's days present and overall result. Excel.</div>
+              </div>
+              <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;flex:1;align-content:start">
+                <sc-for list="{{ attReport.selects }}" as="f" hint-placeholder-count="3">
+                  <div>
+                    <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                    <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                      <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                        <option value="{{ o.value }}">{{ o.label }}</option>
+                      </sc-for>
+                    </select>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end">
+                <button onClick="{{ attReport.onExport }}" style="padding:9px 18px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">Export Excel</button>
+              </div>
+            </div>
           </div>
           <sc-if value="{{ empty.attendance }}" hint-placeholder-val="{{ false }}">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No current or upcoming sessions with registered participants yet.</div>
@@ -789,133 +823,97 @@
                 <div style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ sess.completionLabel }}</div>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;background:#F7F9F8;border-bottom:1px solid #E1E5E3">
-                <button onClick="{{ sess.onQr }}" style="padding:6px 11px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Check-in QR codes ({{ sess.dayCount }})</button>
-                <button onClick="{{ sess.onSurveyQr }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Survey QR code</button>
-                <button onClick="{{ sess.onSheet }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Attendance sheet</button>
-                <button onClick="{{ sess.onSurvey }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Survey results · {{ sess.surveyCount }}</button>
+                <button onClick="{{ sess.onSheet }}" style="padding:6px 11px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ sess.sheetLabel }}</button>
+                <button onClick="{{ sess.onRecord }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Attendance record (Excel)</button>
               </div>
-              <sc-for list="{{ sess.people }}" as="p" hint-placeholder-count="4">
-                <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #F4F6F5">
-                  <div style="width:30px;height:30px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold">{{ p.initials }}</div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:12.5px;font-weight:bold">{{ p.name }}</div>
-                    <div style="font-size:11px;color:#58595B">{{ p.meta }}</div>
-                  </div>
-                  <div style="display:flex;gap:4px;flex-wrap:wrap;flex:0 1 auto;justify-content:flex-end">
-                    <sc-for list="{{ p.days }}" as="dy" hint-placeholder-count="3">
-                      <button onClick="{{ dy.onClick }}" title="{{ dy.title }}" style="min-width:34px;padding:5px 6px;border:1px solid {{ dy.border }};background:{{ dy.bg }};color:{{ dy.fg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:10.5px">{{ dy.label }}</button>
-                    </sc-for>
-                  </div>
-                  <div style="display:flex;gap:0;border:1px solid #D1D3D4;border-radius:4px;overflow:hidden;flex:0 0 auto">
-                    <button onClick="{{ p.onAttended }}" title="Mark as attended" style="padding:6px 12px;border:0;background:{{ p.attBg }};color:{{ p.attFg }};cursor:pointer;font-weight:bold;font-size:11.5px">Attended</button>
-                    <button onClick="{{ p.onNoShow }}" title="Mark as no show" style="padding:6px 12px;border:0;border-left:1px solid #D1D3D4;background:{{ p.noBg }};color:{{ p.noFg }};cursor:pointer;font-weight:bold;font-size:11.5px">No show</button>
-                  </div>
+              <div style="overflow-x:auto">
+                <div style="display:grid;grid-template-columns:{{ sess.cols }};min-width:{{ sess.minW }};gap:6px;padding:8px 16px;background:#FAFBFA;border-bottom:1px solid #EAEEEC;font-size:10.5px;font-weight:bold;color:#58595B;align-items:end">
+                  <div>PARTICIPANT</div>
+                  <sc-for list="{{ sess.dayHeads }}" as="dh" hint-placeholder-count="3">
+                    <div style="text-align:center">{{ dh.label }}<div style="font-weight:normal;color:#8A8F8C">{{ dh.date }}</div></div>
+                  </sc-for>
+                  <div style="text-align:center">OVERALL</div>
                 </div>
-              </sc-for>
+                <sc-for list="{{ sess.people }}" as="p" hint-placeholder-count="4">
+                  <div style="display:grid;grid-template-columns:{{ sess.cols }};min-width:{{ sess.minW }};gap:6px;align-items:center;padding:9px 16px;border-bottom:1px solid #F4F6F5">
+                    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                      <div style="width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold">{{ p.initials }}</div>
+                      <div style="min-width:0">
+                        <div style="font-size:12.5px;font-weight:bold">{{ p.name }}</div>
+                        <div style="font-size:11px;color:#58595B">{{ p.meta }}</div>
+                      </div>
+                    </div>
+                    <sc-for list="{{ p.days }}" as="dy" hint-placeholder-count="3">
+                      <button onClick="{{ dy.onClick }}" title="{{ dy.title }}" style="width:100%;padding:6px 4px;border:1px solid {{ dy.border }};background:{{ dy.bg }};color:{{ dy.fg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11px;white-space:nowrap">{{ dy.label }}</button>
+                    </sc-for>
+                    <div style="display:flex;border:1px solid #D1D3D4;border-radius:4px;overflow:hidden">
+                      <button onClick="{{ p.onAttended }}" title="Mark as attended" style="flex:1;padding:6px 8px;border:0;background:{{ p.attBg }};color:{{ p.attFg }};cursor:pointer;font-weight:bold;font-size:11.5px">Attended</button>
+                      <button onClick="{{ p.onNoShow }}" title="Mark as no show" style="flex:1;padding:6px 8px;border:0;border-left:1px solid #D1D3D4;background:{{ p.noBg }};color:{{ p.noFg }};cursor:pointer;font-weight:bold;font-size:11.5px">No show</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
             </div>
           </sc-for>
         </div>
       </sc-if>
 
-      <sc-if value="{{ s.aNotify }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ s.aSurveys }}" hint-placeholder-val="{{ false }}">
         <div>
-          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Notifications</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Email the people registered for a training, print nameplates and certificates, and edit the email templates.</div>
-
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;margin-bottom:26px">
-          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
-            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
-              <div style="font-size:13px;font-weight:bold">Send Training Email</div>
-              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Goes only to people registered for the selected training. Each email is personalised.</div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Feedback Surveys</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Track who has answered each training's feedback survey, send it now, or remind people who haven't answered.</div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-bottom:18px;padding:13px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-left:4px solid #2A7E4F">
+            <div style="flex:1 1 260px">
+              <div style="font-size:13px;font-weight:bold">How it works</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px;line-height:1.5">The day after a training ends, everyone registered (except No shows) is emailed a link to the feedback survey. Reminders follow every few days until they answer (up to 3). You can also send it now. Edit the wording in Notifications → Email Templates.</div>
             </div>
-            <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1">
-              <sc-for list="{{ mail.selects }}" as="f" hint-placeholder-count="3">
-                <div style="grid-column:{{ f.span }}">
-                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
-                  <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
-                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
-                      <option value="{{ o.value }}">{{ o.label }}</option>
-                    </sc-for>
-                  </select>
-                </div>
-              </sc-for>
-              <div style="grid-column:1 / -1;background:{{ mail.recipientBg }};border:1px solid {{ mail.recipientBorder }};border-radius:4px;padding:9px 12px;font-size:12px;font-weight:bold;color:{{ mail.recipientFg }}">{{ mail.recipientLabel }}</div>
-              <div style="grid-column:1 / -1">
-                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Subject</div>
-                <input value="{{ mail.subject }}" onChange="{{ mail.onSubject }}" placeholder="Email subject" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
-              </div>
-              <div style="grid-column:1 / -1">
-                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Message</div>
-                <textarea value="{{ mail.body }}" onChange="{{ mail.onBody }}" placeholder="Write the email, or pick a template above" rows="7" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
-                <div style="font-size:10.5px;color:#8A8F8C;margin-top:4px;line-height:1.5">Placeholders filled per person: {{ mail.placeholders }}</div>
-              </div>
-            </div>
-            <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;align-items:center;gap:10px">
-              <div style="flex:1;font-size:11px;color:#58595B">{{ mail.fromLabel }}</div>
-              <button onClick="{{ mail.onSubmit }}" style="padding:9px 18px;border:0;background:{{ mail.buttonBg }};color:#fff;border-radius:4px;cursor:{{ mail.buttonCursor }};font-weight:bold">{{ mail.buttonLabel }}</button>
-            </div>
+            <button onClick="{{ attReport.onSurveys }}" style="padding:8px 14px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">All survey results (Excel)</button>
           </div>
-
-          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
-            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
-              <div style="font-size:13px;font-weight:bold">Nameplate Generator</div>
-              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Fold-in-half desk nameplates as a PDF, one A4 page per person.</div>
-            </div>
-            <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;flex:1">
-              <sc-for list="{{ plate.selects }}" as="f" hint-placeholder-count="3">
-                <div style="grid-column:{{ f.span }}">
-                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
-                  <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
-                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
-                      <option value="{{ o.value }}">{{ o.label }}</option>
-                    </sc-for>
-                  </select>
+          <sc-if value="{{ empty.surveys }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No trainings have started yet, so there are no surveys to track.</div>
+          </sc-if>
+          <sc-for list="{{ surveySessions }}" as="sv" hint-placeholder-count="2">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-bottom:14px;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;flex-wrap:wrap">
+                <div style="font-size:11px;font-weight:bold;color:#2A7E4F">{{ sv.code }}</div>
+                <div style="font-size:13.5px;font-weight:bold">{{ sv.title }}</div>
+                <div style="font-size:11.5px;color:#58595B">{{ sv.meta }}</div>
+                <div style="flex:1"></div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:110px;height:7px;background:#EEF1EF;border-radius:4px;overflow:hidden"><div style="height:100%;width:{{ sv.pct }}%;background:#2A7E4F"></div></div>
+                  <div style="font-size:11.5px;font-weight:bold;color:#2A7E4F;white-space:nowrap">{{ sv.answeredLabel }}</div>
                 </div>
-              </sc-for>
-              <sc-if value="{{ plate.showPick }}" hint-placeholder-val="{{ false }}">
-                <div style="grid-column:1 / -1;border:1px solid #E1E5E3;border-radius:4px;max-height:180px;overflow:auto;padding:4px 0">
-                  <sc-for list="{{ plate.people }}" as="pp" hint-placeholder-count="4">
-                    <label style="display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:12px;cursor:pointer">
-                      <input type="checkbox" checked="{{ pp.checked }}" onChange="{{ pp.onToggle }}" />
-                      <span style="flex:1">{{ pp.name }}</span>
-                      <span style="font-size:10.5px;color:#8A8F8C">{{ pp.note }}</span>
-                    </label>
-                  </sc-for>
-                  <sc-if value="{{ plate.noPeople }}" hint-placeholder-val="{{ false }}">
-                    <div style="padding:10px;font-size:12px;color:#8A8F8C">No one is registered for this training yet.</div>
-                  </sc-if>
-                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC">
+                <button onClick="{{ sv.onSend }}" style="padding:6px 11px;border:0;background:{{ sv.sendBg }};color:{{ sv.sendFg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ sv.sendLabel }}</button>
+                <button onClick="{{ sv.onRemind }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:{{ sv.remindFg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ sv.remindLabel }}</button>
+                <button onClick="{{ sv.onResults }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Results (Excel)</button>
+                <div style="flex:1;min-width:10px"></div>
+                <div style="font-size:11px;color:#8A8F8C">{{ sv.autoNote }}</div>
+                <button onClick="{{ sv.onToggle }}" style="border:0;background:none;color:#2A7E4F;cursor:pointer;font-weight:bold;font-size:11.5px;padding:4px 0">{{ sv.chev }} {{ sv.toggleLabel }}</button>
+              </div>
+              <sc-if value="{{ sv.open }}" hint-placeholder-val="{{ false }}">
+                <sc-for list="{{ sv.rows }}" as="sp" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;padding:9px 16px;border-top:1px solid #F4F6F5">
+                    <div style="width:28px;height:28px;flex:0 0 28px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:bold">{{ sp.initials }}</div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:12.5px;font-weight:bold">{{ sp.name }}</div>
+                      <div style="font-size:11px;color:#58595B">{{ sp.meta }}</div>
+                    </div>
+                    <span style="background:{{ sp.bg }};color:{{ sp.fg }};border:1px solid #E1E5E3;font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px;white-space:nowrap">{{ sp.label }}</span>
+                  </div>
+                </sc-for>
               </sc-if>
-              <sc-if value="{{ plate.showTyped }}" hint-placeholder-val="{{ false }}">
-                <div style="grid-column:1 / -1">
-                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Names (one per line)</div>
-                  <textarea value="{{ plate.typedNames }}" onChange="{{ plate.onTypedNames }}" rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
-                </div>
-              </sc-if>
-              <div style="grid-column:1 / -1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;white-space:nowrap">
-                  <input type="checkbox" checked="{{ plate.withInstructor }}" onChange="{{ plate.onWithInstructor }}" />
-                  Also an instructor nameplate
-                </label>
-                <sc-if value="{{ plate.withInstructor }}" hint-placeholder-val="{{ false }}">
-                  <input value="{{ plate.instructorName }}" onChange="{{ plate.onInstructorName }}" placeholder="Instructor name" style="flex:1;min-width:160px;padding:6px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
-                </sc-if>
-              </div>
-              <div>
-                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date from</div>
-                <input type="date" value="{{ plate.from }}" onChange="{{ plate.onFrom }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
-              </div>
-              <div>
-                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date to</div>
-                <input type="date" value="{{ plate.to }}" onChange="{{ plate.onTo }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
-              </div>
-              <div style="grid-column:1 / -1;font-size:11.5px;color:#58595B">{{ plate.summary }}</div>
             </div>
-            <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end">
-              <button onClick="{{ plate.onSubmit }}" style="padding:9px 18px;border:0;background:{{ plate.buttonBg }};color:#fff;border-radius:4px;cursor:{{ plate.buttonCursor }};font-weight:bold">{{ plate.buttonLabel }}</button>
-            </div>
-          </div>
+          </sc-for>
+        </div>
+      </sc-if>
 
+      <sc-if value="{{ s.aCerts }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Certificates</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Certificates of completion for a training: NESR or CPVEN template, PDF to print or PowerPoint to edit.</div>
+          <div style="max-width:720px">
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
             <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
               <div style="font-size:13px;font-weight:bold">Certificates of Completion</div>
@@ -974,6 +972,34 @@
                   <span style="font-size:11px;color:#8A8F8C">{{ cert.sigNote }}</span>
                 </div>
               </div>
+              <label style="grid-column:1 / -1;display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;border-top:1px solid #EAEEEC;padding-top:12px">
+                <input type="checkbox" checked="{{ cert.third }}" onChange="{{ cert.onThird }}" />
+                Add a third signatory, printed in the middle between the instructor and the certificate's signatory
+              </label>
+              <sc-if value="{{ cert.third }}" hint-placeholder-val="{{ false }}">
+                <div>
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Third signatory name</div>
+                  <input value="{{ cert.thirdName }}" onChange="{{ cert.onThirdName }}" placeholder="Full name" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </div>
+                <div>
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Title</div>
+                  <input value="{{ cert.thirdTitle }}" onChange="{{ cert.onThirdTitle }}" placeholder="e.g. HSE Manager" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </div>
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Third signatory signature (optional)</div>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <label style="padding:7px 12px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;font-weight:bold;color:#2A7E4F">
+                      {{ cert.thirdSigButton }}
+                      <input type="file" accept="image/png,image/jpeg" onChange="{{ cert.onThirdSignature }}" style="display:none" />
+                    </label>
+                    <sc-if value="{{ cert.thirdSigUrl }}" hint-placeholder-val="{{ false }}">
+                      <img src="{{ cert.thirdSigUrl }}" alt="Signature" style="height:34px;max-width:140px;object-fit:contain;border:1px dashed #D1D3D4;border-radius:3px;background:#fff;padding:2px" />
+                      <button onClick="{{ cert.onClearThirdSignature }}" style="border:0;background:none;color:#8A2B2B;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Remove</button>
+                    </sc-if>
+                    <span style="font-size:11px;color:#8A8F8C">{{ cert.thirdSigNote }}</span>
+                  </div>
+                </div>
+              </sc-if>
               <div style="grid-column:1 / -1;font-size:11.5px;color:#58595B">{{ cert.summary }}</div>
             </div>
             <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end;gap:8px">
@@ -981,6 +1007,119 @@
               <button onClick="{{ cert.onPdf }}" style="padding:9px 18px;border:0;background:{{ cert.buttonBg }};color:#fff;border-radius:4px;cursor:{{ cert.buttonCursor }};font-weight:bold">{{ cert.pdfLabel }}</button>
             </div>
           </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aPlates }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Name Tags</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Desk name tags for participants and the instructor, NESR or CPVEN.</div>
+          <div style="max-width:720px">
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
+              <div style="font-size:13px;font-weight:bold">Name Tag Generator</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Fold-in-half desk name tags as a PDF, one A4 page per person. NESR or CPVEN.</div>
+            </div>
+            <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;flex:1">
+              <sc-for list="{{ plate.selects }}" as="f" hint-placeholder-count="3">
+                <div style="grid-column:{{ f.span }}">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                  <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                      <option value="{{ o.value }}">{{ o.label }}</option>
+                    </sc-for>
+                  </select>
+                </div>
+              </sc-for>
+              <sc-if value="{{ plate.showPick }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:1 / -1;border:1px solid #E1E5E3;border-radius:4px;max-height:180px;overflow:auto;padding:4px 0">
+                  <sc-for list="{{ plate.people }}" as="pp" hint-placeholder-count="4">
+                    <label style="display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:12px;cursor:pointer">
+                      <input type="checkbox" checked="{{ pp.checked }}" onChange="{{ pp.onToggle }}" />
+                      <span style="flex:1">{{ pp.name }}</span>
+                      <span style="font-size:10.5px;color:#8A8F8C">{{ pp.note }}</span>
+                    </label>
+                  </sc-for>
+                  <sc-if value="{{ plate.noPeople }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:10px;font-size:12px;color:#8A8F8C">No one is registered for this training yet.</div>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{ plate.showTyped }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Names (one per line)</div>
+                  <textarea value="{{ plate.typedNames }}" onChange="{{ plate.onTypedNames }}" rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
+                </div>
+              </sc-if>
+              <div style="grid-column:1 / -1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;white-space:nowrap">
+                  <input type="checkbox" checked="{{ plate.withInstructor }}" onChange="{{ plate.onWithInstructor }}" />
+                  Also an instructor name tag
+                </label>
+                <sc-if value="{{ plate.withInstructor }}" hint-placeholder-val="{{ false }}">
+                  <input value="{{ plate.instructorName }}" onChange="{{ plate.onInstructorName }}" placeholder="Instructor name" style="flex:1;min-width:150px;padding:6px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                  <input value="{{ plate.instructorRole }}" onChange="{{ plate.onInstructorRole }}" placeholder="Role under the name, e.g. Instructor" title="Printed under the instructor's name" style="flex:1;min-width:150px;padding:6px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </sc-if>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date from</div>
+                <input type="date" value="{{ plate.from }}" onChange="{{ plate.onFrom }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Date to</div>
+                <input type="date" value="{{ plate.to }}" onChange="{{ plate.onTo }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              </div>
+              <div style="grid-column:1 / -1;font-size:11.5px;color:#58595B">{{ plate.summary }}</div>
+            </div>
+            <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end">
+              <button onClick="{{ plate.onSubmit }}" style="padding:9px 18px;border:0;background:{{ plate.buttonBg }};color:#fff;border-radius:4px;cursor:{{ plate.buttonCursor }};font-weight:bold">{{ plate.buttonLabel }}</button>
+            </div>
+          </div>
+
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aNotify }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Notifications</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Email the people registered for a training, and edit the automatic email templates.</div>
+
+          <div style="max-width:760px;margin-bottom:26px">
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
+              <div style="font-size:13px;font-weight:bold">Send Training Email</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Goes only to people registered for the selected training. Each email is personalised.</div>
+            </div>
+            <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1">
+              <sc-for list="{{ mail.selects }}" as="f" hint-placeholder-count="3">
+                <div style="grid-column:{{ f.span }}">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
+                  <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                      <option value="{{ o.value }}">{{ o.label }}</option>
+                    </sc-for>
+                  </select>
+                </div>
+              </sc-for>
+              <div style="grid-column:1 / -1;background:{{ mail.recipientBg }};border:1px solid {{ mail.recipientBorder }};border-radius:4px;padding:9px 12px;font-size:12px;font-weight:bold;color:{{ mail.recipientFg }}">{{ mail.recipientLabel }}</div>
+              <div style="grid-column:1 / -1">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Subject</div>
+                <input value="{{ mail.subject }}" onChange="{{ mail.onSubject }}" placeholder="Email subject" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              </div>
+              <div style="grid-column:1 / -1">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Message</div>
+                <textarea value="{{ mail.body }}" onChange="{{ mail.onBody }}" placeholder="Write the email, or pick a template above" rows="7" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
+                <div style="font-size:10.5px;color:#8A8F8C;margin-top:4px;line-height:1.5">Placeholders filled per person: {{ mail.placeholders }}</div>
+              </div>
+            </div>
+            <div style="padding:12px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;align-items:center;gap:10px">
+              <div style="flex:1;font-size:11px;color:#58595B">{{ mail.fromLabel }}</div>
+              <button onClick="{{ mail.onSubmit }}" style="padding:9px 18px;border:0;background:{{ mail.buttonBg }};color:#fff;border-radius:4px;cursor:{{ mail.buttonCursor }};font-weight:bold">{{ mail.buttonLabel }}</button>
+            </div>
+          </div>
+
           </div>
 
           <div style="font-size:15px;font-weight:bold;margin-bottom:10px">Email Templates</div>
@@ -1165,20 +1304,20 @@ const YEAR = 2026;
 
 const CATEGORIES = ["Finance","General Technical Awareness","HSE","Management","Operation Management","Sales, Contracting & Tendering","Soft Skills","Supervisory","Technical Operations"];
 const TYPES = ["Technical","Non Technical","HSE"];
-const LOCATIONS = ["Al Khobar, KSA","Dammam, KSA","Abu Dhabi, UAE","Dubai, UAE","Cairo, Egypt","Houston, USA","Virtual Classroom"];
+const LOCATIONS = ["Al Khobar, KSA","Dammam, KSA","Abu Dhabi, UAE","Dubai, UAE","Cairo, Egypt","Houston, USA","Online Training"];
 const DEPTS = ["Operations","Engineering","Finance","HSE","Supply Chain","Human Resources","Sales & Commercial","IT"];
 const NATIONALITIES = ["Saudi Arabia","United Arab Emirates","Egypt","India","Pakistan","United Kingdom","United States","Other"];
 
 const SEED_TRAININGS = [
   {id:"t1", code:"TNT-01", title:"Technical For Non Technical (UAE Staff)", category:"General Technical Awareness", type:"Non Technical", start:"2026-09-21", end:"2026-09-24", location:"Abu Dhabi, UAE", seats:20, enrolled:20, instructor:"A. Rahman", desc:"Four-day immersion giving non-technical staff a working vocabulary of NESR service lines, well construction and field operations."},
   {id:"t2", code:"LDR-04", title:"Leadership Essentials for New Managers", category:"Supervisory", type:"Non Technical", start:"2026-09-28", end:"2026-09-30", location:"Dubai, UAE", seats:25, enrolled:18, instructor:"K. Mansour", desc:"Practical toolkit for first-time people managers: delegation, feedback conversations, and performance planning the NESR way."},
-  {id:"t3", code:"SFT-02", title:"Presentation Skills Masterclass", category:"Soft Skills", type:"Non Technical", start:"2026-09-07", end:"2026-09-08", location:"Virtual Classroom", seats:25, enrolled:23, instructor:"L. Brennan", desc:"Structure, deliver and defend a business presentation to client and executive audiences."},
+  {id:"t3", code:"SFT-02", title:"Presentation Skills Masterclass", category:"Soft Skills", type:"Non Technical", start:"2026-09-07", end:"2026-09-08", location:"Online Training", seats:25, enrolled:23, instructor:"L. Brennan", desc:"Structure, deliver and defend a business presentation to client and executive audiences."},
   {id:"t4", code:"FIN-02", title:"Financial Acumen for Non-Finance", category:"Finance", type:"Non Technical", start:"2026-10-05", end:"2026-10-07", location:"Cairo, Egypt", seats:20, enrolled:11, instructor:"M. Fahmy", desc:"Read a P&L, understand cost drivers of a service line, and build a defensible budget request."},
   {id:"t5", code:"OPS-07", title:"Well Intervention Fundamentals", category:"Operation Management", type:"Technical", start:"2026-10-12", end:"2026-10-16", location:"Dammam, KSA", seats:16, enrolled:9, instructor:"R. Delgado", desc:"Intervention techniques, tool strings, and job-planning workflows with hands-on yard exercises."},
   {id:"t6", code:"TNT-02", title:"Technical For Non Technical (KSA Staff)", category:"General Technical Awareness", type:"Non Technical", start:"2026-10-18", end:"2026-10-22", location:"Al Khobar, KSA", seats:24, enrolled:21, instructor:"A. Rahman", desc:"Five-day KSA cohort of the flagship technical awareness program, including a field visit."},
   {id:"t7", code:"HSE-03", title:"Defensive Driving (Desert Operations)", category:"HSE", type:"HSE", start:"2026-10-26", end:"2026-10-27", location:"Al Khobar, KSA", seats:20, enrolled:14, instructor:"S. Alotaibi", desc:"Mandatory certification for all staff driving company vehicles in remote and desert terrain."},
   {id:"t8", code:"SCT-05", title:"Contract Negotiation & Tendering", category:"Sales, Contracting & Tendering", type:"Non Technical", start:"2026-11-02", end:"2026-11-04", location:"Houston, USA", seats:18, enrolled:6, instructor:"J. Whitfield", desc:"Bid strategy, commercial terms and negotiation practice using real NESR tender scenarios."},
-  {id:"t9", code:"SFT-09", title:"Effective Business Writing", category:"Soft Skills", type:"Non Technical", start:"2026-11-09", end:"2026-11-10", location:"Virtual Classroom", seats:30, enrolled:12, instructor:"L. Brennan", desc:"Write clear reports, emails and client updates in plain US English."},
+  {id:"t9", code:"SFT-09", title:"Effective Business Writing", category:"Soft Skills", type:"Non Technical", start:"2026-11-09", end:"2026-11-10", location:"Online Training", seats:30, enrolled:12, instructor:"L. Brennan", desc:"Write clear reports, emails and client updates in plain US English."},
   {id:"t10", code:"TNT-03", title:"Technical For Non Technical (Egypt & Libya Staff)", category:"General Technical Awareness", type:"Non Technical", start:"2026-11-15", end:"2026-11-18", location:"Cairo, Egypt", seats:24, enrolled:20, instructor:"A. Rahman", desc:"Regional cohort covering service lines, HSE basics and operational terminology."},
   {id:"t11", code:"TEC-12", title:"Coiled Tubing Level II", category:"Technical Operations", type:"Technical", start:"2026-11-23", end:"2026-11-27", location:"Dammam, KSA", seats:12, enrolled:8, instructor:"R. Delgado", desc:"Advanced coiled tubing operations, fatigue management and job design. Level I certification required."},
   {id:"t12", code:"OPS-03", title:"Supply Chain & Inventory Control", category:"Operation Management", type:"Non Technical", start:"2026-12-01", end:"2026-12-02", location:"Al Khobar, KSA", seats:20, enrolled:7, instructor:"N. Iyer", desc:"Stock policy, demand planning and warehouse KPIs across NESR bases."},

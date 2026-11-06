@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { fillPlaceholders } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
 import { trainingEmailHtml } from "@/lib/email-template";
+import { linkSignature } from "@/lib/link-token";
 
 // Builds personalised emails from a template and hands them to the n8n webhook.
 // Used by the automatic notifications and by Notifications → Send Training Email.
@@ -19,6 +20,9 @@ export async function portalUrl() {
 }
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+/** Link to a training's feedback survey (participants sign in with their NESR account). */
+export const surveyUrl = (t: Pick<Training, "id">, base: string) => `${base}/survey?t=${t.id}&k=${linkSignature("survey", t.id)}`;
 
 export function trainingValues(t: Training) {
   return { training_title: t.title, session_code: t.code, dates: dateRange(iso(t.startDate), iso(t.endDate)), location: t.location };
@@ -41,7 +45,8 @@ export function buildMessage(t: Training, tag: string, subject: string, body: st
     first_name: r.to.firstName, recipient_name: r.to.name,
     employee_name: r.employeeName || r.to.name,
     manager_name: r.managerName || "your manager",
-    comment: r.comment || ""
+    comment: r.comment || "",
+    survey_link: surveyUrl(t, link)
   };
   let text = fillPlaceholders(body, values);
   // Templates that don't mention {{comment}} still get the decline reason
@@ -51,7 +56,8 @@ export function buildMessage(t: Training, tag: string, subject: string, body: st
   const html = trainingEmailHtml({
     tag: tag.toUpperCase(), eyebrow: `${t.code} · NESR Training Portal`, title: filledSubject, firstName: r.to.firstName, message: text,
     details: [["Session", t.code], ["Training", t.title], ["Dates", shared.dates], ["Location", t.location]],
-    buttonText: "Open Training Portal", buttonUrl: link
+    // Survey emails get a button straight to the survey
+    ...(body.includes("{{survey_link}}") ? { buttonText: "Give your feedback", buttonUrl: values.survey_link } : { buttonText: "Open Training Portal", buttonUrl: link })
   });
   return {
     to: testTo || r.to.email, intendedTo: r.to.email, name: r.to.name,
@@ -78,22 +84,25 @@ export async function postToN8n(t: Training, audience: string, messages: Message
 /**
  * Automatic email from a template. Never throws: the portal action has already been saved,
  * so a mail problem is logged instead of undoing it. Skipped if the template is paused.
+ * Resolves to true when the emails were handed to n8n.
  */
-export async function notify(templateId: string, training: Training, recipients: Recipient[], actorId?: string) {
+export async function notify(templateId: string, training: Training, recipients: Recipient[], actorId?: string): Promise<boolean> {
   // External participants (e.g. CPVEN) are never emailed: L&D communicates with them through their HR
   const list = recipients.filter(r => r.to?.email && !r.to.isExternal && !r.to.email.endsWith("@external.invalid"));
-  if (!list.length) return;
+  if (!list.length) return false;
   try {
     const tpl = await prisma.notificationTemplate.findUnique({ where: { id: templateId } });
-    if (!tpl) return console.warn(`[email] template "${templateId}" not found; nothing sent`);
-    if (!tpl.isActive) return console.info(`[email] template "${templateId}" is paused; nothing sent`);
-    if (!process.env.LD_N8N_EMAIL_WEBHOOK_URL) return console.info(`[email] n8n webhook not set; "${templateId}" not sent`);
+    if (!tpl) { console.warn(`[email] template "${templateId}" not found; nothing sent`); return false; }
+    if (!tpl.isActive) { console.info(`[email] template "${templateId}" is paused; nothing sent`); return false; }
+    if (!process.env.LD_N8N_EMAIL_WEBHOOK_URL) { console.info(`[email] n8n webhook not set; "${templateId}" not sent`); return false; }
     const link = await portalUrl();
     const messages = list.map(r => buildMessage(training, tpl.name, tpl.subject, tpl.body, r, link));
     await postToN8n(training, `auto:${templateId}`, messages);
     await prisma.auditLog.create({ data: { actorId: actorId || null, action: "email_auto", entity: "training", entityId: training.id, details: { template: templateId, count: messages.length } } });
     console.info(`[email] "${templateId}" sent to ${messages.length}`);
+    return true;
   } catch (e) {
     console.warn(`[email] "${templateId}" failed: ${(e as Error).message}`);
+    return false;
   }
 }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-// Simple branded card for the phone pages people reach by scanning a QR code (check-in, survey).
+// Simple branded card for the pages people reach from an email link (feedback survey).
 export default function PublicCard({ children, wide }: { children: ReactNode; wide?: boolean }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px", background: "#F2F4F3" }}>

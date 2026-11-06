@@ -156,6 +156,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "13px", color: "#58595B", marginTop: "3px" }}>{v.resultLabel}</div>
 </div>
 <div style={{ flex: "1" }}></div>
+<button onClick={v.onCalExport} style={{ padding: "8px 14px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>Export to Excel</button>
 <div style={{ display: "flex", gap: "2px", background: "#E7EBE9", padding: "3px", borderRadius: "4px" }}>
 {(v.viewTabs || []).map((v, i5) => (<React.Fragment key={i5}>
 <button onClick={v.onClick} style={{ border: "0", cursor: "pointer", padding: "7px 15px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold", background: v.bg, color: v.fg }}>{v.label}</button>
@@ -189,7 +190,7 @@ export default function PortalView({ v }) {
 </div>
 {v.isTable ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflowX: "auto" }}>
-<div style={{ display: "grid", minWidth: "1020px", gridTemplateColumns: "minmax(0,1.2fr) 74px minmax(0,2.1fr) 118px 58px 58px 94px 94px minmax(0,1fr)", background: "#2A7E4F", color: "#fff", fontSize: "11px", fontWeight: "bold", letterSpacing: ".4px" }}>
+<div style={{ display: "grid", minWidth: "1480px", gridTemplateColumns: "minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr)", background: "#2A7E4F", color: "#fff", fontSize: "11px", fontWeight: "bold", letterSpacing: ".4px" }}>
 <div style={{ padding: "11px 10px" }}>Training Category</div>
 <div style={{ padding: "11px 10px" }}>Training Code</div>
 <div style={{ padding: "11px 10px" }}>Training Name</div>
@@ -199,9 +200,12 @@ export default function PortalView({ v }) {
 <div style={{ padding: "11px 10px" }}>Start Date</div>
 <div style={{ padding: "11px 10px" }}>End Date</div>
 <div style={{ padding: "11px 10px" }}>Location</div>
+<div style={{ padding: "11px 10px" }}>Target Audience</div>
+<div style={{ padding: "11px 10px" }}>Training Provider</div>
+<div style={{ padding: "11px 10px" }}>Instructor</div>
 </div>
 {(v.rows || []).map((r, i9) => (<React.Fragment key={i9}>
-<div onClick={r.onClick} style={{ display: "grid", minWidth: "1020px", gridTemplateColumns: "minmax(0,1.2fr) 74px minmax(0,2.1fr) 118px 58px 58px 94px 94px minmax(0,1fr)", borderBottom: "1px solid #F0F2F1", cursor: "pointer", background: r.zebra, alignItems: "center" }} className="dc-h1">
+<div onClick={r.onClick} style={{ display: "grid", minWidth: "1480px", gridTemplateColumns: "minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr)", borderBottom: "1px solid #F0F2F1", cursor: "pointer", background: r.zebra, alignItems: "center" }} className="dc-h1">
 <div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.category}</div>
 <div style={{ padding: "11px 10px", fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{r.code}</div>
 <div style={{ padding: "11px 10px", fontSize: "12.5px", fontWeight: "bold" }}>{r.title}</div>
@@ -211,6 +215,9 @@ export default function PortalView({ v }) {
 <div style={{ padding: "11px 10px", fontSize: "12px" }}>{r.startLabel}</div>
 <div style={{ padding: "11px 10px", fontSize: "12px" }}>{r.endLabel}</div>
 <div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.location}</div>
+<div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.targetAudience}</div>
+<div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.provider}</div>
+<div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.instructor}</div>
 </div>
 </React.Fragment>))}
 {v.noResults ? (<>
@@ -716,29 +723,56 @@ export default function PortalView({ v }) {
 {v.s.aAtt ? (<>
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Attendance &amp; Completion</div>
-<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Print a check-in QR code for each training day: participants scan it and sign in with their NESR account. You can also mark each day here. Present on every day = Attended.</div>
-<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "18px", padding: "13px 16px", display: "flex", alignItems: "flex-end", gap: "12px", flexWrap: "wrap", borderLeft: "4px solid #2A7E4F" }}>
-<div style={{ flex: "1 1 220px" }}>
-<div style={{ fontSize: "13px", fontWeight: "bold" }}>Attendance report</div>
-<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>All trainings in the period, with every participant's days present. Excel.</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Print the attendance sheet for the instructor. When the signed sheet comes back, mark each day here (click a day: present → absent → clear) and the overall result. Present on every day marks the person Attended automatically.</div>
+<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: "16px", marginBottom: "18px" }}>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>Attendance Sheet</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Printable sign-in sheet with the participants and one column per day. Word, to print with the certificates and name tags.</div>
 </div>
-{(v.attReport.selects || []).map((f, i33) => (<React.Fragment key={i33}>
+<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr", gap: "12px", flex: "1", alignContent: "start" }}>
+{(v.sheet.selects || []).map((f, i33) => (<React.Fragment key={i33}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
-<select value={f.value} onChange={f.onChange} style={{ padding: "7px 9px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
+<select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
 {(f.options || []).map((o, i34) => (<React.Fragment key={i34}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
 </div>
 </React.Fragment>))}
-<button onClick={v.attReport.onExport} style={{ padding: "8px 14px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>Export attendance</button>
-<button onClick={v.attReport.onSurveys} style={{ padding: "8px 14px", border: "1px solid #D1D3D4", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>All survey results</button>
+<div style={{ fontSize: "11.5px", color: "#58595B" }}>{v.sheet.summary}</div>
+</div>
+<div style={{ padding: "12px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", justifyContent: "flex-end" }}>
+<button onClick={v.sheet.onSubmit} style={{ padding: "9px 18px", border: "0", background: v.sheet.buttonBg, color: "#fff", borderRadius: "4px", cursor: v.sheet.buttonCursor, fontWeight: "bold" }}>Download Word</button>
+</div>
+</div>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>Attendance Report</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>All trainings in the period, with every participant's days present and overall result. Excel.</div>
+</div>
+<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px", flex: "1", alignContent: "start" }}>
+{(v.attReport.selects || []).map((f, i35) => (<React.Fragment key={i35}>
+<div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
+<select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
+{(f.options || []).map((o, i36) => (<React.Fragment key={i36}>
+<option value={o.value}>{o.label}</option>
+</React.Fragment>))}
+</select>
+</div>
+</React.Fragment>))}
+</div>
+<div style={{ padding: "12px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", justifyContent: "flex-end" }}>
+<button onClick={v.attReport.onExport} style={{ padding: "9px 18px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Export Excel</button>
+</div>
+</div>
 </div>
 {v.empty.attendance ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No current or upcoming sessions with registered participants yet.</div>
 </>) : null}
-{(v.attendanceSessions || []).map((sess, i35) => (<React.Fragment key={i35}>
+{(v.attendanceSessions || []).map((sess, i37) => (<React.Fragment key={i37}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "16px", overflow: "hidden" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: "1px solid #E1E5E3", flexWrap: "wrap" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{sess.code}</div>
@@ -749,129 +783,95 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{sess.completionLabel}</div>
 </div>
 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", padding: "10px 16px", background: "#F7F9F8", borderBottom: "1px solid #E1E5E3" }}>
-<button onClick={sess.onQr} style={{ padding: "6px 11px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Check-in QR codes ({sess.dayCount})</button>
-<button onClick={sess.onSurveyQr} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#1F1F1D", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Survey QR code</button>
-<button onClick={sess.onSheet} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#1F1F1D", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Attendance sheet</button>
-<button onClick={sess.onSurvey} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#1F1F1D", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Survey results · {sess.surveyCount}</button>
+<button onClick={sess.onSheet} style={{ padding: "6px 11px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>{sess.sheetLabel}</button>
+<button onClick={sess.onRecord} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#1F1F1D", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Attendance record (Excel)</button>
 </div>
-{(sess.people || []).map((p, i36) => (<React.Fragment key={i36}>
-<div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px", borderBottom: "1px solid #F4F6F5" }}>
-<div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "bold" }}>{p.initials}</div>
-<div style={{ flex: "1", minWidth: "0" }}>
+<div style={{ overflowX: "auto" }}>
+<div style={{ display: "grid", gridTemplateColumns: sess.cols, minWidth: sess.minW, gap: "6px", padding: "8px 16px", background: "#FAFBFA", borderBottom: "1px solid #EAEEEC", fontSize: "10.5px", fontWeight: "bold", color: "#58595B", alignItems: "end" }}>
+<div>PARTICIPANT</div>
+{(sess.dayHeads || []).map((dh, i38) => (<React.Fragment key={i38}>
+<div style={{ textAlign: "center" }}>{dh.label}<div style={{ fontWeight: "normal", color: "#8A8F8C" }}>{dh.date}</div></div>
+</React.Fragment>))}
+<div style={{ textAlign: "center" }}>OVERALL</div>
+</div>
+{(sess.people || []).map((p, i39) => (<React.Fragment key={i39}>
+<div style={{ display: "grid", gridTemplateColumns: sess.cols, minWidth: sess.minW, gap: "6px", alignItems: "center", padding: "9px 16px", borderBottom: "1px solid #F4F6F5" }}>
+<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: "0" }}>
+<div style={{ width: "30px", height: "30px", flex: "0 0 30px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "bold" }}>{p.initials}</div>
+<div style={{ minWidth: "0" }}>
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{p.name}</div>
 <div style={{ fontSize: "11px", color: "#58595B" }}>{p.meta}</div>
 </div>
-<div style={{ display: "flex", gap: "4px", flexWrap: "wrap", flex: "0 1 auto", justifyContent: "flex-end" }}>
-{(p.days || []).map((dy, i37) => (<React.Fragment key={i37}>
-<button onClick={dy.onClick} title={dy.title} style={{ minWidth: "34px", padding: "5px 6px", border: `1px solid ${dy.border}`, background: dy.bg, color: dy.fg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "10.5px" }}>{dy.label}</button>
+</div>
+{(p.days || []).map((dy, i40) => (<React.Fragment key={i40}>
+<button onClick={dy.onClick} title={dy.title} style={{ width: "100%", padding: "6px 4px", border: `1px solid ${dy.border}`, background: dy.bg, color: dy.fg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11px", whiteSpace: "nowrap" }}>{dy.label}</button>
+</React.Fragment>))}
+<div style={{ display: "flex", border: "1px solid #D1D3D4", borderRadius: "4px", overflow: "hidden" }}>
+<button onClick={p.onAttended} title="Mark as attended" style={{ flex: "1", padding: "6px 8px", border: "0", background: p.attBg, color: p.attFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Attended</button>
+<button onClick={p.onNoShow} title="Mark as no show" style={{ flex: "1", padding: "6px 8px", border: "0", borderLeft: "1px solid #D1D3D4", background: p.noBg, color: p.noFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>No show</button>
+</div>
+</div>
 </React.Fragment>))}
 </div>
-<div style={{ display: "flex", gap: "0", border: "1px solid #D1D3D4", borderRadius: "4px", overflow: "hidden", flex: "0 0 auto" }}>
-<button onClick={p.onAttended} title="Mark as attended" style={{ padding: "6px 12px", border: "0", background: p.attBg, color: p.attFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Attended</button>
-<button onClick={p.onNoShow} title="Mark as no show" style={{ padding: "6px 12px", border: "0", borderLeft: "1px solid #D1D3D4", background: p.noBg, color: p.noFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>No show</button>
-</div>
-</div>
-</React.Fragment>))}
 </div>
 </React.Fragment>))}
 </div>
 </>) : null}
-{v.s.aNotify ? (<>
+{v.s.aSurveys ? (<>
 <div>
-<div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Notifications</div>
-<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Email the people registered for a training, print nameplates and certificates, and edit the email templates.</div>
-<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(360px,1fr))", gap: "16px", marginBottom: "26px" }}>
-<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
-<div style={{ fontSize: "13px", fontWeight: "bold" }}>Send Training Email</div>
-<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Goes only to people registered for the selected training. Each email is personalised.</div>
+<div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Feedback Surveys</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Track who has answered each training's feedback survey, send it now, or remind people who haven't answered.</div>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "18px", padding: "13px 16px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", borderLeft: "4px solid #2A7E4F" }}>
+<div style={{ flex: "1 1 260px" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>How it works</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px", lineHeight: "1.5" }}>The day after a training ends, everyone registered (except No shows) is emailed a link to the feedback survey. Reminders follow every few days until they answer (up to 3). You can also send it now. Edit the wording in Notifications → Email Templates.</div>
 </div>
-<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: "1" }}>
-{(v.mail.selects || []).map((f, i38) => (<React.Fragment key={i38}>
-<div style={{ gridColumn: f.span }}>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
-<select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i39) => (<React.Fragment key={i39}>
-<option value={o.value}>{o.label}</option>
-</React.Fragment>))}
-</select>
+<button onClick={v.attReport.onSurveys} style={{ padding: "8px 14px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>All survey results (Excel)</button>
 </div>
-</React.Fragment>))}
-<div style={{ gridColumn: "1 / -1", background: v.mail.recipientBg, border: `1px solid ${v.mail.recipientBorder}`, borderRadius: "4px", padding: "9px 12px", fontSize: "12px", fontWeight: "bold", color: v.mail.recipientFg }}>{v.mail.recipientLabel}</div>
-<div style={{ gridColumn: "1 / -1" }}>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Subject</div>
-<input value={v.mail.subject} onChange={v.mail.onSubject} placeholder="Email subject" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
-</div>
-<div style={{ gridColumn: "1 / -1" }}>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Message</div>
-<textarea value={v.mail.body} onChange={v.mail.onBody} placeholder="Write the email, or pick a template above" rows="7" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
-<div style={{ fontSize: "10.5px", color: "#8A8F8C", marginTop: "4px", lineHeight: "1.5" }}>Placeholders filled per person: {v.mail.placeholders}</div>
+{v.empty.surveys ? (<>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No trainings have started yet, so there are no surveys to track.</div>
+</>) : null}
+{(v.surveySessions || []).map((sv, i41) => (<React.Fragment key={i41}>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "14px", overflow: "hidden" }}>
+<div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", flexWrap: "wrap" }}>
+<div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{sv.code}</div>
+<div style={{ fontSize: "13.5px", fontWeight: "bold" }}>{sv.title}</div>
+<div style={{ fontSize: "11.5px", color: "#58595B" }}>{sv.meta}</div>
+<div style={{ flex: "1" }}></div>
+<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+<div style={{ width: "110px", height: "7px", background: "#EEF1EF", borderRadius: "4px", overflow: "hidden" }}><div style={{ height: "100%", width: `${sv.pct}%`, background: "#2A7E4F" }}></div></div>
+<div style={{ fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F", whiteSpace: "nowrap" }}>{sv.answeredLabel}</div>
 </div>
 </div>
-<div style={{ padding: "12px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", alignItems: "center", gap: "10px" }}>
-<div style={{ flex: "1", fontSize: "11px", color: "#58595B" }}>{v.mail.fromLabel}</div>
-<button onClick={v.mail.onSubmit} style={{ padding: "9px 18px", border: "0", background: v.mail.buttonBg, color: "#fff", borderRadius: "4px", cursor: v.mail.buttonCursor, fontWeight: "bold" }}>{v.mail.buttonLabel}</button>
+<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", padding: "10px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC" }}>
+<button onClick={sv.onSend} style={{ padding: "6px 11px", border: "0", background: sv.sendBg, color: sv.sendFg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>{sv.sendLabel}</button>
+<button onClick={sv.onRemind} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: sv.remindFg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>{sv.remindLabel}</button>
+<button onClick={sv.onResults} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#1F1F1D", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Results (Excel)</button>
+<div style={{ flex: "1", minWidth: "10px" }}></div>
+<div style={{ fontSize: "11px", color: "#8A8F8C" }}>{sv.autoNote}</div>
+<button onClick={sv.onToggle} style={{ border: "0", background: "none", color: "#2A7E4F", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px", padding: "4px 0" }}>{sv.chev} {sv.toggleLabel}</button>
 </div>
+{sv.open ? (<>
+{(sv.rows || []).map((sp, i42) => (<React.Fragment key={i42}>
+<div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "9px 16px", borderTop: "1px solid #F4F6F5" }}>
+<div style={{ width: "28px", height: "28px", flex: "0 0 28px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10.5px", fontWeight: "bold" }}>{sp.initials}</div>
+<div style={{ flex: "1", minWidth: "0" }}>
+<div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{sp.name}</div>
+<div style={{ fontSize: "11px", color: "#58595B" }}>{sp.meta}</div>
 </div>
-<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
-<div style={{ fontSize: "13px", fontWeight: "bold" }}>Nameplate Generator</div>
-<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Fold-in-half desk nameplates as a PDF, one A4 page per person.</div>
-</div>
-<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
-{(v.plate.selects || []).map((f, i40) => (<React.Fragment key={i40}>
-<div style={{ gridColumn: f.span }}>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
-<select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i41) => (<React.Fragment key={i41}>
-<option value={o.value}>{o.label}</option>
-</React.Fragment>))}
-</select>
+<span style={{ background: sp.bg, color: sp.fg, border: "1px solid #E1E5E3", fontSize: "10.5px", fontWeight: "bold", padding: "3px 8px", borderRadius: "3px", whiteSpace: "nowrap" }}>{sp.label}</span>
 </div>
 </React.Fragment>))}
-{v.plate.showPick ? (<>
-<div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "180px", overflow: "auto", padding: "4px 0" }}>
-{(v.plate.people || []).map((pp, i42) => (<React.Fragment key={i42}>
-<label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
-<input type="checkbox" checked={pp.checked} onChange={pp.onToggle} />
-<span style={{ flex: "1" }}>{pp.name}</span>
-<span style={{ fontSize: "10.5px", color: "#8A8F8C" }}>{pp.note}</span>
-</label>
-</React.Fragment>))}
-{v.plate.noPeople ? (<>
-<div style={{ padding: "10px", fontSize: "12px", color: "#8A8F8C" }}>No one is registered for this training yet.</div>
 </>) : null}
 </div>
-</>) : null}
-{v.plate.showTyped ? (<>
-<div style={{ gridColumn: "1 / -1" }}>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Names (one per line)</div>
-<textarea value={v.plate.typedNames} onChange={v.plate.onTypedNames} rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
+</React.Fragment>))}
 </div>
 </>) : null}
-<div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-<label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" }}>
-<input type="checkbox" checked={v.plate.withInstructor} onChange={v.plate.onWithInstructor} />
-                  Also an instructor nameplate
-                </label>
-{v.plate.withInstructor ? (<>
-<input value={v.plate.instructorName} onChange={v.plate.onInstructorName} placeholder="Instructor name" style={{ flex: "1", minWidth: "160px", padding: "6px 9px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
-</>) : null}
-</div>
+{v.s.aCerts ? (<>
 <div>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Date from</div>
-<input type="date" value={v.plate.from} onChange={v.plate.onFrom} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
-</div>
-<div>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Date to</div>
-<input type="date" value={v.plate.to} onChange={v.plate.onTo} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
-</div>
-<div style={{ gridColumn: "1 / -1", fontSize: "11.5px", color: "#58595B" }}>{v.plate.summary}</div>
-</div>
-<div style={{ padding: "12px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", justifyContent: "flex-end" }}>
-<button onClick={v.plate.onSubmit} style={{ padding: "9px 18px", border: "0", background: v.plate.buttonBg, color: "#fff", borderRadius: "4px", cursor: v.plate.buttonCursor, fontWeight: "bold" }}>{v.plate.buttonLabel}</button>
-</div>
-</div>
+<div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Certificates</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Certificates of completion for a training: NESR or CPVEN template, PDF to print or PowerPoint to edit.</div>
+<div style={{ maxWidth: "720px" }}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
 <div style={{ fontSize: "13px", fontWeight: "bold" }}>Certificates of Completion</div>
@@ -930,6 +930,34 @@ export default function PortalView({ v }) {
 <span style={{ fontSize: "11px", color: "#8A8F8C" }}>{v.cert.sigNote}</span>
 </div>
 </div>
+<label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", borderTop: "1px solid #EAEEEC", paddingTop: "12px" }}>
+<input type="checkbox" checked={v.cert.third} onChange={v.cert.onThird} />
+                Add a third signatory, printed in the middle between the instructor and the certificate's signatory
+              </label>
+{v.cert.third ? (<>
+<div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Third signatory name</div>
+<input value={v.cert.thirdName} onChange={v.cert.onThirdName} placeholder="Full name" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+</div>
+<div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Title</div>
+<input value={v.cert.thirdTitle} onChange={v.cert.onThirdTitle} placeholder="e.g. HSE Manager" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+</div>
+<div style={{ gridColumn: "1 / -1" }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Third signatory signature (optional)</div>
+<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+<label style={{ padding: "7px 12px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", cursor: "pointer", fontSize: "12px", fontWeight: "bold", color: "#2A7E4F" }}>
+                      {v.cert.thirdSigButton}
+                      <input type="file" accept="image/png,image/jpeg" onChange={v.cert.onThirdSignature} style={{ display: "none" }} />
+</label>
+{v.cert.thirdSigUrl ? (<>
+<img src={v.cert.thirdSigUrl} alt="Signature" style={{ height: "34px", maxWidth: "140px", objectFit: "contain", border: "1px dashed #D1D3D4", borderRadius: "3px", background: "#fff", padding: "2px" }} />
+<button onClick={v.cert.onClearThirdSignature} style={{ border: "0", background: "none", color: "#8A2B2B", cursor: "pointer", fontSize: "11.5px", fontWeight: "bold", padding: "0" }}>Remove</button>
+</>) : null}
+<span style={{ fontSize: "11px", color: "#8A8F8C" }}>{v.cert.thirdSigNote}</span>
+</div>
+</div>
+</>) : null}
 <div style={{ gridColumn: "1 / -1", fontSize: "11.5px", color: "#58595B" }}>{v.cert.summary}</div>
 </div>
 <div style={{ padding: "12px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
@@ -938,9 +966,117 @@ export default function PortalView({ v }) {
 </div>
 </div>
 </div>
+</div>
+</>) : null}
+{v.s.aPlates ? (<>
+<div>
+<div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Name Tags</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Desk name tags for participants and the instructor, NESR or CPVEN.</div>
+<div style={{ maxWidth: "720px" }}>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>Name Tag Generator</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Fold-in-half desk name tags as a PDF, one A4 page per person. NESR or CPVEN.</div>
+</div>
+<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
+{(v.plate.selects || []).map((f, i46) => (<React.Fragment key={i46}>
+<div style={{ gridColumn: f.span }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
+<select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
+{(f.options || []).map((o, i47) => (<React.Fragment key={i47}>
+<option value={o.value}>{o.label}</option>
+</React.Fragment>))}
+</select>
+</div>
+</React.Fragment>))}
+{v.plate.showPick ? (<>
+<div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "180px", overflow: "auto", padding: "4px 0" }}>
+{(v.plate.people || []).map((pp, i48) => (<React.Fragment key={i48}>
+<label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
+<input type="checkbox" checked={pp.checked} onChange={pp.onToggle} />
+<span style={{ flex: "1" }}>{pp.name}</span>
+<span style={{ fontSize: "10.5px", color: "#8A8F8C" }}>{pp.note}</span>
+</label>
+</React.Fragment>))}
+{v.plate.noPeople ? (<>
+<div style={{ padding: "10px", fontSize: "12px", color: "#8A8F8C" }}>No one is registered for this training yet.</div>
+</>) : null}
+</div>
+</>) : null}
+{v.plate.showTyped ? (<>
+<div style={{ gridColumn: "1 / -1" }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Names (one per line)</div>
+<textarea value={v.plate.typedNames} onChange={v.plate.onTypedNames} rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
+</div>
+</>) : null}
+<div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+<label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", whiteSpace: "nowrap" }}>
+<input type="checkbox" checked={v.plate.withInstructor} onChange={v.plate.onWithInstructor} />
+                  Also an instructor name tag
+                </label>
+{v.plate.withInstructor ? (<>
+<input value={v.plate.instructorName} onChange={v.plate.onInstructorName} placeholder="Instructor name" style={{ flex: "1", minWidth: "150px", padding: "6px 9px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+<input value={v.plate.instructorRole} onChange={v.plate.onInstructorRole} placeholder="Role under the name, e.g. Instructor" title="Printed under the instructor's name" style={{ flex: "1", minWidth: "150px", padding: "6px 9px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+</>) : null}
+</div>
+<div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Date from</div>
+<input type="date" value={v.plate.from} onChange={v.plate.onFrom} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+</div>
+<div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Date to</div>
+<input type="date" value={v.plate.to} onChange={v.plate.onTo} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+</div>
+<div style={{ gridColumn: "1 / -1", fontSize: "11.5px", color: "#58595B" }}>{v.plate.summary}</div>
+</div>
+<div style={{ padding: "12px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", justifyContent: "flex-end" }}>
+<button onClick={v.plate.onSubmit} style={{ padding: "9px 18px", border: "0", background: v.plate.buttonBg, color: "#fff", borderRadius: "4px", cursor: v.plate.buttonCursor, fontWeight: "bold" }}>{v.plate.buttonLabel}</button>
+</div>
+</div>
+</div>
+</div>
+</>) : null}
+{v.s.aNotify ? (<>
+<div>
+<div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Notifications</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Email the people registered for a training, and edit the automatic email templates.</div>
+<div style={{ maxWidth: "760px", marginBottom: "26px" }}>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>Send Training Email</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Goes only to people registered for the selected training. Each email is personalised.</div>
+</div>
+<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: "1" }}>
+{(v.mail.selects || []).map((f, i49) => (<React.Fragment key={i49}>
+<div style={{ gridColumn: f.span }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
+<select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
+{(f.options || []).map((o, i50) => (<React.Fragment key={i50}>
+<option value={o.value}>{o.label}</option>
+</React.Fragment>))}
+</select>
+</div>
+</React.Fragment>))}
+<div style={{ gridColumn: "1 / -1", background: v.mail.recipientBg, border: `1px solid ${v.mail.recipientBorder}`, borderRadius: "4px", padding: "9px 12px", fontSize: "12px", fontWeight: "bold", color: v.mail.recipientFg }}>{v.mail.recipientLabel}</div>
+<div style={{ gridColumn: "1 / -1" }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Subject</div>
+<input value={v.mail.subject} onChange={v.mail.onSubject} placeholder="Email subject" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+</div>
+<div style={{ gridColumn: "1 / -1" }}>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Message</div>
+<textarea value={v.mail.body} onChange={v.mail.onBody} placeholder="Write the email, or pick a template above" rows="7" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
+<div style={{ fontSize: "10.5px", color: "#8A8F8C", marginTop: "4px", lineHeight: "1.5" }}>Placeholders filled per person: {v.mail.placeholders}</div>
+</div>
+</div>
+<div style={{ padding: "12px 16px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", alignItems: "center", gap: "10px" }}>
+<div style={{ flex: "1", fontSize: "11px", color: "#58595B" }}>{v.mail.fromLabel}</div>
+<button onClick={v.mail.onSubmit} style={{ padding: "9px 18px", border: "0", background: v.mail.buttonBg, color: "#fff", borderRadius: "4px", cursor: v.mail.buttonCursor, fontWeight: "bold" }}>{v.mail.buttonLabel}</button>
+</div>
+</div>
+</div>
 <div style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "10px" }}>Email Templates</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: "16px" }}>
-{(v.templates || []).map((t, i46) => (<React.Fragment key={i46}>
+{(v.templates || []).map((t, i51) => (<React.Fragment key={i51}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden" }}>
 <div style={{ padding: "12px 16px", borderBottom: "1px solid #E1E5E3", display: "flex", alignItems: "center", gap: "10px" }}>
 <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#2A7E4F" }}></div>
@@ -988,7 +1124,7 @@ export default function PortalView({ v }) {
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(288px,1fr))" }}>
 <div style={{ padding: "20px 22px", background: v.detail.railBg, borderRight: v.detail.railBorder, display: "flex", flexDirection: "column", gap: "16px" }}>
 <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
-{(v.detail.facts || []).map((f, i47) => (<React.Fragment key={i47}>
+{(v.detail.facts || []).map((f, i52) => (<React.Fragment key={i52}>
 <div style={{ display: "flex", gap: "11px", alignItems: "center" }}>
 <div style={{ width: "30px", height: "30px", flex: "0 0 30px", borderRadius: "5px", background: "#EDF5F0", border: "1px solid #DCEAE2", display: "flex", alignItems: "center", justifyContent: "center" }}>
 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2A7E4F" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={f.d}></path></svg>
@@ -1016,7 +1152,7 @@ export default function PortalView({ v }) {
 <span style={{ fontSize: "12px", fontWeight: "bold", color: "#1F5E3A" }}>{v.detail.chainNote}</span>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "11px" }}>
-{(v.formFields || []).map((fl, i48) => (<React.Fragment key={i48}>
+{(v.formFields || []).map((fl, i53) => (<React.Fragment key={i53}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#8A8F8C", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
@@ -1024,7 +1160,7 @@ export default function PortalView({ v }) {
 {fl.choosePrompt ? (<>
 <option value="" disabled>{fl.choosePrompt}</option>
 </>) : null}
-{(fl.options || []).map((o, i49) => (<React.Fragment key={i49}>
+{(fl.options || []).map((o, i54) => (<React.Fragment key={i54}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>
@@ -1064,7 +1200,7 @@ export default function PortalView({ v }) {
 <button onClick={v.closeModal} style={{ border: "0", background: "rgba(255,255,255,.18)", color: "#fff", width: "28px", height: "28px", borderRadius: "4px", cursor: "pointer", fontSize: "15px", fontWeight: "bold" }}>&times;</button>
 </div>
 <div style={{ padding: "18px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "13px" }}>
-{(v.editorFields || []).map((fl, i50) => (<React.Fragment key={i50}>
+{(v.editorFields || []).map((fl, i55) => (<React.Fragment key={i55}>
 <div style={{ gridColumn: fl.span }}>
 <div style={{ fontSize: "10.5px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
@@ -1072,7 +1208,7 @@ export default function PortalView({ v }) {
 {fl.choosePrompt ? (<>
 <option value="" disabled>{fl.choosePrompt}</option>
 </>) : null}
-{(fl.options || []).map((o, i51) => (<React.Fragment key={i51}>
+{(fl.options || []).map((o, i56) => (<React.Fragment key={i56}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>

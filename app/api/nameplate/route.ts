@@ -8,13 +8,14 @@ import { dateRange } from "@/lib/training-format.js";
 export const runtime = "nodejs";
 
 /**
- * Admin download from the Notifications page.
+ * Admin download from the Name Tags page.
  * Body: {
  *   trainingId,
  *   who: "enrolled" | "participants" | "selected" | "typed",
  *   ids?: string[]          (who = "selected": employee ids, e.g. some NESR people and some CPVEN externals)
  *   names?: string          (who = "typed": one name per line)
  *   instructor?: string     (also print a nameplate for this instructor)
+ *   instructorRole?: string (printed under the instructor's name; default "Instructor")
  *   brand?: "nesr" | "cpven",
  *   date?: string
  * }
@@ -56,7 +57,8 @@ export async function POST(req: Request) {
 
   const plates: Nameplate[] = names.map(name => ({ name, course: t.title, date }));
   const instructor = String(body.instructor || "").trim().slice(0, 120);
-  if (instructor) plates.unshift({ name: instructor, course: t.title, date, role: "Instructor" });
+  const instructorRole = String(body.instructorRole ?? "").trim().slice(0, 80) || "Instructor";
+  if (instructor) plates.unshift({ name: instructor, course: t.title, date, role: instructorRole });
   if (!plates.length) return NextResponse.json({ error: "No one to print a nameplate for." }, { status: 400 });
 
   const pdf = await nameplatePdf(plates, brand);

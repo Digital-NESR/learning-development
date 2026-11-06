@@ -9,4 +9,5 @@ next-env.d.ts
 .claude/
 npm-debug.log*
 *.docx
+!templates/*.docx
 

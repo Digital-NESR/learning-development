@@ -9,6 +9,7 @@ import { AUDIENCES, audienceIds } from "@/lib/audience.js";
 import { buildMessage, notify, portalUrl, postToN8n } from "@/lib/notify";
 import { ensureManager } from "@/lib/graph";
 import { recordDay } from "@/lib/attendance";
+import { sendSurveyEmails } from "@/lib/survey-mail";
 
 type Result = { ok: true; data: Snapshot } | { ok: false; error: string };
 
@@ -329,7 +330,7 @@ export async function setAttendance(trainingId: string, employeeId: string, atte
     await prisma.$transaction(async tx => {
       await tx.attendance.upsert({
         where: { trainingId_employeeId: { trainingId, employeeId } },
-        update: { attended, markedById: me.id },
+        update: { attended, fromDays: false, markedById: me.id },
         create: { trainingId, employeeId, attended, markedById: me.id }
       });
       await tx.trainingRequest.updateMany({
@@ -351,9 +352,24 @@ export async function setDayAttendance(trainingId: string, employeeId: string, d
     const iso = (d: Date) => d.toISOString().slice(0, 10);
     if (day < iso(t.startDate) || day > iso(t.endDate)) throw new UserError("That day isn't part of this training.");
     await prisma.$transaction(async tx => {
-      await recordDay(tx, t, String(employeeId), day, present === null ? null : !!present, "manual", me.id);
+      await recordDay(tx, t, String(employeeId), day, present === null ? null : !!present, me.id);
       await audit(tx, me, present === null ? "day_cleared" : present ? "day_present" : "day_absent", "attendance", `${t.id}:${employeeId}:${day}`);
     });
+  });
+}
+
+/** L&D emails the feedback survey link now ("send") or a reminder to everyone who hasn't answered ("remind"). */
+export async function sendSurvey(trainingId: string, mode: "send" | "remind"): Promise<Result> {
+  return run(async me => {
+    requireAdmin(me);
+    const t = await prisma.training.findUnique({ where: { id: String(trainingId) } });
+    if (!t) throw new UserError("Training not found.");
+    if (!process.env.LD_N8N_EMAIL_WEBHOOK_URL) throw new UserError("Email sending isn't set up (LD_N8N_EMAIL_WEBHOOK_URL).");
+    const tpl = await prisma.notificationTemplate.findUnique({ where: { id: mode === "send" ? "survey" : "survey_reminder" } });
+    if (tpl && !tpl.isActive) throw new UserError(`The "${tpl.name}" email template is paused. Activate it in Notifications first.`);
+    const r = await sendSurveyEmails(t, mode === "remind" ? "remind" : "send", { actorId: me.id });
+    if (!r.due) throw new UserError(mode === "send" ? "Everyone has already been sent the survey (or has answered it)." : "No one is waiting to answer the survey.");
+    if (!r.emailed) throw new UserError("The emails couldn't be sent. Try again in a moment.");
   });
 }
 

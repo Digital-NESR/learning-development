@@ -18,8 +18,11 @@ export type CertInput = {
   dates: string;              // "25 - 29 October 2026, Cairo"
   instructorName: string;
   instructorTitle: string;
-  signature?: { bytes: Uint8Array; type: "png" | "jpg" } | null;
+  signature?: CertSignature | null;
+  /** Optional third signatory, placed between the instructor and the fixed signatory */
+  third?: { name: string; title: string; signature?: CertSignature | null } | null;
 };
+export type CertSignature = { bytes: Uint8Array; type: "png" | "jpg" };
 
 const W = 780, H = 540, EMU = 12700;
 const BLACK = rgb(0, 0, 0);
@@ -30,6 +33,9 @@ type Layout = {
   dates: { y: number; size: number };
   instructor: { x: number; nameY: number; titleY: number; nameSize: number; titleSize: number; bold: boolean };
   signature: { x: number; bottom: number };
+  /** The instructor's signature line, copied for the third signatory centred at x = `third` */
+  line: { y: number; width: number; color: [number, number, number] };
+  third: number;
   shapes: { name: string; course: string; instructor: string; clear: string[] };
 };
 
@@ -40,6 +46,8 @@ const LAYOUT: Record<CertBrand, Layout> = {
     dates: { y: 374, size: 14 },
     instructor: { x: 160, nameY: 489, titleY: 511, nameSize: 16, titleSize: 16, bold: false },
     signature: { x: 172, bottom: 466 },
+    line: { y: 469, width: 132, color: [52, 120, 83] },
+    third: 358,
     shapes: { name: "TextBox 18", course: "TextBox 19", instructor: "TextBox 17", clear: ["TextBox 4"] }
   },
   cpven: {
@@ -48,6 +56,8 @@ const LAYOUT: Record<CertBrand, Layout> = {
     dates: { y: 373, size: 14 },
     instructor: { x: 171, nameY: 497, titleY: 514, nameSize: 16, titleSize: 14, bold: true },
     signature: { x: 171, bottom: 470 },
+    line: { y: 472.75, width: 120, color: [56, 112, 83] },
+    third: 381,
     shapes: { name: "TextBox 12", course: "TextBox 19", instructor: "TextBox 17", clear: [] }
   }
 };
@@ -96,14 +106,17 @@ export async function certificatePdf(input: CertInput) {
   const bg = await doc.embedJpg(await fs.readFile(path.join(TEMPLATE_DIR, `cert-${input.brand}-bg.jpg`)));
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const regular = await doc.embedFont(StandardFonts.Helvetica);
-  const sig = input.signature
-    ? input.signature.type === "png" ? await doc.embedPng(input.signature.bytes) : await doc.embedJpg(input.signature.bytes)
-    : null;
+  const embed = (x?: CertSignature | null) => x ? (x.type === "png" ? doc.embedPng(x.bytes) : doc.embedJpg(x.bytes)) : Promise.resolve(null);
+  const sig = await embed(input.signature);
+  const thirdSig = await embed(input.third?.signature);
 
   const course = printable(bold, input.course);
   const dates = printable(regular, input.dates);
   const instName = printable(L.instructor.bold ? bold : regular, input.instructorName);
   const instTitle = printable(L.instructor.bold ? bold : regular, input.instructorTitle);
+  const third = input.third && input.third.name.trim() ? {
+    name: printable(L.instructor.bold ? bold : regular, input.third.name), title: printable(L.instructor.bold ? bold : regular, input.third.title)
+  } : null;
 
   // Long course titles shrink, then wrap onto a second line (pushing the dates down)
   const courseFont = L.course.bold ? bold : regular;
@@ -129,10 +142,22 @@ export async function certificatePdf(input: CertInput) {
     if (instName) centred(page, instName, L.instructor.x, L.instructor.nameY, fitSize(f, instName, L.instructor.nameSize, 190, 10), f);
     if (instTitle) centred(page, instTitle, L.instructor.x, L.instructor.titleY, fitSize(f, instTitle, L.instructor.titleSize, 190, 9), f);
 
-    if (sig) {
-      const s = Math.min(130 / sig.width, 46 / sig.height);
-      const w = sig.width * s, h = sig.height * s;
-      page.drawImage(sig, { x: L.signature.x - w / 2, y: H - L.signature.bottom, width: w, height: h });
+    const drawSig = (img: typeof sig, x: number) => {
+      if (!img) return;
+      const s = Math.min(130 / img.width, 46 / img.height);
+      const w = img.width * s, h = img.height * s;
+      page.drawImage(img, { x: x - w / 2, y: H - L.signature.bottom, width: w, height: h });
+    };
+    drawSig(sig, L.signature.x);
+
+    // Third signatory: the same line, name and title as the instructor's, between the two signatures
+    if (third) {
+      const [r, g, b] = L.line.color;
+      page.drawLine({ start: { x: L.third - L.line.width / 2, y: H - L.line.y }, end: { x: L.third + L.line.width / 2, y: H - L.line.y },
+        thickness: 1.5, color: rgb(r / 255, g / 255, b / 255) });
+      centred(page, third.name, L.third, L.instructor.nameY, fitSize(f, third.name, L.instructor.nameSize, 190, 10), f);
+      if (third.title) centred(page, third.title, L.third, L.instructor.titleY, fitSize(f, third.title, L.instructor.titleSize, 190, 9), f);
+      drawSig(thirdSig, L.third);
     }
   }
   return doc.save();
@@ -180,11 +205,35 @@ function setText(xml: string, name: string, texts: string[], opts: { widen?: boo
   return xml.slice(0, r.start) + sp + xml.slice(r.end);
 }
 
-function signaturePic(rId: string, x: number, bottom: number, w: number, h: number) {
+function signaturePic(rId: string, x: number, bottom: number, w: number, h: number, id = 900, name = "Instructor Signature") {
   const e = (v: number) => Math.round(v * EMU);
-  return `<p:pic><p:nvPicPr><p:cNvPr id="900" name="Instructor Signature"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`
+  return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="${name}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`
     + `<p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>`
     + `<p:spPr><a:xfrm><a:off x="${e(x - w / 2)}" y="${e(bottom - h)}"/><a:ext cx="${e(w)}" cy="${e(h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+}
+
+/** Third signatory for the PowerPoint: a signature line and a centred name / title text box like the instructor's. */
+function thirdShapes(L: Layout, name: string, title: string) {
+  const e = (v: number) => Math.round(v * EMU);
+  const hex = L.line.color.map(c => c.toString(16).padStart(2, "0")).join("").toUpperCase();
+  const w = 200, top = L.line.y + 4;
+  const para = (text: string, size: number) =>
+    `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="en-US" sz="${size * 100}"${L.instructor.bold ? ` b="1"` : ""} dirty="0"/><a:t>${esc(text)}</a:t></a:r></a:p>`;
+  return `<p:cxnSp><p:nvCxnSpPr><p:cNvPr id="901" name="Third Signatory Line"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr>`
+    + `<p:spPr><a:xfrm><a:off x="${e(L.third - L.line.width / 2)}" y="${e(L.line.y)}"/><a:ext cx="${e(L.line.width)}" cy="0"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom>`
+    + `<a:ln w="19050"><a:solidFill><a:srgbClr val="${hex}"/></a:solidFill></a:ln></p:spPr></p:cxnSp>`
+    + `<p:sp><p:nvSpPr><p:cNvPr id="902" name="Third Signatory"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>`
+    + `<p:spPr><a:xfrm><a:off x="${e(L.third - w / 2)}" y="${e(top)}"/><a:ext cx="${e(w)}" cy="${e(48)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>`
+    + `<p:txBody><a:bodyPr wrap="square" lIns="0" tIns="0" rIns="0" bIns="0"><a:spAutoFit/></a:bodyPr><a:lstStyle/>`
+    + para(name, L.instructor.nameSize) + (title ? para(title, L.instructor.titleSize) : "") + `</p:txBody></p:sp>`;
+}
+
+/** Fits a signature image in 130 × 46 pt. */
+async function sigSize(sig: CertSignature) {
+  const probe = await PDFDocument.create();
+  const img = sig.type === "png" ? await probe.embedPng(sig.bytes) : await probe.embedJpg(sig.bytes);
+  const s = Math.min(130 / img.width, 46 / img.height);
+  return { w: img.width * s, h: img.height * s };
 }
 
 export async function certificatePptx(input: CertInput) {
@@ -198,11 +247,21 @@ export async function certificatePptx(input: CertInput) {
   if (input.signature) {
     const ext = input.signature.type === "png" ? "png" : "jpeg";
     zip.file(`ppt/media/instructor-signature.${ext}`, input.signature.bytes);
-    const probe = await PDFDocument.create();
-    const img = input.signature.type === "png" ? await probe.embedPng(input.signature.bytes) : await probe.embedJpg(input.signature.bytes);
-    const s = Math.min(130 / img.width, 46 / img.height);
+    const { w, h } = await sigSize(input.signature);
     sigRel = `<Relationship Id="rIdSig" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/instructor-signature.${ext}"/>`;
-    sigPic = signaturePic("rIdSig", L.signature.x, L.signature.bottom, img.width * s, img.height * s);
+    sigPic = signaturePic("rIdSig", L.signature.x, L.signature.bottom, w, h);
+  }
+  // Third signatory (optional), with its own signature image
+  const third = input.third && input.third.name.trim() ? input.third : null;
+  if (third) {
+    sigPic += thirdShapes(L, third.name.trim(), third.title.trim());
+    if (third.signature) {
+      const ext = third.signature.type === "png" ? "png" : "jpeg";
+      zip.file(`ppt/media/third-signature.${ext}`, third.signature.bytes);
+      const { w, h } = await sigSize(third.signature);
+      sigRel += `<Relationship Id="rIdSig3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/third-signature.${ext}"/>`;
+      sigPic += signaturePic("rIdSig3", L.third, L.signature.bottom, w, h, 903, "Third Signatory Signature");
+    }
   }
 
   // One slide per person

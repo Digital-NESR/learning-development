@@ -16,7 +16,7 @@ function safePath(raw: unknown) {
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; callbackUrl?: string }> }) {
   const { error, callbackUrl } = await searchParams;
-  // Where to go after sign-in, e.g. back to a QR check-in or survey page.
+  // Where to go after sign-in, e.g. back to the survey page from a survey email.
   const next = safePath(callbackUrl);
   // Check the employee record, not just the session: a session for a deleted employee must still see this page.
   if (await currentEmployee()) redirect(next);

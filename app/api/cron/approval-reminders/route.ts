@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notify";
 import { safeEqual } from "@/lib/safe-equal";
+import { surveyCron } from "@/lib/survey-mail";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,7 @@ export const runtime = "nodejs";
  * Daily job (Vercel Cron, see vercel.json): reminds approvers about requests still pending.
  * A request is reminded once it has waited LD_REMINDER_AFTER_DAYS (default 2), then again
  * every LD_REMINDER_EVERY_DAYS (default 2) while it stays pending.
+ * The same job emails feedback survey links the day after a training ends, and survey reminders.
  * Vercel sends "Authorization: Bearer <CRON_SECRET>"; without CRON_SECRET the job refuses to run.
  */
 export async function GET(req: Request) {
@@ -41,5 +43,7 @@ export async function GET(req: Request) {
     reminded++;
   }
   console.info(`[cron] approval reminders: ${reminded} sent (${due.length} due)`);
-  return NextResponse.json({ ok: true, due: due.length, reminded });
+  const surveys = await surveyCron();
+  console.info(`[cron] surveys: ${surveys.sent} links, ${surveys.reminded} reminders (${surveys.trainings} trainings)`);
+  return NextResponse.json({ ok: true, due: due.length, reminded, surveys });
 }

@@ -86,14 +86,16 @@ function drawFace(page: PDFPage, flip: boolean, p: Nameplate, f: { bold: PDFFont
   const nameSize = fitSize(f.bold, name, 54, maxWidth, 18);
   const courseLines = wrap(f.regular, printable(f.regular, p.course), 18, maxWidth, 2);
   const date = printable(f.bold, p.date);
-  const role = p.role ? printable(f.bold, p.role.toUpperCase()) : "";
-  const roleH = role ? 13 + 12 : 0;
-  const blockH = roleH + nameSize + (courseLines.length ? 20 + courseLines.length * 23 : 0) + (date ? 16 + 13 : 0);
+  // Instructor nameplates: the role (e.g. "Instructor", "Senior HSE Trainer") goes under the name
+  const role = p.role ? printable(f.bold, p.role) : "";
+  const roleSize = role ? fitSize(f.bold, role, 20, maxWidth, 12) : 0;
+  const roleH = role ? 10 + roleSize : 0;
+  const blockH = nameSize + roleH + (courseLines.length ? 20 + courseLines.length * 23 : 0) + (date ? 16 + 13 : 0);
   const top = FACE - band, bottom = 8;
-  let y = (top + bottom) / 2 + blockH / 2 - nameSize * 0.8 - roleH;
-  if (role) centered(role, y + nameSize * 0.8 + 12, 13, f.bold, accent);
+  let y = (top + bottom) / 2 + blockH / 2 - nameSize * 0.8;
   centered(name, y, nameSize, f.bold, DARK);
-  y -= nameSize * 0.2 + 20 + 18 * 0.8;
+  if (role) { y -= nameSize * 0.2 + 10 + roleSize * 0.8; centered(role, y, roleSize, f.bold, accent); y -= roleSize * 0.2; }
+  y -= (role ? 0 : nameSize * 0.2) + 20 + 18 * 0.8;
   for (const line of courseLines) { centered(line, y, 18, f.regular, GREY); y -= 23; }
   if (date) centered(date, y + 23 - 30, 13, f.bold, accent); // ~16pt below the last course line
 

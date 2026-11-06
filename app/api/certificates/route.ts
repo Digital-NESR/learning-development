@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentEmployee } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { certificatePdf, certificatePptx, type CertBrand } from "@/lib/certificate";
+import { certificatePdf, certificatePptx, type CertBrand, type CertSignature } from "@/lib/certificate";
 import { audienceIds } from "@/lib/audience.js";
 import { longDateRange } from "@/lib/training-days.js";
 
@@ -17,6 +17,7 @@ export const runtime = "nodejs";
  *   format?: "pdf" | "pptx",
  *   instructorName?, instructorTitle?,
  *   signature?: "data:image/png;base64,…"   (optional instructor signature)
+ *   third?: { name, title, signature? }       (optional third signatory, between the other two)
  * }
  */
 export async function POST(req: Request) {
@@ -49,13 +50,23 @@ export async function POST(req: Request) {
   }
   if (!names.length) return NextResponse.json({ error: "No one to make a certificate for." }, { status: 400 });
 
-  let signature: { bytes: Uint8Array; type: "png" | "jpg" } | null = null;
-  const m = /^data:image\/(png|jpe?g);base64,([A-Za-z0-9+/=]+)$/.exec(String(body.signature || ""));
-  if (body.signature && !m) return NextResponse.json({ error: "The signature must be a PNG or JPG image." }, { status: 400 });
-  if (m) {
+  /** Reads an optional "data:image/…;base64" signature; a string error if it isn't usable. */
+  const readSignature = (raw: unknown, who: string): CertSignature | null | string => {
+    if (!raw) return null;
+    const m = /^data:image\/(png|jpe?g);base64,([A-Za-z0-9+/=]+)$/.exec(String(raw));
+    if (!m) return `The ${who} signature must be a PNG or JPG image.`;
     const bytes = Buffer.from(m[2], "base64");
-    if (bytes.length > 2_000_000) return NextResponse.json({ error: "The signature image is too large (2 MB max)." }, { status: 400 });
-    signature = { bytes: new Uint8Array(bytes), type: m[1] === "png" ? "png" : "jpg" };
+    if (bytes.length > 2_000_000) return `The ${who} signature image is too large (2 MB max).`;
+    return { bytes: new Uint8Array(bytes), type: m[1] === "png" ? "png" : "jpg" };
+  };
+  const signature = readSignature(body.signature, "instructor");
+  if (typeof signature === "string") return NextResponse.json({ error: signature }, { status: 400 });
+  let third = null;
+  const thirdName = String(body.third?.name ?? "").trim().slice(0, 120);
+  if (thirdName) {
+    const thirdSig = readSignature(body.third?.signature, "third signatory's");
+    if (typeof thirdSig === "string") return NextResponse.json({ error: thirdSig }, { status: 400 });
+    third = { name: thirdName, title: String(body.third?.title ?? "").trim().slice(0, 120), signature: thirdSig };
   }
 
   const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -65,7 +76,8 @@ export async function POST(req: Request) {
     dates: longDateRange(iso(t.startDate), iso(t.endDate)) + (t.location ? ", " + t.location : ""),
     instructorName: String(body.instructorName ?? t.instructor ?? "").trim().slice(0, 120),
     instructorTitle: String(body.instructorTitle ?? "Instructor").trim().slice(0, 120),
-    signature
+    signature,
+    third
   };
 
   let file: Uint8Array;
@@ -78,7 +90,7 @@ export async function POST(req: Request) {
     console.error("certificate", e);
     return NextResponse.json({ error: "Couldn't create the certificates. If you added a signature, try a different image." }, { status: 500 });
   }
-  await prisma.auditLog.create({ data: { actorId: me.id, action: "certificates", entity: "training", entityId: t.id, details: { count: names.length, brand, format } } });
+  await prisma.auditLog.create({ data: { actorId: me.id, action: "certificates", entity: "training", entityId: t.id, details: { count: names.length, brand, format, third: !!third } } });
 
   const base = names.length === 1 ? `Certificate - ${names[0]}` : `Certificates - ${t.code}${brand === "cpven" ? " (CPVEN)" : ""}`;
   return new NextResponse(Buffer.from(file), {

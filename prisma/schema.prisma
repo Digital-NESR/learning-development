@@ -113,6 +113,10 @@ model TrainingRequest {
   submittedAt   DateTime     @default(now()) @map("submitted_at")
   /// Last time the approver was reminded about this pending request
   lastRemindedAt DateTime?   @map("last_reminded_at")
+  /// Feedback survey link: when it was emailed, last reminder, and how many reminders were sent
+  surveySentAt     DateTime? @map("survey_sent_at")
+  surveyRemindedAt DateTime? @map("survey_reminded_at")
+  surveyReminders  Int       @default(0) @map("survey_reminders")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
   steps         ApprovalStep[]
@@ -145,6 +149,8 @@ model Attendance {
   employeeId String   @map("employee_id")
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   attended   Boolean
+  /// Set automatically because every training day was marked present (rather than by L&D pressing Attended / No show)
+  fromDays   Boolean  @default(false) @map("from_days")
   markedById String?  @map("marked_by_id")
   updatedAt  DateTime @updatedAt @map("updated_at")
 

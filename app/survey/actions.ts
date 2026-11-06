@@ -2,7 +2,7 @@
 
 import { currentEmployee } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { qrValid } from "@/lib/qr-token";
+import { linkValid } from "@/lib/link-token";
 import { SURVEY_QUESTIONS } from "@/lib/survey.js";
 
 export type SurveyResult = { ok: true } | { ok: false; error: string };
@@ -12,7 +12,7 @@ export async function submitSurvey(input: { trainingId: string; k: string; ratin
   const me = await currentEmployee();
   if (!me) return { ok: false, error: "Your session has expired. Sign in again." };
   const trainingId = String(input.trainingId || "");
-  if (!qrValid("survey", trainingId, "", String(input.k || ""))) return { ok: false, error: "This survey link isn't valid." };
+  if (!linkValid("survey", trainingId, String(input.k || ""))) return { ok: false, error: "This survey link isn't valid." };
   const registered = await prisma.trainingRequest.findFirst({ where: { trainingId, employeeId: me.id, state: { in: ["enrolled", "completed"] } } });
   if (!registered) return { ok: false, error: "Only participants of this training can give feedback." };
 
