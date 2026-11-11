@@ -317,6 +317,86 @@
             <div style="font-size:24px;font-weight:bold;color:#fff;margin-top:5px">Resources</div>
             <div style="font-size:13px;color:#DCEAE2;margin-top:4px">Guides, policies and contacts for the {{ year }} training cycle.</div>
           </div>
+          <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <div style="flex:1;min-width:220px">
+              <div style="font-size:16px;font-weight:bold">Instructor Profiles</div>
+              <div style="font-size:12px;color:#58595B;margin-top:2px">Approved profiles of the instructors who deliver NESR trainings.</div>
+            </div>
+            <sc-if value="{{ prof.canEdit }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ prof.onNew }}" style="padding:9px 15px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">+ Add Instructor Profile</button>
+            </sc-if>
+          </div>
+          <sc-if value="{{ prof.editing }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #2A7E4F;border-radius:5px;padding:16px 18px;margin-bottom:14px;animation:fadeIn .15s ease">
+              <div style="font-size:14px;font-weight:bold;margin-bottom:12px">{{ prof.heading }}</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
+                <div>
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Instructor name *</div>
+                  <input value="{{ prof.name }}" onChange="{{ prof.onName }}" placeholder="Full name" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </div>
+                <div>
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Title / expertise</div>
+                  <input value="{{ prof.title }}" onChange="{{ prof.onTitle }}" placeholder="e.g. Senior HSE Trainer" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </div>
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Short introduction</div>
+                  <textarea value="{{ prof.bio }}" onChange="{{ prof.onBio }}" rows="3" placeholder="A few lines about the instructor's background and the trainings they deliver" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
+                </div>
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Profile document (PDF, Word or PowerPoint, up to 4 MB)</div>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <label style="padding:7px 12px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;font-weight:bold;color:#2A7E4F">
+                      {{ prof.fileButton }}
+                      <input type="file" accept=".pdf,.doc,.docx,.pptx" onChange="{{ prof.onFile }}" style="display:none" />
+                    </label>
+                    <span style="font-size:11.5px;color:#58595B">{{ prof.fileNote }}</span>
+                    <sc-if value="{{ prof.hasFile }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ prof.onClearFile }}" style="border:0;background:none;color:#8A2B2B;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Remove</button>
+                    </sc-if>
+                  </div>
+                </div>
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Or a link to the profile (SharePoint, OneDrive, website)</div>
+                  <input value="{{ prof.link }}" onChange="{{ prof.onLink }}" placeholder="https://" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+                <button onClick="{{ prof.onCancel }}" style="padding:8px 14px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Cancel</button>
+                <button onClick="{{ prof.onSave }}" style="padding:8px 16px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">{{ prof.saveLabel }}</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ prof.empty }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px dashed #D1D3D4;border-radius:5px;padding:24px;text-align:center;color:#8A8F8C;font-size:13px;margin-bottom:20px">{{ prof.emptyText }}</div>
+          </sc-if>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-bottom:24px">
+            <sc-for list="{{ prof.list }}" as="ip" hint-placeholder-count="3">
+              <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:16px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;gap:12px;align-items:center">
+                  <div style="width:42px;height:42px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;flex:0 0 auto">{{ ip.initials }}</div>
+                  <div style="min-width:0">
+                    <div style="font-size:14px;font-weight:bold">{{ ip.name }}</div>
+                    <div style="font-size:11.5px;color:#58595B">{{ ip.title }}</div>
+                  </div>
+                </div>
+                <div style="font-size:12px;color:#3E403E;line-height:1.5;flex:1">{{ ip.bio }}</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                  <sc-if value="{{ ip.hasFile }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ ip.onOpenFile }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">View profile</button>
+                  </sc-if>
+                  <sc-if value="{{ ip.hasLink }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ ip.onOpenLink }}" style="padding:6px 12px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Open link</button>
+                  </sc-if>
+                  <div style="flex:1"></div>
+                  <sc-if value="{{ prof.canEdit }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ ip.onEdit }}" style="border:0;background:none;color:#2A7E4F;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Edit</button>
+                    <button onClick="{{ ip.onRemove }}" style="border:0;background:none;color:#8A2B2B;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Remove</button>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:16px;font-weight:bold;margin-bottom:12px">Guides &amp; Policies</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px">
             <sc-for list="{{ resources }}" as="rs" hint-placeholder-count="4">
               <a href="#" style="background:#fff;border:1px solid #E1E5E3;border-left:4px solid #2A7E4F;border-radius:5px;padding:16px;display:block;text-decoration:none" style-hover="border-color:#2A7E4F;text-decoration:none">
@@ -332,7 +412,13 @@
       <sc-if value="{{ s.mgrApp }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Approvals</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:18px">{{ pendingLabel }}</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:14px">{{ pendingLabel }}</div>
+          <div style="margin-bottom:14px;max-width:360px">
+            <input value="{{ approvalsQ }}" onChange="{{ onApprovalsQ }}" placeholder="Search by employee name" style="width:100%;padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+          </div>
+          <sc-if value="{{ noApprovalMatch }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:26px;text-align:center;color:#8A8F8C;font-size:13px;margin-bottom:12px">No one matches that name.</div>
+          </sc-if>
           <sc-if value="{{ empty.teamRequests }}" hint-placeholder-val="{{ false }}">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:38px;text-align:center;color:#8A8F8C;font-size:13px">No requests from your team yet. When someone who reports to you requests a training, it appears here for approval.</div>
           </sc-if>
@@ -378,8 +464,14 @@
 
       <sc-if value="{{ s.mgrTeam }}" hint-placeholder-val="{{ false }}">
         <div>
-          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Development</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:18px">Trainings each direct report has registered for and attended. Click a person to see their trainings.</div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Training History</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:14px">Trainings each direct report has registered for and attended. Click a person to see their trainings.</div>
+          <div style="margin-bottom:14px;max-width:360px">
+            <input value="{{ teamQ }}" onChange="{{ onTeamQ }}" placeholder="Search by employee name" style="width:100%;padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+          </div>
+          <sc-if value="{{ noTeamMatch }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:26px;text-align:center;color:#8A8F8C;font-size:13px;margin-bottom:12px">No one matches that name.</div>
+          </sc-if>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden">
             <sc-if value="{{ empty.teamStats }}" hint-placeholder-val="{{ false }}">
               <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No direct reports found for your account.</div>
@@ -438,8 +530,29 @@
             </div>
             <button onClick="{{ onExport }}" style="position:relative;padding:11px 18px;border:0;background:#fff;color:#1F5E3A;border-radius:4px;cursor:pointer;font-weight:bold">Export to Excel</button>
           </div>
+<div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Sessions</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-bottom:18px">
+            <sc-for list="{{ sessionKpis }}" as="k" hint-placeholder-count="6">
+              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid {{ k.color }};border-radius:5px;padding:12px 14px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;min-height:26px">{{ k.label }}</div>
+                <div style="font-size:26px;font-weight:bold;color:{{ k.color }};line-height:1.2;margin-top:2px">{{ k.value }}</div>
+                <div style="font-size:10.5px;color:#8A8F8C">{{ k.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Registrations</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-bottom:18px">
+            <sc-for list="{{ regKpis }}" as="k" hint-placeholder-count="6">
+              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid {{ k.color }};border-radius:5px;padding:12px 14px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;min-height:26px">{{ k.label }}</div>
+                <div style="font-size:26px;font-weight:bold;color:{{ k.color }};line-height:1.2;margin-top:2px">{{ k.value }}</div>
+                <div style="font-size:10.5px;color:#8A8F8C">{{ k.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Seats &amp; approvals</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px">
-            <sc-for list="{{ adminKpis }}" as="k" hint-placeholder-count="5">
+            <sc-for list="{{ adminKpis }}" as="k" hint-placeholder-count="3">
               <div style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid #2A7E4F;border-radius:5px;padding:14px 16px">
                 <div style="font-size:10.5px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#58595B">{{ k.label }}</div>
                 <div style="font-size:30px;font-weight:bold;color:#2A7E4F;line-height:1.2;margin-top:4px">{{ k.value }}</div>
@@ -538,6 +651,11 @@
             </div>
             <div style="flex:1"></div>
             <input value="{{ q }}" onChange="{{ onSearch }}" placeholder="Search catalog" style="padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;min-width:200px" />
+            <select value="{{ statusFilter.value }}" onChange="{{ statusFilter.onChange }}" style="padding:9px 8px;border:1px solid #D1D3D4;border-radius:4px;background:#fff">
+              <sc-for list="{{ statusFilter.options }}" as="o" hint-placeholder-count="3">
+                <option value="{{ o.value }}">{{ o.label }}</option>
+              </sc-for>
+            </select>
             <button onClick="{{ onExport }}" style="padding:10px 16px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold">Export Excel Report</button>
             <button onClick="{{ onNewTraining }}" style="padding:10px 16px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">+ Add Training</button>
           </div>
@@ -725,10 +843,20 @@
 
       <sc-if value="{{ s.aApp }}" hint-placeholder-val="{{ false }}">
         <div>
-          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Waitlist Queue</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Manager-approved requests that couldn't be registered because the class was full or registration had closed.</div>
+          <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+            <div style="flex:1;min-width:260px">
+              <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Waitlist Queue</div>
+              <div style="font-size:13px;color:#58595B">Manager-approved requests that couldn't be registered because the class was full or registration had closed, and everyone who was registered for a session that was cancelled, so they can be offered another one.</div>
+            </div>
+            <button onClick="{{ waitlist.onExport }}" style="padding:10px 16px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold">{{ waitlist.exportLabel }}</button>
+          </div>
+          <div style="display:inline-flex;gap:2px;background:#EEF1EF;border-radius:4px;padding:3px;margin-bottom:12px">
+            <sc-for list="{{ waitlist.tabs }}" as="wt" hint-placeholder-count="3">
+              <button onClick="{{ wt.onClick }}" style="border:0;cursor:pointer;padding:6px 13px;border-radius:3px;font-size:12px;font-weight:bold;background:{{ wt.bg }};color:{{ wt.fg }}">{{ wt.label }}</button>
+            </sc-for>
+          </div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
-            <div style="display:grid;min-width:880px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
+            <div style="display:grid;min-width:900px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 150px 210px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
               <div style="padding:11px 12px">Employee</div>
               <div style="padding:11px 12px">Training</div>
               <div style="padding:11px 12px">Approved by</div>
@@ -736,10 +864,10 @@
               <div style="padding:11px 12px">L&amp;D Action</div>
             </div>
             <sc-if value="{{ empty.queueRows }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No one is waitlisted. People land here when their manager approves but the class is full or registration has closed.</div>
+                <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">{{ waitlist.emptyText }}</div>
               </sc-if>
               <sc-for list="{{ queueRows }}" as="r" hint-placeholder-count="6">
-              <div style="display:grid;min-width:880px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 130px 210px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
+              <div style="display:grid;min-width:900px;grid-template-columns:minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 150px 210px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
                 <div style="padding:10px 12px">
                   <div style="font-size:12.5px;font-weight:bold">{{ r.employee }}</div>
                   <div style="font-size:11px;color:#58595B">{{ r.empMeta }}</div>
@@ -749,10 +877,18 @@
                   <div style="font-size:11px;color:#58595B">{{ r.meta }}</div>
                 </div>
                 <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.manager }}</div>
-                <div style="padding:10px 12px"><span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ r.st.label }}</span></div>
+                <div style="padding:10px 12px">
+                  <span style="background:{{ r.wst.bg }};color:{{ r.wst.fg }};font-size:10.5px;font-weight:bold;padding:3px 8px;border-radius:3px;white-space:nowrap">{{ r.wst.label }}</span>
+                  <div style="font-size:10.5px;color:#8A8F8C;margin-top:4px">{{ r.reason }}</div>
+                </div>
                 <div style="padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap">
-                  <button onClick="{{ r.onEnroll }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Register</button>
-                  <button onClick="{{ r.onDecline }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
+                  <sc-if value="{{ r.canEnroll }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ r.onEnroll }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Register</button>
+                    <button onClick="{{ r.onDecline }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
+                  </sc-if>
+                  <sc-if value="{{ r.isCancelled }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:11.5px;color:#58595B;line-height:1.4">Offer another session, then add them to it from Manage Trainings.</span>
+                  </sc-if>
                 </div>
               </div>
             </sc-for>

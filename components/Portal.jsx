@@ -8,6 +8,7 @@ import { APPROVAL_LEVELS, CATEGORIES, DEPTS, EXTERNAL_ORGS, LOCATIONS, NATIONALI
 import { AUDIENCES, ENROLLED_STATES, PLACEHOLDERS, REGISTERED_STATES, audienceIds } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
 import { trainingDays, weekdayDate } from "@/lib/training-days.js";
+import { waitlistKind, waitlistReason } from "@/lib/waitlist.js";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -57,7 +58,7 @@ export default class Portal extends React.Component {
       screen: "dashboard",
       calView: "table",
       month: now.getMonth(), calYear: now.getFullYear(),
-      q: "", fType: "All", fCat: "All", fLoc: "All", addValue: "", extName: "", extOrg: "CPVEN", extEmail: "",
+      q: "", fType: "All", fCat: "All", fLoc: "All", fStatus: "", addValue: "", extName: "", extOrg: "CPVEN", extEmail: "",
       detailId: null,
       form: null,
       justification: "",
@@ -71,6 +72,8 @@ export default class Portal extends React.Component {
         third: false, thirdName: "", thirdTitle: "", thirdSig: "", thirdSigName: ""},
       sheet: {trainingId: "", template: "nesr"},
       surveyOpen: {},
+      approvalsQ: "", teamQ: "", waitTab: "all",
+      prof: null, // instructor profile being added / edited (L&D)
       attRep: {year: String(new Date().getFullYear()), quarter: "", type: ""},
       toast: null
     }, this.fromSnapshot(d));
@@ -80,7 +83,7 @@ export default class Portal extends React.Component {
     return {
       meId: d.meId, isAdminUser: d.isAdmin, canManage: d.canManage, people: d.people,
       trainings: d.trainings, requests: d.requests, attended: d.attended, days: d.days || {}, surveyAnswered: d.surveyAnswered || {},
-      templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || []
+      templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || [], instructors: d.instructors || []
     };
   }
 
@@ -163,6 +166,7 @@ export default class Portal extends React.Component {
       if (st.fType !== "All" && t.type !== st.fType) return false;
       if (st.fCat !== "All" && t.category !== st.fCat) return false;
       if (st.fLoc !== "All" && t.location !== st.fLoc) return false;
+      if (st.fStatus && t.status !== st.fStatus) return false;
       return true;
     }).sort((a, b) => a.start < b.start ? -1 : 1);
   }
@@ -288,6 +292,56 @@ export default class Portal extends React.Component {
       .then(saved => { if (!saved) this.setState({trainings: withStatus(t.status)}); });
   }
 
+  setProf(patch) { this.setState({prof: Object.assign({}, this.state.prof, patch)}); }
+
+  pickProfileFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!/\.(pdf|docx?|pptx)$/i.test(file.name)) return this.flash("Use a PDF, Word or PowerPoint file", "The profile document must be a .pdf, .docx, .doc or .pptx file.");
+    if (file.size > 4 * 1024 * 1024) return this.flash("File too large", "Use a file under 4 MB (save it as PDF to make it smaller), or add a link instead.");
+    this.setProf({file, fileName: file.name, removeFile: false});
+  }
+
+  async saveProfile() {
+    const pr = this.state.prof;
+    if (!pr || this.state.busy) return;
+    if (!pr.name.trim()) return this.flash("Name needed", "Enter the instructor's name.");
+    if (!pr.link.trim() && !pr.fileName) return this.flash("Add the profile", "Upload the profile document or paste a link to it.");
+    const fd = new FormData();
+    if (pr.id) fd.append("id", pr.id);
+    fd.append("name", pr.name); fd.append("title", pr.title); fd.append("bio", pr.bio); fd.append("link", pr.link);
+    if (pr.file) fd.append("file", pr.file);
+    if (pr.removeFile) fd.append("removeFile", "1");
+    this.setState({busy: true, busyOp: "prof"});
+    try {
+      const res = await fetch("/api/instructors", {method: "POST", body: fd});
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) return this.flash("Couldn't save the profile", out.error || "Try again in a moment.");
+      this.setState({prof: null});
+      await this.refreshQuiet();
+      this.flash(pr.id ? "Profile updated" : "Profile added", pr.name.trim() + " is listed under Resources for everyone.");
+    } catch {
+      this.flash("Couldn't reach the server", "Check your connection and try again.");
+    } finally {
+      this.setState({busy: false, busyOp: null});
+    }
+  }
+
+  async removeProfile(ip) {
+    if (this.state.busy || !window.confirm("Remove " + ip.name + "'s profile from Resources?")) return;
+    this.setState({busy: true, busyOp: "prof"});
+    try {
+      const res = await fetch("/api/instructors?id=" + encodeURIComponent(ip.id), {method: "DELETE"});
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) return this.flash("Couldn't remove the profile", out.error || "Try again in a moment.");
+      await this.refreshQuiet();
+      this.flash("Profile removed", ip.name + " is no longer listed.");
+    } finally {
+      this.setState({busy: false, busyOp: null});
+    }
+  }
+
   /** Downloads a file (e.g. a PDF) from a GET endpoint. */
   async downloadFile(url, label, opts = {}) {
     if (this.state.busy) return;
@@ -352,7 +406,6 @@ export default class Portal extends React.Component {
     const canManage = st.canManage;
     const myReports = this.reportsOf(meP.key);
 
-    const pendingAll = st.requests.filter(r => r.state === "pending").length;
     const waitlistAll = st.requests.filter(r => r.state === "waitlist").length;
     const onMe = st.requests.filter(r => r.state === "pending" && (r.chain || [])[r.step] === meP.key).length;
     const mineOpen = st.requests.filter(r => r.who === meP.key && r.state === "pending").length;
@@ -373,7 +426,7 @@ export default class Portal extends React.Component {
     const section = (label, items, first) =>
       [{isHeader: true, isItem: false, label, pad: first ? "0 16px 8px" : "18px 16px 8px"}].concat(items.map(navItem));
     const nav = section("Employee", [["dashboard","My Dashboard"],["calendar","Training Calendar"],["resources","Resources"]], true)
-      .concat(canManage ? section("Manager", [["approvals","Team Approvals"],["team","Team Development"]]) : [])
+      .concat(canManage ? section("Manager", [["approvals","Team Approvals"],["team","Team Training History"]]) : [])
       .concat(isAdmin ? section("L&D Team", [["adminDash","Dashboard"],["trainings","Manage Trainings"],["queue","Waitlist Queue"],["attendance","Attendance"],
         ["surveys","Surveys"],["certificates","Certificates"],["nametags","Name Tags"],["templates","Notifications"]]) : []);
 
@@ -408,8 +461,12 @@ export default class Portal extends React.Component {
     }));
     const filters = [
       {label:"Category", value: st.fCat, options:["All"].concat(CATEGORIES), onChange: e => this.setState({fCat: e.target.value})},
-      {label:"Location", value: st.fLoc, options:["All"].concat(LOCATIONS), onChange: e => this.setState({fLoc: e.target.value})}
+      {label:"Location", value: st.fLoc, options:["All"].concat(LOCATIONS), onChange: e => this.setState({fLoc: e.target.value})},
+      {label:"Status", value: st.fStatus ? statusLabel(st.fStatus) : "All", options:["All"].concat(TRAINING_STATUSES.map(x => x.label)),
+        onChange: e => this.setState({fStatus: (TRAINING_STATUSES.find(x => x.label === e.target.value) || {value: ""}).value})}
     ];
+    const statusFilter = {value: st.fStatus, options: [{value: "", label: "All statuses"}].concat(TRAINING_STATUSES),
+      onChange: e => this.setState({fStatus: e.target.value})};
 
     const first = new Date(st.calYear, st.month, 1).getDay();
     const dim = new Date(st.calYear, st.month + 1, 0).getDate();
@@ -499,10 +556,37 @@ export default class Portal extends React.Component {
     };
 
     const myRequests = st.requests.filter(r => r.who === meP.key).map(decorate);
-    const teamRequests = st.requests.filter(r => (r.chain || []).indexOf(meP.key) >= 0).map(decorate)
+    const nameHas = (q, ...names) => !q.trim() || names.some(n => String(n || "").toLowerCase().includes(q.trim().toLowerCase()));
+    const allTeamRequests = st.requests.filter(r => (r.chain || []).indexOf(meP.key) >= 0).map(decorate)
       .sort((a, b) => (b.actionable ? 1 : 0) - (a.actionable ? 1 : 0));
-    const queueRows = st.requests.filter(r => r.state === "waitlist")
-      .map((r, i) => Object.assign(decorate(r), {zebra: i % 2 ? "#FAFBFA" : "#FFFFFF"}));
+    const teamRequests = allTeamRequests.filter(r => nameHas(st.approvalsQ, r.employee, (this.P(st.requests.find(x => x.id === r.id).who) || {}).name));
+
+    // ---- Waitlist queue: waitlisted requests, plus everyone still registered for a cancelled session ----
+    const queueAll = st.requests.map(r => {
+      const t = this.t(r.tid);
+      const kind = t ? waitlistKind(r.state, t.status) : null;
+      return kind ? {r, t, kind} : null;
+    }).filter(Boolean).sort((a, b) => a.t.start < b.t.start ? -1 : a.t.start > b.t.start ? 1 : 0);
+    const nWait = queueAll.filter(x => x.kind === "waitlist").length, nCancelled = queueAll.length - nWait;
+    const queueRows = queueAll.filter(x => st.waitTab === "all" || x.kind === st.waitTab).map((x, i) => {
+      const d = decorate(x.r);
+      const cancelled = x.kind === "cancelled";
+      return Object.assign(d, {
+        zebra: i % 2 ? "#FAFBFA" : "#FFFFFF", canEnroll: !cancelled, isCancelled: cancelled,
+        reason: cancelled ? "Was " + d.st.label.toLowerCase() : waitlistReason(x.kind, x.t),
+        wst: cancelled ? {label: "Session cancelled", bg: "#F7DEDE", fg: "#8A2B2B"} : d.st,
+        manager: d.manager === "—" && cancelled ? (x.r.state === "pending" ? "Was pending approval" : "Added by the L&D team") : d.manager
+      });
+    });
+    const waitTabBtn = (k, label) => ({label, bg: st.waitTab === k ? "#FFFFFF" : "transparent", fg: st.waitTab === k ? "#2A7E4F" : "#58595B",
+      onClick: () => this.setState({waitTab: k})});
+    const waitlist = {
+      tabs: [waitTabBtn("all", "All (" + queueAll.length + ")"), waitTabBtn("waitlist", "Waitlisted (" + nWait + ")"), waitTabBtn("cancelled", "Cancelled sessions (" + nCancelled + ")")],
+      emptyText: st.waitTab === "cancelled" ? "No one is affected by a cancelled session."
+        : "No one is waitlisted. People land here when their manager approves but the class is full or registration has closed" + (st.waitTab === "all" ? ", or when their session is cancelled." : "."),
+      exportLabel: "Export to Excel",
+      onExport: () => this.downloadFile("/api/export/waitlist?kind=" + st.waitTab, (st.waitTab === "cancelled" ? "Cancelled sessions list" : st.waitTab === "waitlist" ? "Waitlist" : "Waitlist and cancelled sessions") + " downloaded as Excel.")
+    };
 
     const upcoming = st.trainings.slice().sort((a, b) => a.start < b.start ? -1 : 1);
 
@@ -650,11 +734,32 @@ export default class Portal extends React.Component {
 
     const totalSeats = st.trainings.reduce((a, t) => a + t.seats, 0);
     const totalEnrolled = st.trainings.reduce((a, t) => a + t.enrolled, 0);
+    // Sessions by the status L&D sets; click a tile to list those sessions in Manage Trainings
+    const nStatus = v => st.trainings.filter(t => t.status === v).length;
+    const tile = (label, value, note, color, onClick, hint) => ({label, value: String(value), note, color, onClick, hint: hint || "", cursor: onClick ? "pointer" : "default"});
+    const showTrainings = status => () => this.setState({screen: "trainings", fStatus: status, q: "", fType: "All", fCat: "All", fLoc: "All"});
+    const sessionKpis = [
+      tile("Total Sessions", st.trainings.length, YEAR + " calendar", "#2A7E4F", showTrainings(""), "List all sessions")
+    ].concat([
+      ["open", "Open", "Taking requests", "#2A7E4F"],
+      ["ongoing", "Ongoing Sessions", "Running now", "#1F4E79"],
+      ["completed", "Completed", "Delivered", "#3E403E"],
+      ["class_full", "Class Full", "No seats left", "#8A6100"],
+      ["registration_closed", "Registration Closed", "Not taking requests", "#58595B"],
+      ["cancelled", "Cancelled", "Called off", "#8A2B2B"]
+    ].map(([v, label, note, color]) => tile(label, nStatus(v), note, color, showTrainings(v), "List " + label.toLowerCase() + " sessions")));
+    // Registrations: the total, then how many are in each status
+    const nReq = k => st.requests.filter(r => r.state === k).length;
+    const regKpis = [
+      tile("Total Registrations", st.requests.length, "All requests received", "#2A7E4F"),
+      tile("Pending Approval", nReq("pending"), "With managers", "#8A6100"),
+      tile("Registered", nReq("enrolled"), "Seat confirmed", "#2A7E4F"),
+      tile("Waitlisted", nReq("waitlist"), "Approved, no seat", "#1F4E79", () => this.setState({screen: "queue", waitTab: "waitlist"}), "Open the Waitlist Queue"),
+      tile("Completed", nReq("completed"), "Attended", "#3E403E"),
+      tile("Declined", nReq("rejected"), "Not approved", "#8A2B2B")
+    ];
     const adminKpis = [
-      {label:"Active Sessions", value: String(st.trainings.length), note: YEAR + " calendar"},
       {label:"Seat Utilization", value: Math.round(totalEnrolled / Math.max(1, totalSeats) * 100) + "%", note: totalEnrolled + " of " + totalSeats + " seats"},
-      {label:"Pending Approvals", value: String(pendingAll), note: "With managers · " + waitlistAll + " waitlisted"},
-      {label:"Registered", value: String(st.requests.filter(r => r.state === "enrolled").length), note:"Confirmed participants"},
       {label:"Avg Wait", value: avgWait + "d", note:"Time in approval chain"},
       {label:"Oldest Pending", value: oldestWait + "d", note: ageingRows.length ? "with " + ageingRows[0].name : "nothing pending"}
     ];
@@ -826,7 +931,7 @@ export default class Portal extends React.Component {
       });
     });
 
-    const teamStats = myReports.map(k => {
+    const teamStats = myReports.filter(k => nameHas(st.teamQ, (this.P(k) || {}).name)).map(k => {
       const p = this.P(k);
       const reqs = st.requests.filter(r => r.who === k && r.state !== "rejected")
         .map(r => ({r, t: this.t(r.tid)})).filter(x => x.t)
@@ -1043,6 +1148,36 @@ export default class Portal extends React.Component {
       onPdf: () => certDownload("pdf"), onPptx: () => certDownload("pptx")
     };
 
+    // ---- Instructor profiles (Resources) ----
+    const pr = st.prof;
+    const prof = {
+      canEdit: isAdmin,
+      empty: st.instructors.length === 0 && !pr,
+      emptyText: isAdmin ? "No instructor profiles yet. Add one with the approved profile document or a link to it." : "Instructor profiles will be listed here.",
+      list: st.instructors.map(ip => ({
+        name: ip.name, title: ip.title, bio: ip.bio, initials: initialsOf(ip.name),
+        hasFile: !!ip.fileName, hasLink: !!ip.link,
+        onOpenFile: () => window.open("/api/instructors?id=" + encodeURIComponent(ip.id), "_blank", "noopener"),
+        onOpenLink: () => window.open(ip.link, "_blank", "noopener"),
+        onEdit: () => this.setState({prof: {id: ip.id, name: ip.name, title: ip.title, bio: ip.bio, link: ip.link, fileName: ip.fileName, file: null, removeFile: false}}),
+        onRemove: () => this.removeProfile(ip)
+      })),
+      onNew: () => this.setState({prof: {id: "", name: "", title: "", bio: "", link: "", fileName: "", file: null, removeFile: false}}),
+      editing: !!pr,
+      heading: pr && pr.id ? "Edit Instructor Profile" : "Add Instructor Profile",
+      name: pr ? pr.name : "", title: pr ? pr.title : "", bio: pr ? pr.bio : "", link: pr ? pr.link : "",
+      onName: e => this.setProf({name: e.target.value}), onTitle: e => this.setProf({title: e.target.value}),
+      onBio: e => this.setProf({bio: e.target.value}), onLink: e => this.setProf({link: e.target.value}),
+      hasFile: !!(pr && pr.fileName),
+      fileButton: pr && pr.fileName ? "Replace file" : "Upload file",
+      fileNote: pr && pr.fileName ? pr.fileName : "No file chosen",
+      onFile: e => this.pickProfileFile(e),
+      onClearFile: () => this.setProf({file: null, fileName: "", removeFile: true}),
+      onCancel: () => this.setState({prof: null}),
+      saveLabel: st.busyOp === "prof" ? "Saving…" : "Save Profile",
+      onSave: () => this.saveProfile()
+    };
+
     let session = null;
     if (s.aSession) {
       const t = this.t(st.sessionId);
@@ -1150,7 +1285,12 @@ export default class Portal extends React.Component {
       year: YEAR, nav, s,
       rows, adminRows, viewTabs, typeTabs, filters, q: st.q,
       onSearch: e => this.setState({q: e.target.value}),
-      clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All"}),
+      clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All", fStatus:""}),
+      statusFilter,
+      approvalsQ: st.approvalsQ, onApprovalsQ: e => this.setState({approvalsQ: e.target.value}),
+      noApprovalMatch: allTeamRequests.length > 0 && teamRequests.length === 0,
+      teamQ: st.teamQ, onTeamQ: e => this.setState({teamQ: e.target.value}),
+      noTeamMatch: myReports.length > 0 && teamStats.length === 0,
       onCalExport: () => this.downloadFile("/api/export/calendar", "Training calendar (" + list.length + (list.length === 1 ? " session" : " sessions") + ") downloaded as Excel.", {body: {ids: list.map(t => t.id)}}),
       isTable: st.calView === "table", isMonth: st.calView === "month", isCards: st.calView === "cards",
       noResults: rows.length === 0,
@@ -1162,13 +1302,13 @@ export default class Portal extends React.Component {
       prevMonth: () => this.setState(st.month === 0 ? {month: 11, calYear: st.calYear - 1} : {month: st.month - 1}),
       nextMonth: () => this.setState(st.month === 11 ? {month: 0, calYear: st.calYear + 1} : {month: st.month + 1}),
       empty: {
-        myRequests: myRequests.length === 0, teamRequests: teamRequests.length === 0, teamStats: teamStats.length === 0,
+        myRequests: myRequests.length === 0, teamRequests: allTeamRequests.length === 0, teamStats: myReports.length === 0,
         queueRows: queueRows.length === 0, attendance: attendanceSessions.length === 0, surveys: surveySessions.length === 0
       },
       myRequests, teamRequests, queueRows, teamStats,
       reqBox: {open: !st.reqBoxClosed, label: st.reqBoxClosed ? "Show" : "Hide", count: myRequests.length + (myRequests.length === 1 ? " request" : " requests"),
         onToggle: () => this.setState(s => ({reqBoxClosed: !s.reqBoxClosed}))},
-      empKpis, dashList, adminKpis, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
+      empKpis, dashList, adminKpis, sessionKpis, regKpis, waitlist, prof, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
       resources: RESOURCES,
       detail, formFields, justification: st.justification,
       justificationBorder: st.formError && !String(st.justification || "").trim() ? "#8A2B2B" : "#D9DDDB",

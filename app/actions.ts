@@ -1,12 +1,12 @@
 "use server";
 
-import type { Employee, Prisma, TrainingStatus } from "@prisma/client";
+import type { Employee, Prisma, Training, TrainingStatus } from "@prisma/client";
 import { currentEmployee, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { approvalChain, loadSnapshot, type Snapshot } from "@/lib/data";
 import { CATEGORIES, LOCATIONS, NATIONALITIES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
 import { AUDIENCES, audienceIds } from "@/lib/audience.js";
-import { buildMessage, notify, portalUrl, postToN8n } from "@/lib/notify";
+import { buildMessage, ldTeamRecipients, notify, portalUrl, postToN8n } from "@/lib/notify";
 import { ensureManager } from "@/lib/graph";
 import { recordDay } from "@/lib/attendance";
 import { sendSurveyEmails } from "@/lib/survey-mail";
@@ -114,6 +114,13 @@ export async function submitRequest(input: { trainingId: string; justification: 
   });
 }
 
+/** Tells the L&D team that a manager approved or declined a request. */
+async function notifyLd(r: { employee: Employee; training: Training }, manager: Employee,
+  decision: "approved" | "declined", result: string, comment?: string | null) {
+  const team = await ldTeamRecipients();
+  await notify("ld_decision", r.training, team.map(to => ({ to, employeeName: r.employee.name, managerName: manager.name, decision, result, comment })), manager.id);
+}
+
 /** Name of whoever approves (or approved) a request: the last approver in its chain, else the employee's manager. */
 async function approverNameFor(requestId: string) {
   const r = await prisma.trainingRequest.findUnique({
@@ -145,7 +152,11 @@ export async function approveRequest(id: string): Promise<Result> {
     });
     if (outcome) {
       const full = await prisma.trainingRequest.findUnique({ where: { id }, include: { employee: true, training: true } });
-      if (full) await notify(outcome === "enrolled" ? "enrolled" : "waitlisted", full.training, [{ to: full.employee, managerName: me.name }], me.id);
+      if (full) {
+        await notify(outcome === "enrolled" ? "enrolled" : "waitlisted", full.training, [{ to: full.employee, managerName: me.name }], me.id);
+        await notifyLd(full, me, "approved", outcome === "enrolled" ? "Registered (seat confirmed)."
+          : "Waitlisted: the class is full or registration has closed. You can register them from the Waitlist Queue.");
+      }
     }
   });
 }
@@ -169,6 +180,7 @@ export async function rejectRequest(id: string, comment?: string): Promise<Resul
     });
     const full = await prisma.trainingRequest.findUnique({ where: { id }, include: { employee: true, training: true } });
     if (full) await notify("declined", full.training, [{ to: full.employee, managerName: isApprover ? me.name : "the L&D team", comment: reason || null }], me.id);
+    if (full && isApprover) await notifyLd(full, me, "declined", "Declined.", reason || null);
   });
 }
 

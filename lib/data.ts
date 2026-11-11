@@ -36,7 +36,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
   const me = typeof meOrId === "string" ? await prisma.employee.findUniqueOrThrow({ where: { id: meOrId } }) : meOrId;
 
   // Everything that doesn't depend on another query is fetched at once: each round trip to the database adds latency.
-  const [trainings, requests, reports, chain, templates, adminAttendance, attendanceDays, surveyResponses, directory] = await Promise.all([
+  const [trainings, requests, reports, chain, templates, adminAttendance, attendanceDays, surveyResponses, directory, instructors] = await Promise.all([
     prisma.training.findMany({ where: { isActive: true }, orderBy: { startDate: "asc" } }),
     prisma.trainingRequest.findMany({
       // Non-admins: their own requests, requests they approve, and all requests from their direct reports.
@@ -55,7 +55,9 @@ export async function loadSnapshot(meOrId: string | Employee) {
     me.isAdmin ? prisma.surveyResponse.findMany({ select: { trainingId: true, employeeId: true, createdAt: true } }) : Promise.resolve([]),
     me.isAdmin
       ? prisma.employee.findMany({ where: { isExternal: false }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } })
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    // Instructor profiles for Resources (the documents themselves are fetched from /api/instructors)
+    prisma.instructorProfile.findMany({ select: { id: true, name: true, title: true, bio: true, link: true, fileName: true }, orderBy: { name: "asc" } })
   ]);
 
   const days: Record<string, Record<string, boolean>> = {};
@@ -99,6 +101,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
     })),
     attended: Object.fromEntries(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended])),
     days,
+    instructors: instructors.map(p => ({ id: p.id, name: p.name, title: p.title || "", bio: p.bio || "", link: p.link || "", fileName: p.fileName || "" })),
     // L&D only: who has answered each training's feedback survey ("tid:emp" → date)
     surveyAnswered: Object.fromEntries(surveyResponses.map(r => [`${r.trainingId}:${r.employeeId}`, pretty(r.createdAt)])),
     templatesOff: Object.fromEntries(templates.filter(t => !t.isActive).map(t => [t.id, true])),

@@ -216,3 +216,19 @@ model SurveyResponse {
   @@unique([trainingId, employeeId])
   @@map("survey_responses")
 }
+
+/// Instructor profiles shown under Resources. L&D adds them with a link and/or an uploaded document (PDF / Word).
+model InstructorProfile {
+  id        String   @id @default(cuid())
+  name      String
+  title     String?
+  bio       String?
+  link      String?
+  fileName  String?  @map("file_name")
+  fileType  String?  @map("file_type")
+  fileData  Bytes?   @map("file_data")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("instructor_profiles")
+}

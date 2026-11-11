@@ -33,6 +33,8 @@ export type Recipient = {
   employeeName?: string;   // the person the email is about ({{employee_name}}), defaults to the recipient
   managerName?: string;    // their approver / manager ({{manager_name}})
   comment?: string | null; // decline reason ({{comment}})
+  decision?: string;       // "approved" / "declined" ({{decision}}, L&D's copy of a manager decision)
+  result?: string;         // what happened to the request ({{result}})
 };
 
 type Message = { to: string; intendedTo: string; name: string; subject: string; text: string; html: string };
@@ -46,6 +48,7 @@ export function buildMessage(t: Training, tag: string, subject: string, body: st
     employee_name: r.employeeName || r.to.name,
     manager_name: r.managerName || "your manager",
     comment: r.comment || "",
+    decision: r.decision || "", result: r.result || "",
     survey_link: surveyUrl(t, link)
   };
   let text = fillPlaceholders(body, values);
@@ -63,6 +66,16 @@ export function buildMessage(t: Training, tag: string, subject: string, body: st
     to: testTo || r.to.email, intendedTo: r.to.email, name: r.to.name,
     subject: testTo ? `[TEST → ${r.to.email}] ${filledSubject}` : filledSubject, text, html
   };
+}
+
+/**
+ * Who gets the L&D team's emails: LD_TEAM_EMAIL (a shared mailbox, or several addresses separated by commas)
+ * if it is set, otherwise everyone with the L&D Team role.
+ */
+export async function ldTeamRecipients(): Promise<Recipient["to"][]> {
+  const fixed = (process.env.LD_TEAM_EMAIL || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  if (fixed.length) return fixed.map(email => ({ email, name: "L&D Team", firstName: "L&D team" }));
+  return prisma.employee.findMany({ where: { isAdmin: true, isExternal: false }, select: { email: true, name: true, firstName: true } });
 }
 
 /** Posts messages to n8n. Throws on failure (callers decide whether that matters). */
