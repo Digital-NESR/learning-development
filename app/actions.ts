@@ -114,9 +114,9 @@ export async function submitRequest(input: { trainingId: string; justification: 
   });
 }
 
-/** Tells the L&D team that a manager approved or declined a request. */
+/** Tells the L&D team that a manager approved or rejected a request. */
 async function notifyLd(r: { employee: Employee; training: Training }, manager: Employee,
-  decision: "approved" | "declined", result: string, comment?: string | null) {
+  decision: "approved" | "rejected", result: string, comment?: string | null) {
   const team = await ldTeamRecipients();
   await notify("ld_decision", r.training, team.map(to => ({ to, employeeName: r.employee.name, managerName: manager.name, decision, result, comment })), manager.id);
 }
@@ -161,17 +161,17 @@ export async function approveRequest(id: string): Promise<Result> {
   });
 }
 
-/** Declines a request. The manager must give a reason; L&D may. The reason goes to the employee. */
+/** Rejects a request. The manager must give a reason; L&D may. The reason goes to the employee. */
 export async function rejectRequest(id: string, comment?: string): Promise<Result> {
   return run(async me => {
     const r = await prisma.trainingRequest.findUnique({ where: { id }, include: { steps: { orderBy: { stepNo: "asc" } } } });
     if (!r) throw new UserError("Request not found.");
     const step = r.steps[r.currentStep];
     const isApprover = r.state === "pending" && step?.approverId === me.id;
-    if (!isApprover && !me.isAdmin) throw new UserError("You can't decline this request.");
+    if (!isApprover && !me.isAdmin) throw new UserError("You can't reject this request.");
     if (r.state === "rejected" || r.state === "completed") throw new UserError("This request is already closed.");
     const reason = str(comment, 2000);
-    if (isApprover && reason.length < 3) throw new UserError("Please add a short reason for declining.");
+    if (isApprover && reason.length < 3) throw new UserError("Please add a short reason for rejecting.");
     await prisma.$transaction(async tx => {
       if (isApprover) await tx.approvalStep.update({ where: { id: step.id }, data: { status: "rejected", decidedAt: new Date(), comment: reason || null } });
       await moveSeat(tx, r.trainingId, r.state, "rejected");
@@ -180,7 +180,7 @@ export async function rejectRequest(id: string, comment?: string): Promise<Resul
     });
     const full = await prisma.trainingRequest.findUnique({ where: { id }, include: { employee: true, training: true } });
     if (full) await notify("declined", full.training, [{ to: full.employee, managerName: isApprover ? me.name : "the L&D team", comment: reason || null }], me.id);
-    if (full && isApprover) await notifyLd(full, me, "declined", "Declined.", reason || null);
+    if (full && isApprover) await notifyLd(full, me, "rejected", "Rejected.", reason || null);
   });
 }
 

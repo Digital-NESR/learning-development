@@ -74,6 +74,7 @@ export default class Portal extends React.Component {
       surveyOpen: {},
       approvalsQ: "", teamQ: "", waitTab: "all",
       prof: null, // instructor profile being added / edited (L&D)
+      histQ: "", histResults: null, histImport: null, // Training History page (L&D)
       attRep: {year: String(new Date().getFullYear()), quarter: "", type: ""},
       toast: null
     }, this.fromSnapshot(d));
@@ -83,11 +84,12 @@ export default class Portal extends React.Component {
     return {
       meId: d.meId, isAdminUser: d.isAdmin, canManage: d.canManage, people: d.people,
       trainings: d.trainings, requests: d.requests, attended: d.attended, days: d.days || {}, surveyAnswered: d.surveyAnswered || {},
-      templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || [], instructors: d.instructors || []
+      templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || [], instructors: d.instructors || [],
+      history: d.history || {}, historyStats: d.historyStats || null
     };
   }
 
-  componentWillUnmount() { clearTimeout(this._tt); }
+  componentWillUnmount() { clearTimeout(this._tt); clearTimeout(this._hq); }
 
   flash(title, body) {
     clearTimeout(this._tt);
@@ -137,6 +139,16 @@ export default class Portal extends React.Component {
     const out = []; let cur = (this.P(key) || {}).boss;
     while (cur && this.P(cur) && out.length < APPROVAL_LEVELS && cur !== key) { out.push(cur); cur = this.P(cur).boss; }
     return out;
+  }
+  /** Completed trainings for a person, newest first: imported records from before the portal + trainings completed in the portal. */
+  historyOf(key) {
+    const st = this.state;
+    const portal = st.requests.filter(r => r.who === key && r.state === "completed").map(r => this.t(r.tid)).filter(Boolean)
+      .map(t => ({title: t.title, year: Number(t.end.slice(0, 4)), meta: "Completed in the portal · " + this.range(t) + " · " + t.location}));
+    const imported = ((st.history || {})[key] || []).map(h => ({title: h.title, year: h.year, meta: h.year ? "Completed in " + h.year : "Year not recorded"}));
+    return portal.concat(imported)
+      .sort((a, b) => (b.year || 0) - (a.year || 0) || a.title.localeCompare(b.title))
+      .map(x => Object.assign(x, {yearLabel: x.year ? String(x.year) : "—"}));
   }
   reportsOf(key) { return Object.keys(this.state.people).filter(k => this.P(k).boss === key); }
 
@@ -292,6 +304,45 @@ export default class Portal extends React.Component {
       .then(saved => { if (!saved) this.setState({trainings: withStatus(t.status)}); });
   }
 
+  /** L&D: imports the consolidated training-history workbook (replaces the previous import). */
+  async importHistory(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file || this.state.busy) return;
+    if (!/\.xlsx$/i.test(file.name)) return this.flash("Use an Excel file", "The training history must be an .xlsx file.");
+    const had = (this.state.historyStats || {}).records || 0;
+    if (had && !window.confirm("Replace the " + had + " training records already imported with the records in " + file.name + "?")) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    this.setState({busy: true, busyOp: "hist"});
+    try {
+      const res = await fetch("/api/history", {method: "POST", body: fd});
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) return this.flash("Couldn't import the file", out.error || "Try again in a moment.");
+      this.setState({histImport: out, histResults: null});
+      await this.refreshQuiet();
+      this.flash("Training history imported", out.records + " completed trainings for " + out.people + " employees, from the \"" + out.sheet + "\" sheet.");
+    } catch {
+      this.flash("Couldn't reach the server", "Check your connection and try again.");
+    } finally {
+      this.setState({busy: false, busyOp: null});
+    }
+  }
+
+  /** L&D: looks up anyone's imported history by name or NESR ID (as they type). */
+  searchHistory(q) {
+    this.setState({histQ: q});
+    clearTimeout(this._hq);
+    if (q.trim().length < 2) return this.setState({histResults: null});
+    this._hq = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/history?q=" + encodeURIComponent(q.trim()));
+        const out = await res.json().catch(() => ({}));
+        if (res.ok && this.state.histQ === q) this.setState({histResults: out});
+      } catch { /* keep the last results */ }
+    }, 300);
+  }
+
   setProf(patch) { this.setState({prof: Object.assign({}, this.state.prof, patch)}); }
 
   pickProfileFile(e) {
@@ -427,7 +478,7 @@ export default class Portal extends React.Component {
       [{isHeader: true, isItem: false, label, pad: first ? "0 16px 8px" : "18px 16px 8px"}].concat(items.map(navItem));
     const nav = section("Employee", [["dashboard","My Dashboard"],["calendar","Training Calendar"],["resources","Resources"]], true)
       .concat(canManage ? section("Manager", [["approvals","Team Approvals"],["team","Team Training History"]]) : [])
-      .concat(isAdmin ? section("L&D Team", [["adminDash","Dashboard"],["trainings","Manage Trainings"],["queue","Waitlist Queue"],["attendance","Attendance"],
+      .concat(isAdmin ? section("L&D Team", [["adminDash","Dashboard"],["trainings","Manage Trainings"],["queue","Waitlist Queue"],["attendance","Attendance"],["history","Training History"],
         ["surveys","Surveys"],["certificates","Certificates"],["nametags","Name Tags"],["templates","Notifications"]]) : []);
 
     const s = {
@@ -441,6 +492,7 @@ export default class Portal extends React.Component {
       aSession: isAdmin && scr === "session",
       aApp: isAdmin && scr === "queue",
       aAtt: isAdmin && scr === "attendance",
+      aHist: isAdmin && scr === "history",
       aSurveys: isAdmin && scr === "surveys",
       aCerts: isAdmin && scr === "certificates",
       aPlates: isAdmin && scr === "nametags",
@@ -500,7 +552,7 @@ export default class Portal extends React.Component {
         const waitStep = r.state === "waitlist" && i === stepDefs.length - 1;
         return {
           label: d.label,
-          note: failed ? "Declined" : i === 0 ? r.submitted : waitStep ? d.note : active ? "Done" : (i === prog && r.state === "pending" ? "Pending" : ""),
+          note: failed ? "Rejected" : i === 0 ? r.submitted : waitStep ? d.note : active ? "Done" : (i === prog && r.state === "pending" ? "Pending" : ""),
           bar: failed ? "#8A2B2B" : waitStep ? "#1F4E79" : active ? "#2A7E4F" : "#E1E5E3",
           fg: failed ? "#8A2B2B" : waitStep ? "#1F4E79" : active ? "#1F5E3A" : "#A8ACAA"
         };
@@ -520,6 +572,9 @@ export default class Portal extends React.Component {
         onToggle: () => this.setState(s => ({reqOpen: Object.assign({}, s.reqOpen, {[r.id]: !(s.reqOpen || {})[r.id]})})),
         state: r.state, stage: r.state, steps,
         actionable: r.state === "pending" && (r.chain || [])[r.step] === meP.key,
+        // Managers check past trainings before approving (Team Training History)
+        histLabel: (() => { const n = this.historyOf(r.who).length; return n ? "Training history: " + n + " completed" : "No completed trainings on record"; })(),
+        onHistory: () => this.setState({screen: "team", teamQ: name, teamOpen: Object.assign({}, st.teamOpen, {[r.who]: true})}),
         onApprove: () => this.act(() => actions.approveRequest(r.id), data => {
           const after = data.requests.find(x => x.id === r.id);
           if (after && after.state === "enrolled") return ["Approved — registered", name + " is registered for " + t.code + "."];
@@ -532,7 +587,7 @@ export default class Portal extends React.Component {
         rejecting: st.rejectFor === r.id,
         rejectText: st.rejectFor === r.id ? st.rejectText : "",
         rejectBorder: st.rejectFor === r.id && st.rejectError ? "#8A2B2B" : "#D1D3D4",
-        rejectCta: st.busyOp === "action" && st.rejectFor === r.id ? "Declining…" : "Decline request",
+        rejectCta: st.busyOp === "action" && st.rejectFor === r.id ? "Rejecting…" : "Reject request",
         onRejectText: e => this.setState({rejectText: e.target.value, rejectError: false}),
         onCancelReject: () => this.setState({rejectFor: null, rejectText: "", rejectError: false}),
         onReject: () => this.setState({rejectFor: r.id, rejectText: "", rejectError: false}),
@@ -542,8 +597,8 @@ export default class Portal extends React.Component {
             this.setState({rejectError: true});
             return this.flash("Reason needed", "Please add a short reason so " + (person.first || name) + " knows why.");
           }
-          this.act(() => actions.rejectRequest(r.id, reason), "Request declined",
-            name + "'s request for " + t.code + " was declined. They'll be emailed with your reason.",
+          this.act(() => actions.rejectRequest(r.id, reason), "Request rejected",
+            name + "'s request for " + t.code + " was rejected. They'll be emailed with your reason.",
             {rejectFor: null, rejectText: "", rejectError: false});
         },
         onEnroll: () => {
@@ -551,7 +606,7 @@ export default class Portal extends React.Component {
           if (full && !window.confirm(t.code + " is full (" + t.enrolled + " of " + t.seats + " seats). Register " + name + " anyway?")) return;
           this.act(() => actions.enrollRequest(r.id), "Participant registered", name + " is registered for " + t.code + ".");
         },
-        onDecline: () => this.act(() => actions.rejectRequest(r.id), "Request declined", name + "'s request for " + t.code + " was declined.")
+        onDecline: () => this.act(() => actions.rejectRequest(r.id), "Request rejected", name + "'s request for " + t.code + " was rejected.")
       };
     };
 
@@ -695,9 +750,6 @@ export default class Portal extends React.Component {
     });
 
     const openReqs = st.requests.filter(r => r.state === "pending");
-    const ages = openReqs.map(r => this.ageDays(r));
-    const avgWait = ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
-    const oldestWait = ages.length ? Math.max.apply(null, ages) : 0;
     const slaColor = d => d >= 7 ? "#8A2B2B" : d >= 4 ? "#B07A00" : "#2A7E4F";
 
     const groups = {};
@@ -729,39 +781,34 @@ export default class Portal extends React.Component {
       Object.assign({label:"Pending Approval", color:"#B07A00"}, stageAvg(["pending"])),
       Object.assign({label:"Registered", color:"#2A7E4F"}, stageAvg(["enrolled"])),
       Object.assign({label:"Waitlisted", color:"#58595B"}, stageAvg(["waitlist"])),
-      Object.assign({label:"Declined", color:"#8A2B2B"}, stageAvg(["rejected"]))
+      Object.assign({label:"Rejected", color:"#8A2B2B"}, stageAvg(["rejected"]))
     ];
 
-    const totalSeats = st.trainings.reduce((a, t) => a + t.seats, 0);
-    const totalEnrolled = st.trainings.reduce((a, t) => a + t.enrolled, 0);
     // Sessions by the status L&D sets; click a tile to list those sessions in Manage Trainings
     const nStatus = v => st.trainings.filter(t => t.status === v).length;
     const tile = (label, value, note, color, onClick, hint) => ({label, value: String(value), note, color, onClick, hint: hint || "", cursor: onClick ? "pointer" : "default"});
     const showTrainings = status => () => this.setState({screen: "trainings", fStatus: status, q: "", fType: "All", fCat: "All", fLoc: "All"});
-    const sessionKpis = [
-      tile("Total Sessions", st.trainings.length, YEAR + " calendar", "#2A7E4F", showTrainings(""), "List all sessions")
-    ].concat([
-      ["open", "Open", "Taking requests", "#2A7E4F"],
+    const statusTiles = list => list.map(([v, label, note, color]) => tile(label, nStatus(v), note, color, showTrainings(v), "List " + label.toLowerCase() + " sessions"));
+    // 1. Session status
+    const sessionKpis = [tile("Total Sessions", st.trainings.length, YEAR + " calendar", "#2A7E4F", showTrainings(""), "List all sessions")].concat(statusTiles([
       ["ongoing", "Ongoing Sessions", "Running now", "#1F4E79"],
       ["completed", "Completed", "Delivered", "#3E403E"],
-      ["class_full", "Class Full", "No seats left", "#8A6100"],
-      ["registration_closed", "Registration Closed", "Not taking requests", "#58595B"],
       ["cancelled", "Cancelled", "Called off", "#8A2B2B"]
-    ].map(([v, label, note, color]) => tile(label, nStatus(v), note, color, showTrainings(v), "List " + label.toLowerCase() + " sessions")));
-    // Registrations: the total, then how many are in each status
-    const nReq = k => st.requests.filter(r => r.state === k).length;
-    const regKpis = [
+    ]));
+    // 2. Registration status (whether a session is taking requests)
+    const regKpis = statusTiles([
+      ["open", "Open Registration", "Taking requests", "#2A7E4F"],
+      ["class_full", "Class Full", "No seats left", "#8A6100"],
+      ["registration_closed", "Registration Closed", "Not taking requests", "#58595B"]
+    ]);
+    // 3. Approval status of everyone who registered
+    const nReq = (...k) => st.requests.filter(r => k.indexOf(r.state) >= 0).length;
+    const approvalKpis = [
       tile("Total Registrations", st.requests.length, "All requests received", "#2A7E4F"),
       tile("Pending Approval", nReq("pending"), "With managers", "#8A6100"),
-      tile("Registered", nReq("enrolled"), "Seat confirmed", "#2A7E4F"),
-      tile("Waitlisted", nReq("waitlist"), "Approved, no seat", "#1F4E79", () => this.setState({screen: "queue", waitTab: "waitlist"}), "Open the Waitlist Queue"),
-      tile("Completed", nReq("completed"), "Attended", "#3E403E"),
-      tile("Declined", nReq("rejected"), "Not approved", "#8A2B2B")
-    ];
-    const adminKpis = [
-      {label:"Seat Utilization", value: Math.round(totalEnrolled / Math.max(1, totalSeats) * 100) + "%", note: totalEnrolled + " of " + totalSeats + " seats"},
-      {label:"Avg Wait", value: avgWait + "d", note:"Time in approval chain"},
-      {label:"Oldest Pending", value: oldestWait + "d", note: ageingRows.length ? "with " + ageingRows[0].name : "nothing pending"}
+      tile("Approved", nReq("enrolled", "completed"), "Seat confirmed", "#2A7E4F"),
+      tile("Rejected", nReq("rejected"), "Not approved", "#8A2B2B"),
+      tile("Waitlisted", nReq("waitlist"), "Approved, no seat", "#1F4E79", () => this.setState({screen: "queue", waitTab: "waitlist"}), "Open the Waitlist Queue")
     ];
 
     const fillRows = upcoming.filter(t => t.end >= TODAY).slice(0, 6).map(t => {
@@ -931,27 +978,27 @@ export default class Portal extends React.Component {
       });
     });
 
-    const teamStats = myReports.filter(k => nameHas(st.teamQ, (this.P(k) || {}).name)).map(k => {
+    // Direct reports, plus anyone whose request this manager approves
+    const teamPeople = myReports.concat(allTeamRequests.map(r => st.requests.find(x => x.id === r.id).who)
+      .filter((k, i, a) => k !== meP.key && myReports.indexOf(k) < 0 && a.indexOf(k) === i && this.P(k)));
+    const teamStats = teamPeople.filter(k => nameHas(st.teamQ, (this.P(k) || {}).name)).map(k => {
       const p = this.P(k);
-      const reqs = st.requests.filter(r => r.who === k && r.state !== "rejected")
-        .map(r => ({r, t: this.t(r.tid)})).filter(x => x.t)
-        .sort((a, b) => a.t.start < b.t.start ? 1 : -1);
-      const attended = x => st.attended[x.t.id + ":" + k] === true;
-      const nAttended = reqs.filter(attended).length;
+      const items = this.historyOf(k);
       const open = !!st.teamOpen[k];
+      const latest = items.find(x => x.year);
       return {
-        name: p.name, role: [p.title, (p.loc || "").split(",")[0]].filter(Boolean).join(" · "), initials: initialsOf(p.name),
-        label: reqs.length + (reqs.length === 1 ? " training" : " trainings"), sub: nAttended + " attended",
+        name: p.name, role: [p.title, (p.loc || "").split(",")[0], myReports.indexOf(k) < 0 ? "awaiting your approval" : ""].filter(Boolean).join(" · "), initials: initialsOf(p.name),
+        label: items.length + " completed", sub: latest ? "Latest " + latest.year : items.length ? "" : "Nothing on record",
         open, chevron: open ? "▾" : "▸", rowBg: open ? "#F7F9F8" : "#FFFFFF",
         onToggle: () => this.setState({teamOpen: Object.assign({}, st.teamOpen, {[k]: !open})}),
-        noTrainings: reqs.length === 0,
-        trainings: reqs.map(x => {
-          const base = STATE_STYLE[x.r.state] || STATE_STYLE.pending;
-          return {title: x.t.code + " · " + x.t.title, meta: this.range(x.t) + " · " + x.t.location,
-            status: base.label, stBg: base.bg, stFg: base.fg, attended: attended(x)};
-        })
+        noTrainings: items.length === 0,
+        trainings: items
       };
     });
+
+    const myHist = this.historyOf(meP.key);
+    const myHistory = {count: myHist.length + (myHist.length === 1 ? " training" : " trainings"), rows: myHist, empty: myHist.length === 0,
+      open: !st.histBoxClosed, label: st.histBoxClosed ? "Show" : "Hide", onToggle: () => this.setState(s => ({histBoxClosed: !s.histBoxClosed}))};
 
     // ---- Dashboard cards: click to list the trainings behind each number ----
     const mine = st.requests.filter(r => r.who === meP.key)
@@ -990,6 +1037,28 @@ export default class Portal extends React.Component {
         status: x.d.st.label, stBg: x.d.st.bg, stFg: x.d.st.fg
       }))
     } : null;
+
+    // ---- Training History (L&D): import the consolidated workbook, look anyone up ----
+    const hs = st.historyStats || {records: 0};
+    const hi = st.histImport;
+    const hr = st.histResults;
+    const hist = {
+      statsText: hs.records ? hs.records + " completed trainings for " + hs.people + " employees" + (hs.first ? " · " + (hs.first === hs.last ? hs.first : hs.first + "–" + hs.last) : "") + " · imported " + hs.at
+        : "Nothing imported yet.",
+      importLabel: st.busyOp === "hist" ? "Importing…" : hs.records ? "Replace with a new file" : "Import Excel file",
+      onImport: e => this.importHistory(e),
+      lastImport: hi ? "Read the \"" + hi.sheet + "\" sheet of " + hi.file + ": " + hi.records + " trainings for " + hi.people + " employees." +
+        (hi.duplicates ? " " + hi.duplicates + " repeated rows were skipped." : "") +
+        (hi.noYear ? " " + hi.noYear + " have no year in the title." : "") +
+        (hi.noId ? " " + hi.noId + " have no employee ID and are matched by name." : "") : "",
+      q: st.histQ, onQ: e => this.searchHistory(e.target.value),
+      noMatch: !!hr && hr.people.length === 0,
+      more: !!hr && hr.more,
+      people: (hr ? hr.people : []).map(p => ({
+        name: p.name, meta: (p.nesrId ? "NESR ID " + p.nesrId + " · " : "No employee ID · ") + p.trainings.length + " completed",
+        trainings: p.trainings.map(x => ({title: x.title, year: x.year ? String(x.year) : "Year not recorded"}))
+      }))
+    };
 
     // ---- Send Training Email ----
     const m = st.mail;
@@ -1236,7 +1305,7 @@ export default class Portal extends React.Component {
             {label:"Pending Approvals", value: String(by("pending").length), note:"Waiting on managers"},
             {label:"Registered", value: String(enrolledN), note: t.enrolled + " of " + t.seats + " seats taken"},
             {label:"Waitlisted", value: String(by("waitlist").length), note:"Manager approved, no seat"},
-            {label:"Rejected", value: String(by("rejected").length), note:"Declined"}
+            {label:"Rejected", value: String(by("rejected").length), note:"Not approved"}
           ],
           fillPct: String(Math.min(100, fillPct)), fillColor: fillPct >= 100 ? "#58595B" : fillPct >= 80 ? "#6AAF8E" : "#2A7E4F",
           fillLabel: t.enrolled + " of " + t.seats + " seats taken",
@@ -1290,7 +1359,7 @@ export default class Portal extends React.Component {
       approvalsQ: st.approvalsQ, onApprovalsQ: e => this.setState({approvalsQ: e.target.value}),
       noApprovalMatch: allTeamRequests.length > 0 && teamRequests.length === 0,
       teamQ: st.teamQ, onTeamQ: e => this.setState({teamQ: e.target.value}),
-      noTeamMatch: myReports.length > 0 && teamStats.length === 0,
+      noTeamMatch: teamPeople.length > 0 && teamStats.length === 0,
       onCalExport: () => this.downloadFile("/api/export/calendar", "Training calendar (" + list.length + (list.length === 1 ? " session" : " sessions") + ") downloaded as Excel.", {body: {ids: list.map(t => t.id)}}),
       isTable: st.calView === "table", isMonth: st.calView === "month", isCards: st.calView === "cards",
       noResults: rows.length === 0,
@@ -1302,13 +1371,13 @@ export default class Portal extends React.Component {
       prevMonth: () => this.setState(st.month === 0 ? {month: 11, calYear: st.calYear - 1} : {month: st.month - 1}),
       nextMonth: () => this.setState(st.month === 11 ? {month: 0, calYear: st.calYear + 1} : {month: st.month + 1}),
       empty: {
-        myRequests: myRequests.length === 0, teamRequests: allTeamRequests.length === 0, teamStats: myReports.length === 0,
+        myRequests: myRequests.length === 0, teamRequests: allTeamRequests.length === 0, teamStats: teamPeople.length === 0,
         queueRows: queueRows.length === 0, attendance: attendanceSessions.length === 0, surveys: surveySessions.length === 0
       },
       myRequests, teamRequests, queueRows, teamStats,
       reqBox: {open: !st.reqBoxClosed, label: st.reqBoxClosed ? "Show" : "Hide", count: myRequests.length + (myRequests.length === 1 ? " request" : " requests"),
         onToggle: () => this.setState(s => ({reqBoxClosed: !s.reqBoxClosed}))},
-      empKpis, dashList, adminKpis, sessionKpis, regKpis, waitlist, prof, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
+      empKpis, dashList, sessionKpis, regKpis, approvalKpis, myHistory, hist, waitlist, prof, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
       resources: RESOURCES,
       detail, formFields, justification: st.justification,
       justificationBorder: st.formError && !String(st.justification || "").trim() ? "#8A2B2B" : "#D9DDDB",

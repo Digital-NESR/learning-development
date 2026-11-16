@@ -167,6 +167,30 @@
             </sc-for>
             </sc-if>
           </div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-top:18px">
+            <div onClick="{{ myHistory.onToggle }}" style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
+              <span style="flex:1">My Training History <span style="font-weight:normal;color:#8A8F8C">· {{ myHistory.count }} completed</span></span>
+              <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ myHistory.label }}</span>
+            </div>
+            <sc-if value="{{ myHistory.open }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:10px 18px 0;font-size:11.5px;color:#58595B">Trainings you have completed, including those from before the portal. Check here before requesting a course you may already have taken.</div>
+              <sc-if value="{{ myHistory.empty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:26px 16px;text-align:center;color:#8A8F8C;font-size:13px">No completed trainings on record yet. If a training you completed is missing, contact the L&amp;D team.</div>
+              </sc-if>
+              <div style="padding:4px 0 6px">
+                <sc-for list="{{ myHistory.rows }}" as="h" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid #F0F2F1">
+                    <div style="width:44px;flex:0 0 auto;font-size:12px;font-weight:bold;color:#2A7E4F">{{ h.yearLabel }}</div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:13px;font-weight:bold">{{ h.title }}</div>
+                      <div style="font-size:11px;color:#58595B;margin-top:1px">{{ h.meta }}</div>
+                    </div>
+                    <span style="background:#C5E0D2;color:#1F5E3A;font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">Completed</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
         </div>
       </sc-if>
 
@@ -432,6 +456,7 @@
                   <div style="font-size:13.5px;font-weight:bold;margin-top:9px">{{ r.title }}</div>
                   <div style="font-size:11.5px;color:#58595B;margin-top:2px">{{ r.meta }}</div>
                   <div style="font-size:11px;color:#1F5E3A;font-weight:bold;margin-top:5px">Approver: {{ r.approver }}</div>
+                  <button onClick="{{ r.onHistory }}" title="See the trainings this person has already completed" style="margin-top:6px;border:0;background:none;padding:0;color:#1F4E79;cursor:pointer;font-size:11.5px;font-weight:bold;text-decoration:underline">{{ r.histLabel }}</button>
                   <div style="font-size:12px;color:#1F1F1D;margin-top:9px;background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:9px 11px;line-height:1.55">{{ r.justification }}</div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:150px">
@@ -446,7 +471,7 @@
                </div>
                <sc-if value="{{ r.rejecting }}" hint-placeholder-val="{{ false }}">
                  <div style="margin-top:14px;border-top:1px solid #EEF1EF;padding-top:12px;animation:fadeIn .15s ease">
-                   <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;margin-bottom:5px">Reason for declining *</div>
+                   <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;margin-bottom:5px">Reason for rejecting *</div>
                    <textarea value="{{ r.rejectText }}" onChange="{{ r.onRejectText }}" placeholder="Explain why, so {{ r.employeeFirst }} knows what to do next. This is included in the email they receive." rows="3" style="width:100%;padding:9px 10px;border:1px solid {{ r.rejectBorder }};border-radius:4px;resize:vertical;line-height:1.5"></textarea>
                    <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
                      <button onClick="{{ r.onCancelReject }}" style="padding:8px 14px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Cancel</button>
@@ -465,7 +490,7 @@
       <sc-if value="{{ s.mgrTeam }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Training History</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:14px">Trainings each direct report has registered for and attended. Click a person to see their trainings.</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:14px">Completed trainings for your team, including records from before the portal. Click a person to see the list. Requests waiting for a decision are in Team Approvals.</div>
           <div style="margin-bottom:14px;max-width:360px">
             <input value="{{ teamQ }}" onChange="{{ onTeamQ }}" placeholder="Search by employee name" style="width:100%;padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
           </div>
@@ -474,7 +499,7 @@
           </sc-if>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden">
             <sc-if value="{{ empty.teamStats }}" hint-placeholder-val="{{ false }}">
-              <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No direct reports found for your account.</div>
+              <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">No direct reports or requests to approve found for your account.</div>
               </sc-if>
               <sc-for list="{{ teamStats }}" as="t" hint-placeholder-count="5">
               <div style="border-bottom:1px solid #F0F2F1">
@@ -493,7 +518,7 @@
                 <sc-if value="{{ t.open }}" hint-placeholder-val="{{ false }}">
                   <div style="padding:2px 18px 14px 66px;background:#FAFBFA">
                     <sc-if value="{{ t.noTrainings }}" hint-placeholder-val="{{ false }}">
-                      <div style="padding:10px 0;font-size:12px;color:#8A8F8C">No training requests yet.</div>
+                      <div style="padding:10px 0;font-size:12px;color:#8A8F8C">No completed trainings on record.</div>
                     </sc-if>
                     <sc-for list="{{ t.trainings }}" as="tr" hint-placeholder-count="2">
                       <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #EEF1EF">
@@ -501,10 +526,7 @@
                           <div style="font-size:12.5px;font-weight:bold">{{ tr.title }}</div>
                           <div style="font-size:11px;color:#58595B">{{ tr.meta }}</div>
                         </div>
-                        <span style="background:{{ tr.stBg }};color:{{ tr.stFg }};font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ tr.status }}</span>
-                        <sc-if value="{{ tr.attended }}" hint-placeholder-val="{{ false }}">
-                          <span style="background:#2A7E4F;color:#fff;font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">Attended</span>
-                        </sc-if>
+                        <span style="background:#C5E0D2;color:#1F5E3A;font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ tr.yearLabel }}</span>
                       </div>
                     </sc-for>
                   </div>
@@ -512,6 +534,51 @@
               </div>
             </sc-for>
           </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s.aHist }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Training History</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Completed trainings from before the portal. Employees see their own list on My Dashboard; managers see their team's in Team Training History. Trainings completed in the portal are added automatically.</div>
+          <div style="background:#fff;border:1px solid #E1E5E3;border-left:4px solid #2A7E4F;border-radius:5px;padding:16px 18px;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+              <div style="flex:1;min-width:240px">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B">Imported records</div>
+                <div style="font-size:14px;font-weight:bold;margin-top:4px">{{ hist.statsText }}</div>
+              </div>
+              <label style="padding:9px 15px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px">
+                {{ hist.importLabel }}
+                <input type="file" accept=".xlsx" onChange="{{ hist.onImport }}" style="display:none" />
+              </label>
+            </div>
+            <sc-if value="{{ hist.lastImport }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;font-size:12px;color:#1F5E3A;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:4px;padding:9px 11px;line-height:1.5">{{ hist.lastImport }}</div>
+            </sc-if>
+            <div style="margin-top:12px;font-size:11.5px;color:#58595B;line-height:1.55">Use the consolidated Excel file: an <b>Employee ID</b> column, a <b>Name</b> column, and either one <b>Training Title</b> column or <b>Training 1</b>, <b>Training 2</b>&hellip; columns, with the year at the end of each title (e.g. &ldquo;Basic Pumping - 2024&rdquo;). Importing replaces all earlier imported records, so always upload the complete file.</div>
+          </div>
+          <div style="font-size:16px;font-weight:bold;margin-bottom:8px">Look up an employee</div>
+          <div style="margin-bottom:14px;max-width:360px">
+            <input value="{{ hist.q }}" onChange="{{ hist.onQ }}" placeholder="Name or NESR ID" style="width:100%;padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+          </div>
+          <sc-if value="{{ hist.noMatch }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:26px;text-align:center;color:#8A8F8C;font-size:13px">No imported records match that name or ID.</div>
+          </sc-if>
+          <sc-for list="{{ hist.people }}" as="hp" hint-placeholder-count="2">
+            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:14px 18px;margin-bottom:12px">
+              <div style="font-size:14px;font-weight:bold">{{ hp.name }}</div>
+              <div style="font-size:11.5px;color:#58595B;margin-bottom:6px">{{ hp.meta }}</div>
+              <sc-for list="{{ hp.trainings }}" as="ht" hint-placeholder-count="2">
+                <div style="display:flex;gap:12px;padding:7px 0;border-top:1px solid #F0F2F1;font-size:12.5px">
+                  <span style="width:110px;flex:0 0 auto;color:#2A7E4F;font-weight:bold">{{ ht.year }}</span>
+                  <span style="flex:1">{{ ht.title }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+          <sc-if value="{{ hist.more }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px;color:#8A8F8C">Showing the first 40 people. Type more of the name to narrow the list.</div>
+          </sc-if>
         </div>
       </sc-if>
 
@@ -530,9 +597,9 @@
             </div>
             <button onClick="{{ onExport }}" style="position:relative;padding:11px 18px;border:0;background:#fff;color:#1F5E3A;border-radius:4px;cursor:pointer;font-weight:bold">Export to Excel</button>
           </div>
-<div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Sessions</div>
+<div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Session status</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-bottom:18px">
-            <sc-for list="{{ sessionKpis }}" as="k" hint-placeholder-count="6">
+            <sc-for list="{{ sessionKpis }}" as="k" hint-placeholder-count="4">
               <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid {{ k.color }};border-radius:5px;padding:12px 14px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
                 <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;min-height:26px">{{ k.label }}</div>
                 <div style="font-size:26px;font-weight:bold;color:{{ k.color }};line-height:1.2;margin-top:2px">{{ k.value }}</div>
@@ -540,9 +607,9 @@
               </div>
             </sc-for>
           </div>
-          <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Registrations</div>
+          <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Registration status</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-bottom:18px">
-            <sc-for list="{{ regKpis }}" as="k" hint-placeholder-count="6">
+            <sc-for list="{{ regKpis }}" as="k" hint-placeholder-count="3">
               <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid {{ k.color }};border-radius:5px;padding:12px 14px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
                 <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;min-height:26px">{{ k.label }}</div>
                 <div style="font-size:26px;font-weight:bold;color:{{ k.color }};line-height:1.2;margin-top:2px">{{ k.value }}</div>
@@ -550,13 +617,13 @@
               </div>
             </sc-for>
           </div>
-          <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Seats &amp; approvals</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px">
-            <sc-for list="{{ adminKpis }}" as="k" hint-placeholder-count="3">
-              <div style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid #2A7E4F;border-radius:5px;padding:14px 16px">
-                <div style="font-size:10.5px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#58595B">{{ k.label }}</div>
-                <div style="font-size:30px;font-weight:bold;color:#2A7E4F;line-height:1.2;margin-top:4px">{{ k.value }}</div>
-                <div style="font-size:11px;color:#8A8F8C">{{ k.note }}</div>
+          <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Approval status</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-bottom:18px">
+            <sc-for list="{{ approvalKpis }}" as="k" hint-placeholder-count="5">
+              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid {{ k.color }};border-radius:5px;padding:12px 14px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
+                <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;min-height:26px">{{ k.label }}</div>
+                <div style="font-size:26px;font-weight:bold;color:{{ k.color }};line-height:1.2;margin-top:2px">{{ k.value }}</div>
+                <div style="font-size:10.5px;color:#8A8F8C">{{ k.note }}</div>
               </div>
             </sc-for>
           </div>
@@ -767,7 +834,7 @@
                   </div>
                   <div style="display:flex;gap:7px">
                     <button onClick="{{ r.onEnroll }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Register</button>
-                    <button onClick="{{ r.onDecline }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
+                    <button onClick="{{ r.onDecline }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Reject</button>
                   </div>
                 </div>
               </sc-for>
@@ -884,7 +951,7 @@
                 <div style="padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap">
                   <sc-if value="{{ r.canEnroll }}" hint-placeholder-val="{{ true }}">
                     <button onClick="{{ r.onEnroll }}" style="padding:6px 11px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Register</button>
-                    <button onClick="{{ r.onDecline }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Decline</button>
+                    <button onClick="{{ r.onDecline }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Reject</button>
                   </sc-if>
                   <sc-if value="{{ r.isCancelled }}" hint-placeholder-val="{{ false }}">
                     <span style="font-size:11.5px;color:#58595B;line-height:1.4">Offer another session, then add them to it from Manage Trainings.</span>

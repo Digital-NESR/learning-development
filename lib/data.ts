@@ -2,6 +2,7 @@ import "server-only";
 import type { Employee } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { APPROVAL_LEVELS } from "@/lib/constants.js";
+import { normId, nameKey, nameWords } from "@/lib/history";
 
 const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -74,6 +75,45 @@ export async function loadSnapshot(meOrId: string | Employee) {
 
   const isApprover = requests.some(r => r.steps.some(s => s.approverId === me.id));
 
+  // Completed trainings from before the portal: for me, my direct reports and anyone whose request I approve.
+  const historyFor = new Map<string, Employee>();
+  for (const p of people) {
+    if (p.id === me.id || p.managerId === me.id || requests.some(r => r.employeeId === p.id && r.steps.some(s => s.approverId === me.id))) historyFor.set(p.id, p);
+  }
+  const idsOf = new Map<string, Set<string>>();
+  for (const p of historyFor.values()) {
+    const set = new Set<string>();
+    const own = normId(p.nesrId); if (own) set.add(own);
+    // The NESR ID typed on the registration form, for accounts where Entra has none
+    for (const r of requests) if (r.employeeId === p.id) { const f = normId((r.form as Record<string, unknown> | null)?.nesrId); if (f) set.add(f); }
+    idsOf.set(p.id, set);
+  }
+  const allIds = [...new Set([...idsOf.values()].flatMap(s => [...s]))];
+  const allNames = [...historyFor.values()].map(p => nameKey(p.name));
+  const [historyRows, historyStats] = await Promise.all([
+    historyFor.size
+      ? prisma.trainingHistory.findMany({
+          where: { OR: [{ nesrId: { in: allIds } }, { nesrId: null, nameKey: { in: allNames } }] },
+          select: { nesrId: true, nameKey: true, title: true, year: true }
+        })
+      : Promise.resolve([]),
+    me.isAdmin
+      ? prisma.$queryRaw<{ records: number; people: number; first: number | null; last: number | null; at: Date | null }[]>`
+          SELECT COUNT(*)::int AS records, COUNT(DISTINCT COALESCE(nesr_id, 'n:' || name_key))::int AS people,
+                 MIN(year) AS first, MAX(year) AS last, MAX(imported_at) AS at FROM training_history`
+      : Promise.resolve(null)
+  ]);
+  const history: Record<string, { title: string; year: number | null }[]> = {};
+  for (const p of historyFor.values()) {
+    const ids = idsOf.get(p.id)!, nk = nameKey(p.name), words = nameWords(p.name);
+    // An ID match also needs a name in common, so a mistyped ID (or a demo account) never shows someone else's record
+    history[p.id] = historyRows
+      .filter(h => h.nesrId ? ids.has(h.nesrId) && nameWords(h.nameKey).some(w => words.includes(w)) : h.nameKey === nk)
+      .map(h => ({ title: h.title, year: h.year }))
+      .sort((a, b) => (b.year ?? 0) - (a.year ?? 0) || a.title.localeCompare(b.title));
+  }
+  const hs = historyStats?.[0];
+
   return {
     meId: me.id,
     isAdmin: me.isAdmin,
@@ -101,6 +141,9 @@ export async function loadSnapshot(meOrId: string | Employee) {
     })),
     attended: Object.fromEntries(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended])),
     days,
+    history,
+    // L&D only: what the last history import loaded
+    historyStats: hs ? { records: hs.records, people: hs.people, first: hs.first, last: hs.last, at: hs.at ? pretty(hs.at) : "" } : null,
     instructors: instructors.map(p => ({ id: p.id, name: p.name, title: p.title || "", bio: p.bio || "", link: p.link || "", fileName: p.fileName || "" })),
     // L&D only: who has answered each training's feedback survey ("tid:emp" → date)
     surveyAnswered: Object.fromEntries(surveyResponses.map(r => [`${r.trainingId}:${r.employeeId}`, pretty(r.createdAt)])),

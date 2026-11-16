@@ -145,6 +145,7 @@ Open http://localhost:3000.
 | Notifications → Send Training Email | Email everyone registered, enrolled or attended for a training. Only a count is shown. Sent through n8n |
 | Notifications → Nameplate Generator | Fold-in-half A4 desk nameplates as a PDF, for one person, all enrolled, all participants or a typed name |
 | Notifications → Email Templates | Edit name, trigger, subject and message (saved to `notification_templates`), pause or activate |
+| Training History | Import the consolidated history workbook (Employee ID, Name, Training Title or Training 1…n, year at the end of the title) into `training_history`; each import replaces the previous one. A sheet named "Consolidated…" is preferred. Look anyone up by name or NESR ID. Employees see their own completed trainings on My Dashboard and managers see their team's in Team Training History, matched by NESR ID (plus a shared name word) or by exact name when the row has no ID |
 
 ## Not built yet
 

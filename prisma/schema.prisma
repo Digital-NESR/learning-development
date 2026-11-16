@@ -232,3 +232,21 @@ model InstructorProfile {
 
   @@map("instructor_profiles")
 }
+
+/// Completed trainings imported from L&D's consolidated history workbook (records from before the portal).
+/// Re-importing replaces every row. Trainings completed in the portal come from training_requests instead.
+model TrainingHistory {
+  id         String   @id @default(cuid())
+  /// NESR employee ID, digits only without leading zeros (null when the workbook had none)
+  nesrId     String?  @map("nesr_id")
+  name       String
+  /// Lower-case name with single spaces, for matching rows that have no employee ID
+  nameKey    String   @map("name_key")
+  title      String
+  year       Int?
+  importedAt DateTime @default(now()) @map("imported_at")
+
+  @@index([nesrId])
+  @@index([nameKey])
+  @@map("training_history")
+}
