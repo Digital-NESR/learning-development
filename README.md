@@ -142,6 +142,7 @@ Open http://localhost:3000.
 | Page | What it does |
 |---|---|
 | Manage Trainings | Add, edit (date pickers), delete (withdraw) sessions, open/close registration. **Export List** downloads a participant PDF. **View** opens the session with **Registered** / **Participants** tabs. Mark attendance on the Registered tab once the session has started; Participants lists only people marked attended |
+| Change Log | Session page → Change Log: every edit (field, old → new, required reason), status change, person added/removed/registered from the waitlist and training email, with who and when. **Change Log** on Manage Trainings (or Export on the session) downloads it as Excel. Built from `audit_log` (`lib/changelog.ts`, `/api/changelog`) |
 | Notifications → Send Training Email | Email everyone registered, enrolled or attended for a training. Only a count is shown. Sent through n8n |
 | Notifications → Nameplate Generator | Fold-in-half A4 desk nameplates as a PDF, for one person, all enrolled, all participants or a typed name |
 | Notifications → Email Templates | Edit name, trigger, subject and message (saved to `notification_templates`), pause or activate |

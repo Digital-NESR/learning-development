@@ -1,5 +1,6 @@
 "use server";
 
+import { trainingChanges } from "@/lib/changelog";
 import type { Employee, Prisma, Training, TrainingStatus } from "@prisma/client";
 import { currentEmployee, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -188,13 +189,13 @@ export async function rejectRequest(id: string, comment?: string): Promise<Resul
 export async function enrollRequest(id: string): Promise<Result> {
   return run(async me => {
     requireAdmin(me);
-    const r = await prisma.trainingRequest.findUnique({ where: { id } });
+    const r = await prisma.trainingRequest.findUnique({ where: { id }, include: { employee: { select: { name: true } } } });
     if (!r) throw new UserError("Request not found.");
     if (r.state === "enrolled" || r.state === "completed") return;
     await prisma.$transaction(async tx => {
       await moveSeat(tx, r.trainingId, r.state, "enrolled");
       await tx.trainingRequest.update({ where: { id }, data: { state: "enrolled" } });
-      await audit(tx, me, "enroll", "request", id, { from: r.state });
+      await audit(tx, me, "enroll", "request", id, { from: r.state, trainingId: r.trainingId, name: r.employee.name });
     });
     const full = await prisma.trainingRequest.findUnique({ where: { id }, include: { employee: true, training: true } });
     if (full) await notify("enrolled", full.training, [{ to: full.employee, managerName: await approverNameFor(id) }], me.id);
@@ -224,7 +225,7 @@ export async function addParticipant(trainingId: string, who: string): Promise<R
       const req = existing
         ? await tx.trainingRequest.update({ where: { id: existing.id }, data: { state: "enrolled" } })
         : await tx.trainingRequest.create({ data: { employeeId: person.id, trainingId, state: "enrolled", form, justification: "Added by the L&D team" } });
-      await audit(tx, me, "add_participant", "request", req.id, { trainingId, email: person.email, from: existing?.state ?? null });
+      await audit(tx, me, "add_participant", "request", req.id, { trainingId, email: person.email, name: person.name, from: existing?.state ?? null });
     });
     await notify("enrolled", t, [{ to: person, managerName: "the L&D team" }], me.id);
   });
@@ -240,7 +241,7 @@ export async function removeParticipant(requestId: string): Promise<Result> {
       if (holdsSeat(r.state)) await tx.$executeRaw`UPDATE "trainings" SET "enrolled" = GREATEST("enrolled" - 1, 0) WHERE "id" = ${r.trainingId}`;
       await tx.attendance.deleteMany({ where: { trainingId: r.trainingId, employeeId: r.employeeId } });
       await tx.trainingRequest.delete({ where: { id: requestId } });
-      await audit(tx, me, "remove_participant", "request", requestId, { trainingId: r.trainingId, email: r.employee.email, state: r.state });
+      await audit(tx, me, "remove_participant", "request", requestId, { trainingId: r.trainingId, email: r.employee.email, name: r.employee.name, state: r.state });
     });
   });
 }
@@ -324,11 +325,18 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
     };
     const id = ed.id ? String(ed.id) : null;
     const before = id ? await prisma.training.findUnique({ where: { id } }) : null;
+    if (id && !before) throw new UserError("That training no longer exists.");
+    // Edits are logged field by field with the reason, so every change to a session is traceable
+    const changes = before ? trainingChanges(before, data) : [];
+    const reason = str(ed.reason, 500);
+    if (before && !changes.length) throw new UserError("Nothing was changed.");
+    if (before && reason.length < 3) throw new UserError("Please give a reason for the change. It is kept in the session's change log.");
     const cancelling = data.status === "cancelled" && before?.status !== "cancelled";
     const registered = cancelling && id ? await stillRegistered(id) : [];
     const saved = await prisma.$transaction(async tx => {
       const t = id ? await tx.training.update({ where: { id }, data }) : await tx.training.create({ data });
-      await audit(tx, me, id ? "update" : "create", "training", t.id, { code: t.code, status: t.status });
+      await audit(tx, me, id ? "update" : "create", "training", t.id,
+        id ? { code: t.code, status: t.status, changes, reason } : { code: t.code, title: t.title, status: t.status });
       return t;
     });
     if (cancelling) await notify("cancelled", saved, registered.map(r => ({ to: r.employee })), me.id);

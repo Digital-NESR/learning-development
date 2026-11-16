@@ -724,6 +724,7 @@
               </sc-for>
             </select>
             <button onClick="{{ onExport }}" style="padding:10px 16px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold">Export Excel Report</button>
+            <button onClick="{{ onLogExport }}" title="Every change made to any session, as Excel" style="padding:10px 16px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold">Change Log</button>
             <button onClick="{{ onNewTraining }}" style="padding:10px 16px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">+ Add Training</button>
           </div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
@@ -904,6 +905,44 @@
             <sc-if value="{{ session.noRoster }}" hint-placeholder-val="{{ false }}">
               <div style="padding:30px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">{{ session.rosterEmpty }}</div>
             </sc-if>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-top:18px">
+            <div style="padding:11px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <div style="flex:1;min-width:200px">
+                <div style="font-size:13px;font-weight:bold">Change Log</div>
+                <div style="font-size:11px;color:#58595B;margin-top:2px">Every change to this session: who made it, when, what changed and why.</div>
+              </div>
+              <button onClick="{{ session.log.onExport }}" style="padding:7px 13px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Export to Excel</button>
+            </div>
+            <sc-if value="{{ session.log.loading }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:22px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">Loading the change log…</div>
+            </sc-if>
+            <sc-if value="{{ session.log.empty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:22px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">No changes recorded for this session yet.</div>
+            </sc-if>
+            <sc-for list="{{ session.log.rows }}" as="lg" hint-placeholder-count="3">
+              <div style="display:flex;gap:14px;padding:11px 16px;border-bottom:1px solid #F0F2F1;flex-wrap:wrap">
+                <div style="width:150px;flex:0 0 auto">
+                  <div style="font-size:11.5px;font-weight:bold;color:#1F1F1D">{{ lg.when }}</div>
+                  <div style="font-size:11px;color:#58595B">{{ lg.who }}</div>
+                </div>
+                <div style="flex:1;min-width:220px">
+                  <div style="font-size:12.5px;font-weight:bold">{{ lg.what }}</div>
+                  <sc-if value="{{ lg.hasChanges }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:6px;display:grid;grid-template-columns:minmax(110px,auto) 1fr;gap:4px 12px;font-size:11.5px">
+                      <sc-for list="{{ lg.changes }}" as="ch" hint-placeholder-count="2">
+                        <div style="color:#58595B;font-weight:bold">{{ ch.field }}</div>
+                        <div style="line-height:1.45"><span style="color:#8A2B2B;text-decoration:line-through">{{ ch.from }}</span> &rarr; <span style="color:#1F5E3A;font-weight:bold">{{ ch.to }}</span></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ lg.reason }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:6px;font-size:11.5px;color:#3E403E;background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:6px 9px;line-height:1.5"><b>Reason:</b> {{ lg.reason }}</div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
           </div>
         </div>
       </sc-if>

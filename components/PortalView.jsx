@@ -692,6 +692,7 @@ export default function PortalView({ v }) {
 </React.Fragment>))}
 </select>
 <button onClick={v.onExport} style={{ padding: "10px 16px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Export Excel Report</button>
+<button onClick={v.onLogExport} title="Every change made to any session, as Excel" style={{ padding: "10px 16px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Change Log</button>
 <button onClick={v.onNewTraining} style={{ padding: "10px 16px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>+ Add Training</button>
 </div>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflowX: "auto" }}>
@@ -866,6 +867,43 @@ export default function PortalView({ v }) {
 <div style={{ padding: "30px 16px", textAlign: "center", fontSize: "12.5px", color: "#8A8F8C" }}>{v.session.rosterEmpty}</div>
 </>) : null}
 </div>
+<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginTop: "18px" }}>
+<div style={{ padding: "11px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+<div style={{ flex: "1", minWidth: "200px" }}>
+<div style={{ fontSize: "13px", fontWeight: "bold" }}>Change Log</div>
+<div style={{ fontSize: "11px", color: "#58595B", marginTop: "2px" }}>Every change to this session: who made it, when, what changed and why.</div>
+</div>
+<button onClick={v.session.log.onExport} style={{ padding: "7px 13px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>Export to Excel</button>
+</div>
+{v.session.log.loading ? (<>
+<div style={{ padding: "22px 16px", textAlign: "center", fontSize: "12.5px", color: "#8A8F8C" }}>Loading the change log…</div>
+</>) : null}
+{v.session.log.empty ? (<>
+<div style={{ padding: "22px 16px", textAlign: "center", fontSize: "12.5px", color: "#8A8F8C" }}>No changes recorded for this session yet.</div>
+</>) : null}
+{(v.session.log.rows || []).map((lg, i39) => (<React.Fragment key={i39}>
+<div style={{ display: "flex", gap: "14px", padding: "11px 16px", borderBottom: "1px solid #F0F2F1", flexWrap: "wrap" }}>
+<div style={{ width: "150px", flex: "0 0 auto" }}>
+<div style={{ fontSize: "11.5px", fontWeight: "bold", color: "#1F1F1D" }}>{lg.when}</div>
+<div style={{ fontSize: "11px", color: "#58595B" }}>{lg.who}</div>
+</div>
+<div style={{ flex: "1", minWidth: "220px" }}>
+<div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{lg.what}</div>
+{lg.hasChanges ? (<>
+<div style={{ marginTop: "6px", display: "grid", gridTemplateColumns: "minmax(110px,auto) 1fr", gap: "4px 12px", fontSize: "11.5px" }}>
+{(lg.changes || []).map((ch, i40) => (<React.Fragment key={i40}>
+<div style={{ color: "#58595B", fontWeight: "bold" }}>{ch.field}</div>
+<div style={{ lineHeight: "1.45" }}><span style={{ color: "#8A2B2B", textDecoration: "line-through" }}>{ch.from}</span> &rarr; <span style={{ color: "#1F5E3A", fontWeight: "bold" }}>{ch.to}</span></div>
+</React.Fragment>))}
+</div>
+</>) : null}
+{lg.reason ? (<>
+<div style={{ marginTop: "6px", fontSize: "11.5px", color: "#3E403E", background: "#F7F9F8", border: "1px solid #EAEEEC", borderRadius: "4px", padding: "6px 9px", lineHeight: "1.5" }}><b>Reason:</b> {lg.reason}</div>
+</>) : null}
+</div>
+</div>
+</React.Fragment>))}
+</div>
 </div>
 </>) : null}
 {v.s.aApp ? (<>
@@ -878,7 +916,7 @@ export default function PortalView({ v }) {
 <button onClick={v.waitlist.onExport} style={{ padding: "10px 16px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{v.waitlist.exportLabel}</button>
 </div>
 <div style={{ display: "inline-flex", gap: "2px", background: "#EEF1EF", borderRadius: "4px", padding: "3px", marginBottom: "12px" }}>
-{(v.waitlist.tabs || []).map((wt, i39) => (<React.Fragment key={i39}>
+{(v.waitlist.tabs || []).map((wt, i41) => (<React.Fragment key={i41}>
 <button onClick={wt.onClick} style={{ border: "0", cursor: "pointer", padding: "6px 13px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold", background: wt.bg, color: wt.fg }}>{wt.label}</button>
 </React.Fragment>))}
 </div>
@@ -893,7 +931,7 @@ export default function PortalView({ v }) {
 {v.empty.queueRows ? (<>
 <div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>{v.waitlist.emptyText}</div>
 </>) : null}
-{(v.queueRows || []).map((r, i40) => (<React.Fragment key={i40}>
+{(v.queueRows || []).map((r, i42) => (<React.Fragment key={i42}>
 <div style={{ display: "grid", minWidth: "900px", gridTemplateColumns: "minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 150px 210px", borderBottom: "1px solid #F0F2F1", alignItems: "center", background: r.zebra }}>
 <div style={{ padding: "10px 12px" }}>
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{r.employee}</div>
@@ -933,11 +971,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Printable sign-in sheet with the participants and one column per day. Word, to print with the certificates and name tags.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr", gap: "12px", flex: "1", alignContent: "start" }}>
-{(v.sheet.selects || []).map((f, i41) => (<React.Fragment key={i41}>
+{(v.sheet.selects || []).map((f, i43) => (<React.Fragment key={i43}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i42) => (<React.Fragment key={i42}>
+{(f.options || []).map((o, i44) => (<React.Fragment key={i44}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -955,11 +993,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>All trainings in the period, with every participant's days present and overall result. Excel.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px", flex: "1", alignContent: "start" }}>
-{(v.attReport.selects || []).map((f, i43) => (<React.Fragment key={i43}>
+{(v.attReport.selects || []).map((f, i45) => (<React.Fragment key={i45}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i44) => (<React.Fragment key={i44}>
+{(f.options || []).map((o, i46) => (<React.Fragment key={i46}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -974,7 +1012,7 @@ export default function PortalView({ v }) {
 {v.empty.attendance ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No current or upcoming sessions with registered participants yet.</div>
 </>) : null}
-{(v.attendanceSessions || []).map((sess, i45) => (<React.Fragment key={i45}>
+{(v.attendanceSessions || []).map((sess, i47) => (<React.Fragment key={i47}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "16px", overflow: "hidden" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: "1px solid #E1E5E3", flexWrap: "wrap" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{sess.code}</div>
@@ -991,12 +1029,12 @@ export default function PortalView({ v }) {
 <div style={{ overflowX: "auto" }}>
 <div style={{ display: "grid", gridTemplateColumns: sess.cols, minWidth: sess.minW, gap: "6px", padding: "8px 16px", background: "#FAFBFA", borderBottom: "1px solid #EAEEEC", fontSize: "10.5px", fontWeight: "bold", color: "#58595B", alignItems: "end" }}>
 <div>PARTICIPANT</div>
-{(sess.dayHeads || []).map((dh, i46) => (<React.Fragment key={i46}>
+{(sess.dayHeads || []).map((dh, i48) => (<React.Fragment key={i48}>
 <div style={{ textAlign: "center" }}>{dh.label}<div style={{ fontWeight: "normal", color: "#8A8F8C" }}>{dh.date}</div></div>
 </React.Fragment>))}
 <div style={{ textAlign: "center" }}>OVERALL</div>
 </div>
-{(sess.people || []).map((p, i47) => (<React.Fragment key={i47}>
+{(sess.people || []).map((p, i49) => (<React.Fragment key={i49}>
 <div style={{ display: "grid", gridTemplateColumns: sess.cols, minWidth: sess.minW, gap: "6px", alignItems: "center", padding: "9px 16px", borderBottom: "1px solid #F4F6F5" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: "0" }}>
 <div style={{ width: "30px", height: "30px", flex: "0 0 30px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "bold" }}>{p.initials}</div>
@@ -1005,7 +1043,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11px", color: "#58595B" }}>{p.meta}</div>
 </div>
 </div>
-{(p.days || []).map((dy, i48) => (<React.Fragment key={i48}>
+{(p.days || []).map((dy, i50) => (<React.Fragment key={i50}>
 <button onClick={dy.onClick} title={dy.title} style={{ width: "100%", padding: "6px 4px", border: `1px solid ${dy.border}`, background: dy.bg, color: dy.fg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11px", whiteSpace: "nowrap" }}>{dy.label}</button>
 </React.Fragment>))}
 <div style={{ display: "flex", border: "1px solid #D1D3D4", borderRadius: "4px", overflow: "hidden" }}>
@@ -1033,7 +1071,7 @@ export default function PortalView({ v }) {
 {v.empty.surveys ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No trainings have started yet, so there are no surveys to track.</div>
 </>) : null}
-{(v.surveySessions || []).map((sv, i49) => (<React.Fragment key={i49}>
+{(v.surveySessions || []).map((sv, i51) => (<React.Fragment key={i51}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "14px", overflow: "hidden" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", flexWrap: "wrap" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{sv.code}</div>
@@ -1054,7 +1092,7 @@ export default function PortalView({ v }) {
 <button onClick={sv.onToggle} style={{ border: "0", background: "none", color: "#2A7E4F", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px", padding: "4px 0" }}>{sv.chev} {sv.toggleLabel}</button>
 </div>
 {sv.open ? (<>
-{(sv.rows || []).map((sp, i50) => (<React.Fragment key={i50}>
+{(sv.rows || []).map((sp, i52) => (<React.Fragment key={i52}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "9px 16px", borderTop: "1px solid #F4F6F5" }}>
 <div style={{ width: "28px", height: "28px", flex: "0 0 28px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10.5px", fontWeight: "bold" }}>{sp.initials}</div>
 <div style={{ flex: "1", minWidth: "0" }}>
@@ -1080,11 +1118,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>NESR or CPVEN template, one page per person. PDF to print, or PowerPoint to edit.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
-{(v.cert.selects || []).map((f, i51) => (<React.Fragment key={i51}>
+{(v.cert.selects || []).map((f, i53) => (<React.Fragment key={i53}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i52) => (<React.Fragment key={i52}>
+{(f.options || []).map((o, i54) => (<React.Fragment key={i54}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -1092,7 +1130,7 @@ export default function PortalView({ v }) {
 </React.Fragment>))}
 {v.cert.showPick ? (<>
 <div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "180px", overflow: "auto", padding: "4px 0" }}>
-{(v.cert.people || []).map((cp, i53) => (<React.Fragment key={i53}>
+{(v.cert.people || []).map((cp, i55) => (<React.Fragment key={i55}>
 <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
 <input type="checkbox" checked={cp.checked} onChange={cp.onToggle} />
 <span style={{ flex: "1" }}>{cp.name}</span>
@@ -1181,11 +1219,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Fold-in-half desk name tags as a PDF, one A4 page per person. NESR or CPVEN.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
-{(v.plate.selects || []).map((f, i54) => (<React.Fragment key={i54}>
+{(v.plate.selects || []).map((f, i56) => (<React.Fragment key={i56}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i55) => (<React.Fragment key={i55}>
+{(f.options || []).map((o, i57) => (<React.Fragment key={i57}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -1193,7 +1231,7 @@ export default function PortalView({ v }) {
 </React.Fragment>))}
 {v.plate.showPick ? (<>
 <div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "180px", overflow: "auto", padding: "4px 0" }}>
-{(v.plate.people || []).map((pp, i56) => (<React.Fragment key={i56}>
+{(v.plate.people || []).map((pp, i58) => (<React.Fragment key={i58}>
 <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
 <input type="checkbox" checked={pp.checked} onChange={pp.onToggle} />
 <span style={{ flex: "1" }}>{pp.name}</span>
@@ -1249,11 +1287,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Goes only to people registered for the selected training. Each email is personalised.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: "1" }}>
-{(v.mail.selects || []).map((f, i57) => (<React.Fragment key={i57}>
+{(v.mail.selects || []).map((f, i59) => (<React.Fragment key={i59}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i58) => (<React.Fragment key={i58}>
+{(f.options || []).map((o, i60) => (<React.Fragment key={i60}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -1278,7 +1316,7 @@ export default function PortalView({ v }) {
 </div>
 <div style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "10px" }}>Email Templates</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: "16px" }}>
-{(v.templates || []).map((t, i59) => (<React.Fragment key={i59}>
+{(v.templates || []).map((t, i61) => (<React.Fragment key={i61}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden" }}>
 <div style={{ padding: "12px 16px", borderBottom: "1px solid #E1E5E3", display: "flex", alignItems: "center", gap: "10px" }}>
 <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#2A7E4F" }}></div>
@@ -1326,7 +1364,7 @@ export default function PortalView({ v }) {
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(288px,1fr))" }}>
 <div style={{ padding: "20px 22px", background: v.detail.railBg, borderRight: v.detail.railBorder, display: "flex", flexDirection: "column", gap: "16px" }}>
 <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
-{(v.detail.facts || []).map((f, i60) => (<React.Fragment key={i60}>
+{(v.detail.facts || []).map((f, i62) => (<React.Fragment key={i62}>
 <div style={{ display: "flex", gap: "11px", alignItems: "center" }}>
 <div style={{ width: "30px", height: "30px", flex: "0 0 30px", borderRadius: "5px", background: "#EDF5F0", border: "1px solid #DCEAE2", display: "flex", alignItems: "center", justifyContent: "center" }}>
 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2A7E4F" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={f.d}></path></svg>
@@ -1354,7 +1392,7 @@ export default function PortalView({ v }) {
 <span style={{ fontSize: "12px", fontWeight: "bold", color: "#1F5E3A" }}>{v.detail.chainNote}</span>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "11px" }}>
-{(v.formFields || []).map((fl, i61) => (<React.Fragment key={i61}>
+{(v.formFields || []).map((fl, i63) => (<React.Fragment key={i63}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#8A8F8C", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
@@ -1362,7 +1400,7 @@ export default function PortalView({ v }) {
 {fl.choosePrompt ? (<>
 <option value="" disabled>{fl.choosePrompt}</option>
 </>) : null}
-{(fl.options || []).map((o, i62) => (<React.Fragment key={i62}>
+{(fl.options || []).map((o, i64) => (<React.Fragment key={i64}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>
@@ -1402,7 +1440,7 @@ export default function PortalView({ v }) {
 <button onClick={v.closeModal} style={{ border: "0", background: "rgba(255,255,255,.18)", color: "#fff", width: "28px", height: "28px", borderRadius: "4px", cursor: "pointer", fontSize: "15px", fontWeight: "bold" }}>&times;</button>
 </div>
 <div style={{ padding: "18px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: "13px" }}>
-{(v.editorFields || []).map((fl, i63) => (<React.Fragment key={i63}>
+{(v.editorFields || []).map((fl, i65) => (<React.Fragment key={i65}>
 <div style={{ gridColumn: fl.span }}>
 <div style={{ fontSize: "10.5px", fontWeight: "bold", letterSpacing: ".6px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{fl.label}</div>
 {fl.isSelect ? (<>
@@ -1410,7 +1448,7 @@ export default function PortalView({ v }) {
 {fl.choosePrompt ? (<>
 <option value="" disabled>{fl.choosePrompt}</option>
 </>) : null}
-{(fl.options || []).map((o, i64) => (<React.Fragment key={i64}>
+{(fl.options || []).map((o, i66) => (<React.Fragment key={i66}>
 <option value={o}>{o}</option>
 </React.Fragment>))}
 </select>

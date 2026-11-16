@@ -75,6 +75,7 @@ export default class Portal extends React.Component {
       approvalsQ: "", teamQ: "", waitTab: "all",
       prof: null, // instructor profile being added / edited (L&D)
       histQ: "", histResults: null, histImport: null, // Training History page (L&D)
+      changeLog: null, // {id, entries, loading} for the open session (L&D)
       attRep: {year: String(new Date().getFullYear()), quarter: "", type: ""},
       toast: null
     }, this.fromSnapshot(d));
@@ -87,6 +88,22 @@ export default class Portal extends React.Component {
       templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || [], instructors: d.instructors || [],
       history: d.history || {}, historyStats: d.historyStats || null
     };
+  }
+
+  componentDidUpdate(_, prev) {
+    const st = this.state;
+    if (st.screen === "session" && st.sessionId && (prev.screen !== "session" || prev.sessionId !== st.sessionId)) this.loadLog(st.sessionId);
+  }
+
+  async loadLog(id) {
+    this.setState(s => ({changeLog: {id, entries: s.changeLog && s.changeLog.id === id ? s.changeLog.entries : [], loading: true}}));
+    try {
+      const res = await fetch("/api/changelog?id=" + encodeURIComponent(id));
+      const out = await res.json().catch(() => ({}));
+      if (this.state.sessionId === id) this.setState({changeLog: {id, entries: res.ok ? out.entries || [] : [], loading: false}});
+    } catch {
+      this.setState(s => ({changeLog: Object.assign({}, s.changeLog, {loading: false})}));
+    }
   }
 
   componentWillUnmount() { clearTimeout(this._tt); clearTimeout(this._hq); }
@@ -105,6 +122,7 @@ export default class Portal extends React.Component {
       const res = await promiseFn();
       if (res.ok) {
         this.setState(Object.assign(this.fromSnapshot(res.data), extra || {}, {busy: false, busyOp: null}));
+        if (this.state.screen === "session" && this.state.sessionId) this.loadLog(this.state.sessionId);
         // title may be a function of the fresh data returning [title, body]
         const [tt, bb] = typeof title === "function" ? title(res.data) : [title, body];
         if (tt) this.flash(tt, bb);
@@ -266,6 +284,11 @@ export default class Portal extends React.Component {
     if (ed.end < ed.start) {
       this.setState({editorError: true});
       this.flash("Check the dates", "The end date must be on or after the start date.");
+      return;
+    }
+    if (ed.id && String(ed.reason || "").trim().length < 3) {
+      this.setState({editorError: true});
+      this.flash("Reason needed", "Say why the session is being changed. It is kept in the session's change log.");
       return;
     }
     this.act(() => actions.saveTraining(ed), ed.id ? "Training updated" : "Training published", ed.code + " — " + ed.title, {editor: null, editorError: false});
@@ -733,7 +756,10 @@ export default class Portal extends React.Component {
       ef({label:"Training provider", isText:true, span:"auto", value: ed.provider || "", placeholder:"e.g. NESR / external company", onChange: this.setEditor("provider")}),
       ef({label:"Instructor location", isText:true, span:"auto", value: ed.instructorLocation || "", placeholder:"e.g. Dubai, UAE", onChange: this.setEditor("instructorLocation")}),
       rf({label:"Description", isTextarea:true, rows:"3", span:"1 / -1", value: ed.desc, placeholder:"What participants will learn", onChange: this.setEditor("desc")}, ed.desc)
-    ];
+    ].concat(ed.id ? [
+      rf({label:"Reason for change", isTextarea:true, rows:"2", span:"1 / -1", value: ed.reason || "", placeholder:"e.g. Venue changed to the Dubai training centre at the provider's request",
+        onChange: this.setEditor("reason"), hint: "Saved in the session's change log with your name, the date and every field you changed."}, ed.reason)
+    ] : []);
 
     const adminRows = list.map((t, i) => {
       const r = this.row(t, i);
@@ -1340,8 +1366,23 @@ export default class Portal extends React.Component {
           showAttendance,
           completionLabel: attendedN + " of " + enrolledReqs.length + " marked attended",
           onBack: () => this.setState({screen:"trainings", sessionId: null}),
-          onEdit: () => this.setState({editorError: false, editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes"})}),
-          onExport: () => this.downloadFile("/api/export/training?id=" + encodeURIComponent(t.id), "Participant list for " + t.code + " downloaded.")
+          onEdit: () => this.setState({editorError: false, editor: Object.assign({}, t, {heading:"Edit Training", cta:"Save Changes", reason: ""})}),
+          onExport: () => this.downloadFile("/api/export/training?id=" + encodeURIComponent(t.id), "Participant list for " + t.code + " downloaded."),
+          log: (() => {
+            const cl = st.changeLog && st.changeLog.id === t.id ? st.changeLog : {entries: [], loading: true};
+            const when = iso => new Date(iso).toLocaleString("en-GB", {day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"});
+            return {
+              loading: cl.loading && !cl.entries.length,
+              empty: !cl.loading && cl.entries.length === 0,
+              rows: cl.entries.map(e => ({
+                when: when(e.at), who: e.who, what: e.what,
+                hasChanges: e.changes.length > 0,
+                changes: e.changes.map(c => ({field: c.field, from: c.from || "(empty)", to: c.to || "(empty)"})),
+                reason: e.reason
+              })),
+              onExport: () => this.downloadFile("/api/changelog?format=xlsx&id=" + encodeURIComponent(t.id), "Change log for " + t.code + " downloaded.")
+            };
+          })()
         };
       }
     }
@@ -1385,6 +1426,7 @@ export default class Portal extends React.Component {
       submitRequest: () => this.submitRequest(),
       mail, plate,
       editor: st.editor && Object.assign({}, st.editor, {cta: st.busyOp === "action" ? "Saving…" : st.editor.cta}), editorFields, saveTraining: () => this.saveTraining(),
+      onLogExport: () => this.downloadFile("/api/changelog?format=xlsx", "Change log for all sessions downloaded."),
       onNewTraining: () => this.setState({editorError: false, editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category:"", type:"", start:"", end:"", location:"", seats:"", instructor:"", desc:"", status:"open", targetAudience:"", provider:"", instructorLocation:""}}),
       onExport: () => this.downloadFile("/api/export/report", "Excel report with all trainings and registrations downloaded."),
       statusOptions: TRAINING_STATUSES,
