@@ -1052,7 +1052,6 @@ export default class Portal extends React.Component {
       return (ta ? ta.start : "9") < (tb ? tb.start : "9") ? -1 : 1;
     });
     const cardGroups = {
-      all: mine,
       enrolled: mine.filter(x => x.state === "enrolled"),
       pending: mine.filter(x => x.state === "pending"),
       waitlist: mine.filter(x => x.state === "waitlist"),
@@ -1065,7 +1064,6 @@ export default class Portal extends React.Component {
         onClick: () => this.setState({dashCard: on ? null : key})};
     };
     const empKpis = [
-      card("all", "Total Requests", cardGroups.all.length, "Everything you requested"),
       card("enrolled", "Registered", cardGroups.enrolled.length, "Confirmed sessions"),
       card("pending", "Pending Approval", cardGroups.pending.length, "With your manager"),
       card("waitlist", "Waitlisted", cardGroups.waitlist.length, "Approved, waiting for a seat"),
@@ -1073,7 +1071,6 @@ export default class Portal extends React.Component {
       card("rejected", "Rejected", cardGroups.rejected.length, "Not approved")
     ];
     const LISTS = {
-      all: ["All your requests", "You haven't requested any training yet."],
       enrolled: ["Registered trainings", "You're not registered for any training yet."],
       pending: ["Requests pending approval", "Nothing is waiting for approval."],
       waitlist: ["Waitlisted requests", "You're not on any waitlist. If your manager approves a request when the class is full or registration has closed, it appears here until L&D can register you."],
