@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     prisma.trainingRequest.findMany({ where: { trainingId: t.id }, include: { employee: true, steps: { orderBy: { stepNo: "desc" }, take: 1, include: { approver: true } } } }),
     prisma.attendance.findMany({ where: { trainingId: t.id } })
   ]);
-  const att = new Map(attendance.map(a => [a.employeeId, a.attended]));
+  const att = new Map<string, boolean | "partial">(attendance.map(a => [a.employeeId, a.partial ? "partial" : a.attended]));
   const rows: ListRow[] = requests
     .sort((a, b) => ORDER.indexOf(a.state) - ORDER.indexOf(b.state) || a.employee.name.localeCompare(b.employee.name))
     .map(r => ({
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
       email: r.employee.email.endsWith("@external.invalid") ? "" : r.employee.email,
       status: STATUS[r.state] || r.state,
       approval: r.steps[0] ? r.steps[0].approver.name + " (" + ({ approved: "approved", rejected: "rejected", waiting: "pending" } as Record<string, string>)[r.steps[0].status] + ")" : r.employee.isExternal ? "External" : "Added by L&D",
-      attendance: att.get(r.employeeId) === true ? "Attended" : att.get(r.employeeId) === false ? "No show" : ""
+      attendance: att.get(r.employeeId) === true ? "Attended" : att.get(r.employeeId) === "partial" ? "Partially attended" : att.get(r.employeeId) === false ? "No show" : ""
     }));
 
   const count = (s: string) => requests.filter(r => r.state === s).length;

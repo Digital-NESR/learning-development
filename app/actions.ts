@@ -5,11 +5,12 @@ import type { Employee, Prisma, Training, TrainingStatus } from "@prisma/client"
 import { currentEmployee, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { approvalChain, loadSnapshot, type Snapshot } from "@/lib/data";
-import { CATEGORIES, LOCATIONS, NATIONALITIES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
+import { CATEGORIES, DELIVERY_METHODS, LOCATIONS, NATIONALITIES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
 import { AUDIENCES, audienceIds } from "@/lib/audience.js";
 import { buildMessage, ldTeamRecipients, notify, portalUrl, postToN8n } from "@/lib/notify";
 import { ensureManager } from "@/lib/graph";
 import { recordDay } from "@/lib/attendance";
+import { trainingDays } from "@/lib/training-days.js";
 import { sendSurveyEmails } from "@/lib/survey-mail";
 
 type Result = { ok: true; data: Snapshot } | { ok: false; error: string };
@@ -309,7 +310,7 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
       !str(ed.code) && "session code", !str(ed.instructor) && "instructor", !str(ed.title) && "training title",
       !CATEGORIES.includes(String(ed.category)) && "category", !TYPES.includes(String(ed.type)) && "type",
       !dateOk(start) && "start date", !dateOk(end) && "end date",
-      !LOCATIONS.includes(String(ed.location)) && "location", !(seats >= 1) && "seat capacity", !str(ed.desc) && "description"
+      !LOCATIONS.includes(String(ed.location)) && "location", !DELIVERY_METHODS.includes(String(ed.deliveryMethod)) && "delivery method", !(seats >= 1) && "seat capacity", !str(ed.desc) && "description"
     ].filter(Boolean);
     if (missing.length) throw new UserError("Please fill in: " + missing.join(", ") + ".");
     if (end < start) throw new UserError("End date must be on or after the start date.");
@@ -321,7 +322,8 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
       status: (TRAINING_STATUSES.some(s => s.value === ed.status) ? ed.status : "open") as TrainingStatus,
       targetAudience: str(ed.targetAudience, 200) || null,
       provider: str(ed.provider, 200) || null,
-      instructorLocation: str(ed.instructorLocation, 200) || null
+      instructorLocation: str(ed.instructorLocation, 200) || null,
+      deliveryMethod: String(ed.deliveryMethod)
     };
     const id = ed.id ? String(ed.id) : null;
     const before = id ? await prisma.training.findUnique({ where: { id } }) : null;
@@ -344,20 +346,38 @@ export async function saveTraining(ed: Record<string, unknown>): Promise<Result>
 }
 
 /** Marks attendance. Attended → the request becomes "completed"; no show → back to "enrolled". */
-export async function setAttendance(trainingId: string, employeeId: string, attended: boolean): Promise<Result> {
+/**
+ * Overall attendance: true = Attended (completes the request and marks every training day present),
+ * "partial" = Partially Attended (some days only; not completed), false = No show.
+ */
+export async function setAttendance(trainingId: string, employeeId: string, mark: boolean | "partial"): Promise<Result> {
   return run(async me => {
     requireAdmin(me);
+    const t = await prisma.training.findUnique({ where: { id: String(trainingId) } });
+    if (!t) throw new UserError("Training not found.");
+    const attended = mark === true, partial = mark === "partial";
     await prisma.$transaction(async tx => {
       await tx.attendance.upsert({
         where: { trainingId_employeeId: { trainingId, employeeId } },
-        update: { attended, fromDays: false, markedById: me.id },
-        create: { trainingId, employeeId, attended, markedById: me.id }
+        update: { attended, partial, fromDays: false, markedById: me.id },
+        create: { trainingId, employeeId, attended, partial, markedById: me.id }
       });
+      if (attended) {
+        // Attended overall = present on every day of the training
+        for (const day of trainingDays(t.startDate.toISOString().slice(0, 10), t.endDate.toISOString().slice(0, 10))) {
+          const date = new Date(day + "T00:00:00Z");
+          await tx.attendanceDay.upsert({
+            where: { trainingId_employeeId_day: { trainingId, employeeId, day: date } },
+            update: { present: true, method: "manual", markedById: me.id, at: new Date() },
+            create: { trainingId, employeeId, day: date, present: true, method: "manual", markedById: me.id }
+          });
+        }
+      }
       await tx.trainingRequest.updateMany({
         where: { trainingId, employeeId, state: { in: attended ? ["enrolled"] : ["completed"] } },
         data: { state: attended ? "completed" : "enrolled" }
       });
-      await audit(tx, me, attended ? "attended" : "no_show", "attendance", `${trainingId}:${employeeId}`);
+      await audit(tx, me, attended ? "attended" : partial ? "partial" : "no_show", "attendance", `${trainingId}:${employeeId}`);
     });
   });
 }

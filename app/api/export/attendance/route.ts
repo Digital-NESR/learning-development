@@ -36,7 +36,7 @@ async function loadAttendance(where: Prisma.TrainingWhereInput) {
     prisma.attendance.findMany({ where: { trainingId: { in: ids } } })
   ]);
   const dayMap = new Map(days.map(d => [`${d.trainingId}:${d.employeeId}:${iso(d.day)}`, d.present]));
-  const overallMap = new Map(overall.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended]));
+  const overallMap = new Map<string, boolean | "partial">(overall.map(a => [`${a.trainingId}:${a.employeeId}`, a.partial ? "partial" : a.attended]));
   return { trainings, requests, dayMap, overallMap };
 }
 
@@ -103,7 +103,7 @@ async function oneTraining(id: string, actorId: string) {
     const marks = days.map(d => dayMap.get(`${t.id}:${p.id}:${d}`));
     const o = overallMap.get(`${t.id}:${p.id}`);
     const values = [i + 1, p.nesrId || "", p.name + (p.isExternal ? ` (${p.organization || "External"})` : ""), p.location || p.country || "",
-      ...marks.map(m => (m === true ? "✓" : m === false ? "Absent" : "")), o === true ? "Attended" : o === false ? "No show" : ""];
+      ...marks.map(m => (m === true ? "✓" : m === false ? "Absent" : "")), o === true ? "Attended" : o === "partial" ? "Partially attended" : o === false ? "No show" : ""];
     values.forEach((v, j) => {
       const cell = row.getCell(2 + j);
       cell.value = v;

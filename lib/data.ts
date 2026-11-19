@@ -58,7 +58,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
       ? prisma.employee.findMany({ where: { isExternal: false }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } })
       : Promise.resolve([]),
     // Instructor profiles for Resources (the documents themselves are fetched from /api/instructors)
-    prisma.instructorProfile.findMany({ select: { id: true, name: true, title: true, bio: true, link: true, fileName: true }, orderBy: { name: "asc" } })
+    prisma.instructorProfile.findMany({ select: { id: true, name: true, title: true, bio: true, link: true, fileName: true, categories: true }, orderBy: { name: "asc" } })
   ]);
 
   const days: Record<string, Record<string, boolean>> = {};
@@ -124,7 +124,8 @@ export async function loadSnapshot(meOrId: string | Employee) {
       start: iso(t.startDate), end: iso(t.endDate), location: t.location,
       seats: t.seats, enrolled: t.enrolled, instructor: t.instructor || "", desc: t.description || "",
       status: t.status, registrationOpen: t.status === "open",
-      targetAudience: t.targetAudience || "", provider: t.provider || "", instructorLocation: t.instructorLocation || ""
+      targetAudience: t.targetAudience || "", provider: t.provider || "", instructorLocation: t.instructorLocation || "",
+      deliveryMethod: t.deliveryMethod || (/online/i.test(t.location) ? "Online" : "In-Person")
     })),
     // L&D only: everyone known to the portal, for the "Add person" picker on a session
     directory: directory.map(e => ({ value: `${e.name} <${e.email}>`, id: e.id })),
@@ -139,12 +140,13 @@ export async function loadSnapshot(meOrId: string | Employee) {
       // Feedback survey email (L&D's Surveys page)
       surveySent: r.surveySentAt ? pretty(r.surveySentAt) : "", surveyReminders: r.surveyReminders
     })),
-    attended: Object.fromEntries(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended])),
+    // true = attended, "partial" = partially attended, false = no show
+    attended: Object.fromEntries(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.partial ? "partial" : a.attended])),
     days,
     history,
     // L&D only: what the last history import loaded
     historyStats: hs ? { records: hs.records, people: hs.people, first: hs.first, last: hs.last, at: hs.at ? pretty(hs.at) : "" } : null,
-    instructors: instructors.map(p => ({ id: p.id, name: p.name, title: p.title || "", bio: p.bio || "", link: p.link || "", fileName: p.fileName || "" })),
+    instructors: instructors.map(p => ({ id: p.id, name: p.name, title: p.title || "", bio: p.bio || "", link: p.link || "", fileName: p.fileName || "", categories: p.categories || [] })),
     // L&D only: who has answered each training's feedback survey ("tid:emp" → date)
     surveyAnswered: Object.fromEntries(surveyResponses.map(r => [`${r.trainingId}:${r.employeeId}`, pretty(r.createdAt)])),
     templatesOff: Object.fromEntries(templates.filter(t => !t.isActive).map(t => [t.id, true])),

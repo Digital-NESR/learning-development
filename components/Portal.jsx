@@ -4,7 +4,7 @@
 import React from "react";
 import PortalView from "./PortalView";
 import * as actions from "@/app/actions";
-import { APPROVAL_LEVELS, CATEGORIES, DEPTS, EXTERNAL_ORGS, LOCATIONS, NATIONALITIES, SHEET_TEMPLATES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
+import { APPROVAL_LEVELS, CATEGORIES, DELIVERY_METHODS, DEPTS, EXTERNAL_ORGS, LOCATIONS, NATIONALITIES, SHEET_TEMPLATES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
 import { AUDIENCES, ENROLLED_STATES, PLACEHOLDERS, REGISTERED_STATES, audienceIds } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
 import { trainingDays, weekdayDate } from "@/lib/training-days.js";
@@ -67,7 +67,7 @@ export default class Portal extends React.Component {
       busy: false,
       rosterTab: "registered",
       mail: {trainingId: "", audience: "registered", templateId: "", subject: "", body: ""},
-      plate: {trainingId: "", who: "enrolled", brand: "nesr", picked: {}, typedNames: "", withInstructor: false, instructorName: "", instructorRole: "Instructor", from: "", to: ""},
+      plate: {trainingId: "", who: "enrolled", brand: "nesr", picked: {}, typedNames: "", withInstructor: false, instructors: [{name: "", role: "Instructor"}], from: "", to: ""},
       cert: {trainingId: "", who: "participants", brand: "nesr", picked: {}, typedNames: "", instructorName: "", instructorTitle: "Instructor", signature: "", sigName: "",
         third: false, thirdName: "", thirdTitle: "", thirdSig: "", thirdSigName: ""},
       sheet: {trainingId: "", template: "nesr"},
@@ -234,6 +234,7 @@ export default class Portal extends React.Component {
       quarter: "Q" + (Math.floor((Number(t.start.slice(5, 7)) - 1) / 3) + 1), month: MONTH_SHORT[Number(t.start.slice(5, 7)) - 1],
       startLabel: fmtDate(t.start), endLabel: fmtDate(t.end),
       duration: this.days(t) + (this.days(t) === 1 ? " day" : " days"),
+      delivery: t.deliveryMethod || "—", capacity: String(t.seats),
       zebra: i % 2 ? "#FAFBFA" : "#FFFFFF",
       cta: t.registrationOpen ? "Register →" : "View details →",
       onClick: () => this.openDetail(t.id)
@@ -273,7 +274,7 @@ export default class Portal extends React.Component {
     }
     const blank = v => !String(v ?? "").trim();
     const missing = [["code","session code"],["instructor","instructor"],["title","training title"],["category","category"],["type","type"],["status","status"],
-      ["start","start date"],["end","end date"],["location","location"],["seats","seat capacity"],["desc","description"]]
+      ["start","start date"],["end","end date"],["location","location"],["deliveryMethod","delivery method"],["seats","seat capacity"],["desc","description"]]
       .filter(([k]) => blank(ed[k])).map(([, label]) => label);
     if (!blank(ed.seats) && !(Math.floor(Number(ed.seats)) >= 1)) missing.push("seat capacity (a number, at least 1)");
     if (missing.length) {
@@ -385,6 +386,7 @@ export default class Portal extends React.Component {
     const fd = new FormData();
     if (pr.id) fd.append("id", pr.id);
     fd.append("name", pr.name); fd.append("title", pr.title); fd.append("bio", pr.bio); fd.append("link", pr.link);
+    (pr.categories || []).forEach(c => fd.append("categories", c));
     if (pr.file) fd.append("file", pr.file);
     if (pr.removeFile) fd.append("removeFile", "1");
     this.setState({busy: true, busyOp: "prof"});
@@ -679,8 +681,14 @@ export default class Portal extends React.Component {
         ? myChain.map(p => p.first + (p.title ? " (" + p.title + ")" : "")).join(" → ")
         : myForm.mgr || "your line manager") + " — final approval";
       // (approval chain note above uses first names; the Approver field below shows the full name)
+      // Already completed something with the same name? (imported history or the portal)
+      const norm = x => String(x || "").toLowerCase().replace(/\(.*?\)/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+      const tn = norm(detailT.title);
+      const done = this.historyOf(meP.key).filter(h => { const hn = norm(h.title); return hn && tn && (hn === tn || (Math.min(hn.length, tn.length) >= 8 && (hn.includes(tn) || tn.includes(hn)))); });
       detail = {
         code: detailT.code, type: detailT.type, title: detailT.title, desc: detailT.desc, photo: this.photoFor(detailT),
+        histWarn: done.length ? "You have already completed " + done.map(h => "“" + h.title + "”" + (h.year ? " (" + h.year + ")" : "")).join(" and ") + ". Make sure you need this course again before requesting it." : "",
+        onHistory: () => this.setState({detailId: null, screen: "dashboard", histBoxClosed: false}),
         canApply,
         width: canApply ? "900px" : "600px",
         railBg: canApply ? "#FAFBFA" : "#FFFFFF",
@@ -748,7 +756,12 @@ export default class Portal extends React.Component {
       rf({label:"Type", isSelect:true, span:"auto", value: ed.type, options: TYPES, onChange: this.setEditor("type")}, ed.type),
       rf({label:"Start date", isText:true, inputType:"date", span:"auto", value: ed.start, onChange: this.setEditor("start")}, ed.start),
       rf({label:"End date", isText:true, inputType:"date", span:"auto", value: ed.end, onChange: this.setEditor("end")}, ed.end),
-      rf({label:"Location", isSelect:true, span:"auto", value: ed.location, options: LOCATIONS, onChange: this.setEditor("location")}, ed.location),
+      rf({label:"Location", isSelect:true, span:"auto", value: ed.location, options: LOCATIONS, onChange: e => {
+        const location = e.target.value;
+        // Online Training is delivered online; keep L&D's own choice otherwise
+        this.setState({editor: Object.assign({}, this.state.editor, {location}, location === "Online Training" ? {deliveryMethod: "Online"} : {})});
+      }}, ed.location),
+      rf({label:"Delivery method", isSelect:true, span:"auto", value: ed.deliveryMethod || "", options: DELIVERY_METHODS, onChange: this.setEditor("deliveryMethod")}, ed.deliveryMethod),
       rf({label:"Seat capacity", isText:true, inputType:"number", span:"auto", value: String(ed.seats ?? ""), placeholder:"e.g. 20", onChange: this.setEditor("seats")}, ed.seats),
       rf({label:"Status", isSelect:true, span:"auto", value: statusLabel(ed.status || "open"), options: TRAINING_STATUSES.map(x => x.label),
         onChange: e => this.setState({editor: Object.assign({}, this.state.editor, {status: (TRAINING_STATUSES.find(x => x.label === e.target.value) || TRAINING_STATUSES[0]).value})})}, ed.status),
@@ -818,7 +831,7 @@ export default class Portal extends React.Component {
     // 1. Session status
     const sessionKpis = [tile("Total Sessions", st.trainings.length, YEAR + " calendar", "#2A7E4F", showTrainings(""), "List all sessions")].concat(statusTiles([
       ["ongoing", "Ongoing Sessions", "Running now", "#1F4E79"],
-      ["completed", "Completed", "Delivered", "#3E403E"],
+      ["completed", "Completed", "Training completed", "#3E403E"],
       ["cancelled", "Cancelled", "Called off", "#8A2B2B"]
     ]));
     // 2. Registration status (whether a session is taking requests)
@@ -854,15 +867,17 @@ export default class Portal extends React.Component {
     const attendee = (t, pk) => {
       const p = this.P(pk) || {name:"Unknown", nesrId:"—", title:"", dept:""};
       const key = t.id + ":" + pk;
-      const mark = st.attended[key]; // true = attended, false = no show, undefined = not marked yet
+      const mark = st.attended[key]; // true = attended, "partial" = partially attended, false = no show, undefined = not marked yet
       return {
         name: p.name, initials: initialsOf(p.name),
         meta: [p.nesrId && p.nesrId !== "—" ? "NESR ID " + p.nesrId : "", p.title, p.dept].filter(Boolean).join(" · "),
-        label: mark === true ? "Attended" : mark === false ? "No show" : "Not marked",
-        // Two explicit buttons; the selected one is filled in
+        label: mark === true ? "Attended" : mark === "partial" ? "Partially attended" : mark === false ? "No show" : "Not marked",
+        // Three explicit buttons; the selected one is filled in
         attBg: mark === true ? "#2A7E4F" : "#FFFFFF", attFg: mark === true ? "#FFFFFF" : "#58595B",
+        partBg: mark === "partial" ? "#B07A00" : "#FFFFFF", partFg: mark === "partial" ? "#FFFFFF" : "#58595B",
         noBg: mark === false ? "#8A2B2B" : "#FFFFFF", noFg: mark === false ? "#FFFFFF" : "#58595B",
-        onAttended: () => { if (mark !== true) this.act(() => actions.setAttendance(t.id, pk, true), "Marked attended", p.name + " · " + t.code); },
+        onAttended: () => { if (mark !== true) this.act(() => actions.setAttendance(t.id, pk, true), "Marked attended", p.name + " · " + t.code + " · every day marked present"); },
+        onPartial: () => { if (mark !== "partial") this.act(() => actions.setAttendance(t.id, pk, "partial"), "Marked partially attended", p.name + " · " + t.code + ". Mark the days they were present."); },
         onNoShow: () => { if (mark !== false) this.act(() => actions.setAttendance(t.id, pk, false), "Marked no show", p.name + " · " + t.code); }
       };
     };
@@ -898,11 +913,11 @@ export default class Portal extends React.Component {
       const n = people.filter(p => p.label === "Attended").length;
       const running = t.start <= TODAY && t.end >= TODAY, past = t.end < TODAY;
       return {code: t.code, title: t.title, meta: this.range(t) + " · " + t.location,
-        when: running ? "Running now" : past ? "Delivered" : "Upcoming",
+        when: running ? "Running now" : past ? "Completed" : "Upcoming",
         whenBg: running ? "#C5E0D2" : past ? "#EEF1EF" : "#E3EEFA", whenFg: running ? "#1F5E3A" : past ? "#58595B" : "#1F4E79",
         completionLabel: n + " of " + people.length + " attended", people,
         // One column per training day, then the overall result
-        cols: "minmax(210px,1fr) repeat(" + tDays.length + ",92px) 176px", minW: (210 + 92 * tDays.length + 176 + 32) + "px",
+        cols: "minmax(210px,1fr) repeat(" + tDays.length + ",92px) 250px", minW: (210 + 92 * tDays.length + 250 + 32) + "px",
         dayHeads: tDays.map((d, i) => ({label: "Day " + (i + 1), date: fmtDate(d).replace(/ \d{4}$/, "")})),
         sheetLabel: "Attendance sheet (" + sheetLabel(st.sheet.template) + ")",
         onSheet: () => this.downloadFile(sheetUrl(t, st.sheet.template), "Attendance sheet for " + t.code + " (" + sheetLabel(st.sheet.template) + " template) downloaded. Print it for the instructor."),
@@ -922,7 +937,7 @@ export default class Portal extends React.Component {
         {label: "Template", span: "1 / -1", value: sh.template, options: SHEET_TEMPLATES, onChange: e => setSheet({template: e.target.value})}
       ],
       summary: !shT ? "Select a training to start." : shN + (shN === 1 ? " registered participant" : " registered participants") + " · "
-        + trainingDays(shT.start, shT.end).length + " day columns · Word, A4 landscape. Blank rows are added for walk-ins.",
+        + trainingDays(shT.start, shT.end).length + " day columns · Word, A4 landscape. One row per participant plus " + (shN ? "3 blank rows" : "10 blank rows") + " for walk-ins.",
       buttonBg: shT ? "#2A7E4F" : "#A8ACAA", buttonCursor: shT ? "pointer" : "not-allowed",
       onSubmit: () => {
         if (!shT) return this.flash("Select a training", "Choose the training to print an attendance sheet for.");
@@ -966,13 +981,17 @@ export default class Portal extends React.Component {
           onToggle: () => this.setState(s2 => ({surveyOpen: Object.assign({}, s2.surveyOpen, {[t.id]: !s2.surveyOpen[t.id]})})),
           sendLabel: "Send survey link" + (unsent ? " (" + unsent + ")" : ""), sendFg: unsent ? "#FFFFFF" : "#A8ACAA", sendBg: unsent ? "#2A7E4F" : "#EEF1EF",
           remindLabel: "Send reminder" + (waiting ? " (" + waiting + ")" : ""), remindFg: waiting ? "#2A7E4F" : "#A8ACAA",
+          // Reminders only go to people who were sent the link and haven't answered: explain an unavailable button
+          remindNote: waiting ? "" : unsent ? "Reminders are available once the survey link has been sent. Use Send survey link first."
+            : eligible && answered >= eligible ? "Everyone has answered, so there is no one to remind."
+            : "No one is waiting to answer (no shows and external participants aren't emailed).",
           onSend: () => {
             if (!unsent) return this.flash("Nothing to send", "Everyone has been sent the survey, or has already answered.");
             if (!window.confirm("Email the feedback survey link to " + unsent + (unsent === 1 ? " person" : " people") + " for " + t.code + "?")) return;
             this.act(() => actions.sendSurvey(t.id, "send"), "Survey sent", "The survey link was emailed to " + unsent + (unsent === 1 ? " person" : " people") + ".");
           },
           onRemind: () => {
-            if (!waiting) return this.flash("No one to remind", "No one who was sent the survey is still waiting to answer.");
+            if (!waiting) return this.flash("No one to remind", unsent ? "The survey link hasn't been sent yet. Use Send survey link first." : "No one who was sent the survey is still waiting to answer.");
             if (!window.confirm("Send a survey reminder to " + waiting + (waiting === 1 ? " person" : " people") + " for " + t.code + "?")) return;
             this.act(() => actions.sendSurvey(t.id, "remind"), "Reminder sent", "A reminder was emailed to " + waiting + (waiting === 1 ? " person" : " people") + ".");
           },
@@ -1027,14 +1046,18 @@ export default class Portal extends React.Component {
       open: !st.histBoxClosed, label: st.histBoxClosed ? "Show" : "Hide", onToggle: () => this.setState(s => ({histBoxClosed: !s.histBoxClosed}))};
 
     // ---- Dashboard cards: click to list the trainings behind each number ----
-    const mine = st.requests.filter(r => r.who === meP.key)
-      .map(r => ({r, t: this.t(r.tid), d: myRequests.find(x => x.id === r.id)})).filter(x => x.t && x.d)
-      .sort((a, b) => a.t.start < b.t.start ? -1 : 1);
+    // Every request counts in exactly one card (removed sessions too), so the cards add up to the total
+    const mine = myRequests.slice().sort((a, b) => {
+      const ta = this.t(st.requests.find(x => x.id === a.id).tid), tb = this.t(st.requests.find(x => x.id === b.id).tid);
+      return (ta ? ta.start : "9") < (tb ? tb.start : "9") ? -1 : 1;
+    });
     const cardGroups = {
-      enrolled: mine.filter(x => x.r.state === "enrolled"),
-      pending: mine.filter(x => x.r.state === "pending"),
-      completed: mine.filter(x => x.r.state === "completed"),
-      rejected: mine.filter(x => x.r.state === "rejected")
+      all: mine,
+      enrolled: mine.filter(x => x.state === "enrolled"),
+      pending: mine.filter(x => x.state === "pending"),
+      waitlist: mine.filter(x => x.state === "waitlist"),
+      completed: mine.filter(x => x.state === "completed"),
+      rejected: mine.filter(x => x.state === "rejected")
     };
     const card = (key, label, value, note) => {
       const on = st.dashCard === key;
@@ -1042,14 +1065,18 @@ export default class Portal extends React.Component {
         onClick: () => this.setState({dashCard: on ? null : key})};
     };
     const empKpis = [
+      card("all", "Total Requests", cardGroups.all.length, "Everything you requested"),
       card("enrolled", "Registered", cardGroups.enrolled.length, "Confirmed sessions"),
       card("pending", "Pending Approval", cardGroups.pending.length, "With your manager"),
+      card("waitlist", "Waitlisted", cardGroups.waitlist.length, "Approved, waiting for a seat"),
       card("completed", "Completed", cardGroups.completed.length, "Attended sessions"),
       card("rejected", "Rejected", cardGroups.rejected.length, "Not approved")
     ];
     const LISTS = {
+      all: ["All your requests", "You haven't requested any training yet."],
       enrolled: ["Registered trainings", "You're not registered for any training yet."],
       pending: ["Requests pending approval", "Nothing is waiting for approval."],
+      waitlist: ["Waitlisted requests", "You're not on any waitlist. If your manager approves a request when the class is full or registration has closed, it appears here until L&D can register you."],
       rejected: ["Rejected requests", "None of your requests were rejected."],
       completed: ["Completed trainings", "No completed trainings yet. A training counts as completed once L&D marks you as attended."]
     };
@@ -1057,10 +1084,9 @@ export default class Portal extends React.Component {
       title: LISTS[st.dashCard][0] + " (" + cardGroups[st.dashCard].length + ")",
       empty: cardGroups[st.dashCard].length === 0, emptyText: LISTS[st.dashCard][1],
       onClose: () => this.setState({dashCard: null}),
-      rows: cardGroups[st.dashCard].map(x => ({
-        title: x.t.code + " · " + x.t.title,
-        meta: this.range(x.t) + " · " + x.t.location + " · submitted " + x.r.submitted,
-        status: x.d.st.label, stBg: x.d.st.bg, stFg: x.d.st.fg
+      rows: cardGroups[st.dashCard].map(d => ({
+        title: d.code + " · " + d.title, meta: d.meta,
+        status: d.st.label, stBg: d.st.bg, stFg: d.st.fg
       }))
     } : null;
 
@@ -1149,9 +1175,16 @@ export default class Portal extends React.Component {
     const platePeople = ptReqs.map(r => this.P(r.who)).filter(Boolean).sort((a, b) => a.name < b.name ? -1 : 1);
     const pickedIds = platePeople.filter(p => pl.picked[p.key]).map(p => p.key);
     const typedList = pl.typedNames.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    // A session's instructor field may name several people ("A, B" / "A & B" / "A and B")
+    const instructorsOf = t => {
+      const names = t && t.instructor ? t.instructor.split(/\s*(?:,|;|&|\/|\band\b)\s*/i).map(x => x.trim()).filter(Boolean) : [];
+      return (names.length ? names : [""]).map(name => ({name, role: "Instructor"}));
+    };
+    const plateInstructors = pl.instructors.filter(x => x.name.trim());
     const plateCount = (!pt ? 0 : pl.who === "participants" ? nAttended : pl.who === "enrolled" ? nEnrolled
-      : pl.who === "selected" ? pickedIds.length : typedList.length) + (pt && pl.withInstructor && pl.instructorName.trim() ? 1 : 0);
+      : pl.who === "selected" ? pickedIds.length : typedList.length) + (pt && pl.withInstructor ? plateInstructors.length : 0);
     const pFrom = pl.from || (pt ? pt.start : ""), pTo = pl.to || (pt ? pt.end : "");
+    const setInstructor = (i, patch) => this.setPlate({instructors: pl.instructors.map((x, j) => j === i ? Object.assign({}, x, patch) : x)});
     const plateDate = pFrom ? dateRange(pFrom, pTo && pTo >= pFrom ? pTo : pFrom) : "";
     const canPlate = !!pt && plateCount > 0;
     const plateBusy = st.busyOp === "plate";
@@ -1159,7 +1192,7 @@ export default class Portal extends React.Component {
       selects: [
         {label: "Training", span: "1 / -1", value: pl.trainingId, options: trainingOptions, onChange: e => {
           const nt = this.t(e.target.value);
-          this.setPlate({trainingId: e.target.value, from: "", to: "", picked: {}, instructorName: nt ? nt.instructor : ""});
+          this.setPlate({trainingId: e.target.value, from: "", to: "", picked: {}, instructors: instructorsOf(nt)});
         }},
         {label: "Template", span: "auto", value: pl.brand, options: [{value: "nesr", label: "NESR"}, {value: "cpven", label: "CPVEN"}], onChange: e => this.setPlate({brand: e.target.value})},
         {label: "Nameplates for", span: "auto", value: pl.who, options: whoOptions, onChange: e => this.setPlate({who: e.target.value})}
@@ -1168,9 +1201,15 @@ export default class Portal extends React.Component {
       people: platePeople.map(p => ({name: p.name, note: p.external ? p.org || "External" : p.dept,
         checked: !!pl.picked[p.key], onToggle: () => this.setPlate({picked: Object.assign({}, pl.picked, {[p.key]: !pl.picked[p.key]})})})),
       showTyped: pl.who === "typed", typedNames: pl.typedNames, onTypedNames: e => this.setPlate({typedNames: e.target.value}),
-      withInstructor: pl.withInstructor, onWithInstructor: () => this.setPlate({withInstructor: !pl.withInstructor, instructorName: pl.instructorName || (pt ? pt.instructor : "")}),
-      instructorName: pl.instructorName, onInstructorName: e => this.setPlate({instructorName: e.target.value}),
-      instructorRole: pl.instructorRole, onInstructorRole: e => this.setPlate({instructorRole: e.target.value}),
+      withInstructor: pl.withInstructor,
+      onWithInstructor: () => this.setPlate(Object.assign({withInstructor: !pl.withInstructor},
+        !pl.withInstructor && !plateInstructors.length && pt ? {instructors: instructorsOf(pt)} : {})),
+      instructors: pl.instructors.map((x, i) => ({
+        name: x.name, role: x.role, canRemove: pl.instructors.length > 1,
+        onName: e => setInstructor(i, {name: e.target.value}), onRole: e => setInstructor(i, {role: e.target.value}),
+        onRemove: () => this.setPlate({instructors: pl.instructors.filter((_, j) => j !== i)})
+      })),
+      onAddInstructor: () => this.setPlate({instructors: pl.instructors.concat({name: "", role: "Instructor"})}),
       from: pFrom, to: pTo, onFrom: e => this.setPlate({from: e.target.value}), onTo: e => this.setPlate({to: e.target.value}),
       summary: !pt ? "Select a training to start." : plateCount ? plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " · one A4 landscape page each, fold along the dashed line." : "No one to print for this choice.",
       buttonLabel: plateBusy ? "Preparing…" : "Download PDF",
@@ -1179,7 +1218,7 @@ export default class Portal extends React.Component {
         if (st.busy) return;
         if (!canPlate) return this.flash("Nothing to print", pt ? "Choose people who have a name to print." : "Select a training first.");
         this.downloadPlates({trainingId: pt.id, who: pl.who, ids: pickedIds, names: pl.typedNames, brand: pl.brand,
-            instructor: pl.withInstructor ? pl.instructorName.trim() : "", instructorRole: pl.instructorRole.trim(), date: plateDate},
+            instructors: pl.withInstructor ? plateInstructors.map(x => ({name: x.name.trim(), role: x.role.trim()})) : [], date: plateDate},
           plateCount + (plateCount === 1 ? " nameplate" : " nameplates") + " for " + pt.code + " downloaded.");
       }
     };
@@ -1245,19 +1284,28 @@ export default class Portal extends React.Component {
 
     // ---- Instructor profiles (Resources) ----
     const pr = st.prof;
+    const profList = st.instructors.filter(ip => !st.profCat || (ip.categories || []).includes(st.profCat));
     const prof = {
       canEdit: isAdmin,
-      empty: st.instructors.length === 0 && !pr,
-      emptyText: isAdmin ? "No instructor profiles yet. Add one with the approved profile document or a link to it." : "Instructor profiles will be listed here.",
-      list: st.instructors.map(ip => ({
+      empty: profList.length === 0 && !pr,
+      emptyText: st.instructors.length && st.profCat ? "No instructor profiles for " + st.profCat + " yet."
+        : isAdmin ? "No instructor profiles yet. Add one with the approved profile document or a link to it." : "Instructor profiles will be listed here.",
+      catFilter: {value: st.profCat || "", options: [{value: "", label: "All training categories"}].concat(CATEGORIES.map(c => ({value: c, label: c}))),
+        onChange: e => this.setState({profCat: e.target.value})},
+      list: profList.map(ip => ({
         name: ip.name, title: ip.title, bio: ip.bio, initials: initialsOf(ip.name),
+        cats: (ip.categories || []).join(" · "), hasCats: (ip.categories || []).length > 0,
         hasFile: !!ip.fileName, hasLink: !!ip.link,
         onOpenFile: () => window.open("/api/instructors?id=" + encodeURIComponent(ip.id), "_blank", "noopener"),
         onOpenLink: () => window.open(ip.link, "_blank", "noopener"),
-        onEdit: () => this.setState({prof: {id: ip.id, name: ip.name, title: ip.title, bio: ip.bio, link: ip.link, fileName: ip.fileName, file: null, removeFile: false}}),
+        onEdit: () => this.setState({prof: {id: ip.id, name: ip.name, title: ip.title, bio: ip.bio, link: ip.link, fileName: ip.fileName, file: null, removeFile: false, categories: (ip.categories || []).slice()}}),
         onRemove: () => this.removeProfile(ip)
       })),
-      onNew: () => this.setState({prof: {id: "", name: "", title: "", bio: "", link: "", fileName: "", file: null, removeFile: false}}),
+      onNew: () => this.setState({prof: {id: "", name: "", title: "", bio: "", link: "", fileName: "", file: null, removeFile: false, categories: st.profCat ? [st.profCat] : []}}),
+      catChoices: CATEGORIES.map(c => {
+        const on = !!(pr && (pr.categories || []).includes(c));
+        return {label: c, checked: on, onToggle: () => this.setProf({categories: on ? pr.categories.filter(x => x !== c) : (pr.categories || []).concat(c)})};
+      }),
       editing: !!pr,
       heading: pr && pr.id ? "Edit Instructor Profile" : "Add Instructor Profile",
       name: pr ? pr.name : "", title: pr ? pr.title : "", bio: pr ? pr.bio : "", link: pr ? pr.link : "",
@@ -1285,7 +1333,7 @@ export default class Portal extends React.Component {
         const dsince = Math.round((todayMs - endMs) / 86400000);
         const isDelivered = todayMs > endMs;
         const live = !isDelivered && dleft <= 0;
-        const countBig = isDelivered ? "Delivered" : live ? "In progress" : String(dleft);
+        const countBig = isDelivered ? "Completed" : live ? "In progress" : String(dleft);
         const countUnit = isDelivered ? (dsince === 0 ? "ended today" : dsince + " days ago") : live ? "running now" : (dleft === 1 ? "day to go" : "days to go");
         const enrolledN = by("enrolled").length + by("completed").length;
         const fillPct = Math.round(t.enrolled / Math.max(1, t.seats) * 100);
@@ -1427,7 +1475,7 @@ export default class Portal extends React.Component {
       mail, plate,
       editor: st.editor && Object.assign({}, st.editor, {cta: st.busyOp === "action" ? "Saving…" : st.editor.cta}), editorFields, saveTraining: () => this.saveTraining(),
       onLogExport: () => this.downloadFile("/api/changelog?format=xlsx", "Change log for all sessions downloaded."),
-      onNewTraining: () => this.setState({editorError: false, editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category:"", type:"", start:"", end:"", location:"", seats:"", instructor:"", desc:"", status:"open", targetAudience:"", provider:"", instructorLocation:""}}),
+      onNewTraining: () => this.setState({editorError: false, editor: {heading:"Add Training", cta:"Publish Session", code:"", title:"", category:"", type:"", start:"", end:"", location:"", seats:"", instructor:"", desc:"", status:"open", targetAudience:"", provider:"", instructorLocation:"", deliveryMethod:"In-Person"}}),
       onExport: () => this.downloadFile("/api/export/report", "Excel report with all trainings and registrations downloaded."),
       statusOptions: TRAINING_STATUSES,
       closeModal: () => this.setState({detailId: null, editor: null, editorError: false}),

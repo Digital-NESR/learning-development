@@ -47,7 +47,7 @@ export async function GET() {
     }),
     prisma.attendance.findMany()
   ]);
-  const att = new Map(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.attended]));
+  const att = new Map<string, boolean | "partial">(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.partial ? "partial" : a.attended]));
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "NESR Training Portal";
@@ -114,7 +114,7 @@ export async function GET() {
       start: day(t.startDate),
       end: day(t.endDate),
       regStatus: REG_STATUS[r.state] || r.state,
-      attendance: a === true ? "Attended" : a === false ? "No show" : "",
+      attendance: a === true ? "Attended" : a === "partial" ? "Partially attended" : a === false ? "No show" : "",
       organization: e.isExternal ? e.organization || "External" : "NESR",
       email: e.isExternal && e.email.endsWith("@external.invalid") ? "" : e.email
     });

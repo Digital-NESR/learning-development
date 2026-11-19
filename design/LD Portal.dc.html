@@ -173,7 +173,7 @@
               <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ myHistory.label }}</span>
             </div>
             <sc-if value="{{ myHistory.open }}" hint-placeholder-val="{{ true }}">
-              <div style="padding:10px 18px 0;font-size:11.5px;color:#58595B">Trainings you have completed, including those from before the portal. Check here before requesting a course you may already have taken.</div>
+              <div style="margin:12px 16px 0;padding:9px 12px;background:#FDF2D9;border:1px solid #F0DDA8;border-radius:4px;font-size:12px;color:#7A5400;line-height:1.5"><b>Before you request a training,</b> check this list to make sure you haven't already completed the course. It includes trainings from before the portal.</div>
               <sc-if value="{{ myHistory.empty }}" hint-placeholder-val="{{ false }}">
                 <div style="padding:26px 16px;text-align:center;color:#8A8F8C;font-size:13px">No completed trainings on record yet. If a training you completed is missing, contact the L&amp;D team.</div>
               </sc-if>
@@ -238,22 +238,26 @@
 
           <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
-              <div style="display:grid;min-width:1480px;grid-template-columns:minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr);background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
+              <div style="display:grid;min-width:1840px;grid-template-columns:minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 78px 92px 72px 104px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
                 <div style="padding:11px 10px">Training Category</div>
                 <div style="padding:11px 10px">Training Code</div>
                 <div style="padding:11px 10px">Training Name</div>
                 <div style="padding:11px 10px">Training Status</div>
                 <div style="padding:11px 10px">Quarter</div>
                 <div style="padding:11px 10px">Month</div>
-                <div style="padding:11px 10px">Start Date</div>
-                <div style="padding:11px 10px">End Date</div>
-                <div style="padding:11px 10px">Location</div>
-                <div style="padding:11px 10px">Target Audience</div>
+                <div style="padding:11px 10px">Training Start Date</div>
+                <div style="padding:11px 10px">Training End Date</div>
+                <div style="padding:11px 10px">Training Location</div>
+                <div style="padding:11px 10px">Primary Audience</div>
                 <div style="padding:11px 10px">Training Provider</div>
                 <div style="padding:11px 10px">Instructor</div>
+                <div style="padding:11px 10px">Training Duration</div>
+                <div style="padding:11px 10px">Delivery Method</div>
+                <div style="padding:11px 10px">Class Capacity</div>
+                <div style="padding:11px 10px">Training Type</div>
               </div>
               <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
-                <div onClick="{{ r.onClick }}" style="display:grid;min-width:1480px;grid-template-columns:minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr);border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
+                <div onClick="{{ r.onClick }}" style="display:grid;min-width:1840px;grid-template-columns:minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 78px 92px 72px 104px;border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.category }}</div>
                   <div style="padding:11px 10px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
                   <div style="padding:11px 10px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
@@ -266,6 +270,10 @@
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.targetAudience }}</div>
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.provider }}</div>
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.instructor }}</div>
+                  <div style="padding:11px 10px;font-size:12px">{{ r.duration }}</div>
+                  <div style="padding:11px 10px;font-size:12px">{{ r.delivery }}</div>
+                  <div style="padding:11px 10px;font-size:12px">{{ r.capacity }}</div>
+                  <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.type }}</div>
                 </div>
               </sc-for>
               <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
@@ -346,6 +354,11 @@
               <div style="font-size:16px;font-weight:bold">Instructor Profiles</div>
               <div style="font-size:12px;color:#58595B;margin-top:2px">Approved profiles of the instructors who deliver NESR trainings.</div>
             </div>
+            <select value="{{ prof.catFilter.value }}" onChange="{{ prof.catFilter.onChange }}" title="Filter by training category" style="padding:9px 8px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;max-width:260px">
+              <sc-for list="{{ prof.catFilter.options }}" as="o" hint-placeholder-count="3">
+                <option value="{{ o.value }}">{{ o.label }}</option>
+              </sc-for>
+            </select>
             <sc-if value="{{ prof.canEdit }}" hint-placeholder-val="{{ true }}">
               <button onClick="{{ prof.onNew }}" style="padding:9px 15px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">+ Add Instructor Profile</button>
             </sc-if>
@@ -361,6 +374,17 @@
                 <div>
                   <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Title / expertise</div>
                   <input value="{{ prof.title }}" onChange="{{ prof.onTitle }}" placeholder="e.g. Senior HSE Trainer" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                </div>
+                <div style="grid-column:1 / -1">
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:6px">Training categories they deliver</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px 16px">
+                    <sc-for list="{{ prof.catChoices }}" as="cc" hint-placeholder-count="4">
+                      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;white-space:nowrap">
+                        <input type="checkbox" checked="{{ cc.checked }}" onChange="{{ cc.onToggle }}" />
+                        {{ cc.label }}
+                      </label>
+                    </sc-for>
+                  </div>
                 </div>
                 <div style="grid-column:1 / -1">
                   <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Short introduction</div>
@@ -403,6 +427,9 @@
                     <div style="font-size:11.5px;color:#58595B">{{ ip.title }}</div>
                   </div>
                 </div>
+                <sc-if value="{{ ip.hasCats }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:10.5px;font-weight:bold;color:#1F5E3A;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:3px;padding:4px 8px;align-self:flex-start">{{ ip.cats }}</div>
+                </sc-if>
                 <div style="font-size:12px;color:#3E403E;line-height:1.5;flex:1">{{ ip.bio }}</div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                   <sc-if value="{{ ip.hasFile }}" hint-placeholder-val="{{ true }}">
@@ -891,6 +918,7 @@
                 <sc-if value="{{ p.showToggle }}" hint-placeholder-val="{{ false }}">
                   <div style="display:flex;gap:0;border:1px solid #D1D3D4;border-radius:4px;overflow:hidden;flex:0 0 auto">
                     <button onClick="{{ p.onAttended }}" title="Mark as attended" style="padding:6px 12px;border:0;background:{{ p.attBg }};color:{{ p.attFg }};cursor:pointer;font-weight:bold;font-size:11.5px">Attended</button>
+                    <button onClick="{{ p.onPartial }}" title="Mark as partially attended (present on some days)" style="padding:6px 12px;border:0;border-left:1px solid #D1D3D4;background:{{ p.partBg }};color:{{ p.partFg }};cursor:pointer;font-weight:bold;font-size:11.5px">Partial</button>
                     <button onClick="{{ p.onNoShow }}" title="Mark as no show" style="padding:6px 12px;border:0;border-left:1px solid #D1D3D4;background:{{ p.noBg }};color:{{ p.noFg }};cursor:pointer;font-weight:bold;font-size:11.5px">No show</button>
                   </div>
                 </sc-if>
@@ -1090,6 +1118,7 @@
                     </sc-for>
                     <div style="display:flex;border:1px solid #D1D3D4;border-radius:4px;overflow:hidden">
                       <button onClick="{{ p.onAttended }}" title="Mark as attended" style="flex:1;padding:6px 8px;border:0;background:{{ p.attBg }};color:{{ p.attFg }};cursor:pointer;font-weight:bold;font-size:11.5px">Attended</button>
+                      <button onClick="{{ p.onPartial }}" title="Mark as partially attended (present on some days)" style="flex:1;padding:6px 8px;border:0;border-left:1px solid #D1D3D4;background:{{ p.partBg }};color:{{ p.partFg }};cursor:pointer;font-weight:bold;font-size:11.5px">Partial</button>
                       <button onClick="{{ p.onNoShow }}" title="Mark as no show" style="flex:1;padding:6px 8px;border:0;border-left:1px solid #D1D3D4;background:{{ p.noBg }};color:{{ p.noFg }};cursor:pointer;font-weight:bold;font-size:11.5px">No show</button>
                     </div>
                   </div>
@@ -1128,10 +1157,13 @@
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px;background:#F7F9F8;border-top:1px solid #EAEEEC">
                 <button onClick="{{ sv.onSend }}" style="padding:6px 11px;border:0;background:{{ sv.sendBg }};color:{{ sv.sendFg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ sv.sendLabel }}</button>
-                <button onClick="{{ sv.onRemind }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:{{ sv.remindFg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ sv.remindLabel }}</button>
+                <button onClick="{{ sv.onRemind }}" title="{{ sv.remindNote }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:{{ sv.remindFg }};border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">{{ sv.remindLabel }}</button>
                 <button onClick="{{ sv.onResults }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#1F1F1D;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Results (Excel)</button>
                 <div style="flex:1;min-width:10px"></div>
                 <div style="font-size:11px;color:#8A8F8C">{{ sv.autoNote }}</div>
+                <sc-if value="{{ sv.remindNote }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex-basis:100%;font-size:11px;color:#8A6100">{{ sv.remindNote }}</div>
+                </sc-if>
                 <button onClick="{{ sv.onToggle }}" style="border:0;background:none;color:#2A7E4F;cursor:pointer;font-weight:bold;font-size:11.5px;padding:4px 0">{{ sv.chev }} {{ sv.toggleLabel }}</button>
               </div>
               <sc-if value="{{ sv.open }}" hint-placeholder-val="{{ false }}">
@@ -1297,11 +1329,21 @@
               <div style="grid-column:1 / -1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;white-space:nowrap">
                   <input type="checkbox" checked="{{ plate.withInstructor }}" onChange="{{ plate.onWithInstructor }}" />
-                  Also an instructor name tag
+                  Also instructor name tags
                 </label>
                 <sc-if value="{{ plate.withInstructor }}" hint-placeholder-val="{{ false }}">
-                  <input value="{{ plate.instructorName }}" onChange="{{ plate.onInstructorName }}" placeholder="Instructor name" style="flex:1;min-width:150px;padding:6px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
-                  <input value="{{ plate.instructorRole }}" onChange="{{ plate.onInstructorRole }}" placeholder="Role under the name, e.g. Instructor" title="Printed under the instructor's name" style="flex:1;min-width:150px;padding:6px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                  <div style="flex-basis:100%;display:flex;flex-direction:column;gap:6px">
+                    <sc-for list="{{ plate.instructors }}" as="ins" hint-placeholder-count="2">
+                      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input value="{{ ins.name }}" onChange="{{ ins.onName }}" placeholder="Instructor name" style="flex:1;min-width:150px;padding:6px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                        <input value="{{ ins.role }}" onChange="{{ ins.onRole }}" placeholder="Role under the name, e.g. Instructor" title="Printed under the instructor's name" style="flex:1;min-width:150px;padding:6px 9px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+                        <sc-if value="{{ ins.canRemove }}" hint-placeholder-val="{{ false }}">
+                          <button onClick="{{ ins.onRemove }}" title="Remove this instructor" style="border:0;background:none;color:#8A2B2B;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0 4px">Remove</button>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                    <button onClick="{{ plate.onAddInstructor }}" style="align-self:flex-start;border:0;background:none;color:#2A7E4F;cursor:pointer;font-size:12px;font-weight:bold;padding:2px 0">+ Add another instructor</button>
+                  </div>
                 </sc-if>
               </div>
               <div>
@@ -1442,6 +1484,10 @@
                 <div style="font-size:14px;font-weight:bold">Registration</div>
                 <div style="font-size:11.5px;color:#58595B;margin-top:3px;line-height:1.55">Your request goes to your line manager. Their approval is final: you're registered if a seat is free, or placed on the waitlist if the class is full or registration has closed. All fields are required.</div>
               </div>
+              <sc-if value="{{ detail.histWarn }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#FDF2D9;border:1px solid #F0DDA8;border-radius:5px;padding:10px 12px;font-size:12px;color:#7A5400;line-height:1.5"><b>Already completed?</b> {{ detail.histWarn }}</div>
+              </sc-if>
+              <div style="font-size:11.5px;color:#58595B;line-height:1.5">Not sure if you've taken this course before? <button onClick="{{ detail.onHistory }}" style="border:0;background:none;padding:0;color:#2A7E4F;font-weight:bold;cursor:pointer;font-size:11.5px;text-decoration:underline">Check My Training History</button> first.</div>
               <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px;padding:10px 12px">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>
                 <span style="font-size:12px;font-weight:bold;color:#1F5E3A">{{ detail.chainNote }}</span>

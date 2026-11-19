@@ -33,21 +33,26 @@ export async function POST(req: Request) {
     { header: "Training Status", key: "status", width: 18 },
     { header: "Quarter", key: "quarter", width: 9 },
     { header: "Month", key: "month", width: 9 },
-    { header: "Start Date", key: "start", width: 13, style: { numFmt: "dd/mm/yyyy" } },
-    { header: "End Date", key: "end", width: 13, style: { numFmt: "dd/mm/yyyy" } },
-    { header: "Location", key: "location", width: 20 },
-    { header: "Type of Training", key: "type", width: 16 },
-    { header: "Target Audience", key: "audience", width: 24 },
+    { header: "Training Start Date", key: "start", width: 13, style: { numFmt: "dd/mm/yyyy" } },
+    { header: "Training End Date", key: "end", width: 13, style: { numFmt: "dd/mm/yyyy" } },
+    { header: "Training Location", key: "location", width: 20 },
+    { header: "Primary Audience", key: "audience", width: 24 },
     { header: "Training Provider", key: "provider", width: 22 },
     { header: "Instructor", key: "instructor", width: 22 },
+    { header: "Training Duration", key: "duration", width: 12 },
+    { header: "Delivery Method", key: "delivery", width: 14 },
+    { header: "Class Capacity", key: "seats", width: 11 },
+    { header: "Training Type", key: "type", width: 16 },
     { header: "Instructor Location", key: "instructorLocation", width: 18 }
   ];
   for (const t of trainings) {
+    const days = Math.round((day(t.endDate).getTime() - day(t.startDate).getTime()) / 86400000) + 1;
     ws.addRow({
       category: t.category, code: t.code, title: t.title, status: statusLabel(t.status),
       quarter: "Q" + (Math.floor(t.startDate.getUTCMonth() / 3) + 1), month: MONTHS[t.startDate.getUTCMonth()],
       start: day(t.startDate), end: day(t.endDate), location: t.location, type: t.type,
-      audience: t.targetAudience || "", provider: t.provider || "", instructor: t.instructor || "", instructorLocation: t.instructorLocation || ""
+      audience: t.targetAudience || "", provider: t.provider || "", instructor: t.instructor || "", instructorLocation: t.instructorLocation || "",
+      duration: `${days} ${days === 1 ? "day" : "days"}`, delivery: t.deliveryMethod || (/online/i.test(t.location) ? "Online" : "In-Person"), seats: t.seats
     });
   }
   const head = ws.getRow(1);

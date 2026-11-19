@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentEmployee } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { CATEGORIES } from "@/lib/constants.js";
 
 export const runtime = "nodejs";
 
@@ -46,7 +47,9 @@ export async function POST(req: Request) {
   let link = text(f.get("link"), 1000);
   if (link && !/^https?:\/\//i.test(link)) link = "https://" + link;
 
-  const data: Record<string, unknown> = { name, title: text(f.get("title"), 160) || null, bio: text(f.get("bio"), 1500) || null, link: link || null };
+  // Training categories the instructor delivers (repeated "categories" fields)
+  const categories = [...new Set(f.getAll("categories").map(String))].filter(c => CATEGORIES.includes(c));
+  const data: Record<string, unknown> = { name, title: text(f.get("title"), 160) || null, bio: text(f.get("bio"), 1500) || null, link: link || null, categories };
   const file = f.get("file");
   if (file && typeof file !== "string" && file.size > 0) {
     const ext = (file.name.split(".").pop() || "").toLowerCase();

@@ -14,8 +14,8 @@ export const runtime = "nodejs";
  *   who: "enrolled" | "participants" | "selected" | "typed",
  *   ids?: string[]          (who = "selected": employee ids, e.g. some NESR people and some CPVEN externals)
  *   names?: string          (who = "typed": one name per line)
- *   instructor?: string     (also print a nameplate for this instructor)
- *   instructorRole?: string (printed under the instructor's name; default "Instructor")
+ *   instructors?: { name, role? }[]  (also print a nameplate for each instructor; role defaults to "Instructor")
+ *   instructor?: string, instructorRole?: string  (older single-instructor form, still accepted)
  *   brand?: "nesr" | "cpven",
  *   date?: string
  * }
@@ -56,9 +56,12 @@ export async function POST(req: Request) {
   }
 
   const plates: Nameplate[] = names.map(name => ({ name, course: t.title, date }));
-  const instructor = String(body.instructor || "").trim().slice(0, 120);
-  const instructorRole = String(body.instructorRole ?? "").trim().slice(0, 80) || "Instructor";
-  if (instructor) plates.unshift({ name: instructor, course: t.title, date, role: instructorRole });
+  const given: { name?: unknown; role?: unknown }[] = Array.isArray(body.instructors) ? body.instructors.slice(0, 10)
+    : body.instructor ? [{ name: body.instructor, role: body.instructorRole }] : [];
+  const instructors = given
+    .map(i => ({ name: String(i?.name || "").trim().slice(0, 120), role: String(i?.role ?? "").trim().slice(0, 80) || "Instructor" }))
+    .filter(i => i.name);
+  plates.unshift(...instructors.map(i => ({ name: i.name, course: t.title, date, role: i.role })));
   if (!plates.length) return NextResponse.json({ error: "No one to print a nameplate for." }, { status: 400 });
 
   const pdf = await nameplatePdf(plates, brand);

@@ -32,7 +32,8 @@ const shortDate = (iso: string) => `${iso.slice(8, 10)} ${MONTHS[Number(iso.slic
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const DAYS_PER_TABLE = 5;
-const MIN_ROWS = 15;          // the template's 15 rows fill one page
+/** Blank rows after the registered people, for walk-ins (more when no one is registered yet). */
+const EXTRA_ROWS = 3, EMPTY_ROWS = 10;
 const TABLE_W = 15661, INDENT = -539;
 const FIXED = { no: 681, id: 1443, name: 4194, loc: 1779 };
 
@@ -52,7 +53,7 @@ function attendanceTable(days: string[], firstDay: number, people: SheetInput["p
     + cell(widths[0], head(["#"]), { head: true }) + cell(widths[1], head(["Employee ID"]), { head: true })
     + cell(widths[2], head(["Employee Name"]), { head: true }) + cell(widths[3], head(["Employee Location"]), { head: true })
     + days.map((d, i) => cell(dayW, head([`DAY ${firstDay + i}`, dayW >= 2000 ? sheetDate(d) : shortDate(d)]), { head: true })).join("") + `</w:tr>`;
-  const rows = Array.from({ length: Math.max(MIN_ROWS, people.length + 3) }, (_, i) => {
+  const rows = Array.from({ length: people.length ? people.length + EXTRA_ROWS : EMPTY_ROWS }, (_, i) => {
     const p = people[i];
     return `<w:tr><w:trPr><w:trHeight w:val="395"/><w:cantSplit/></w:trPr>`
       + cell(widths[0], para(run(String(i + 1), { bold: true }), { center: true, before: 180 }))

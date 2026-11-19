@@ -10,7 +10,7 @@ import { statusLabel } from "@/lib/constants.js";
 /** Editable training fields, in the order they appear in the editor. */
 export const TRAINING_FIELDS: [key: string, label: string][] = [
   ["code", "Session code"], ["title", "Training title"], ["instructor", "Instructor"], ["category", "Category"], ["type", "Type"],
-  ["startDate", "Start date"], ["endDate", "End date"], ["location", "Location"], ["seats", "Seat capacity"], ["status", "Status"],
+  ["startDate", "Start date"], ["endDate", "End date"], ["location", "Location"], ["deliveryMethod", "Delivery method"], ["seats", "Seat capacity"], ["status", "Status"],
   ["targetAudience", "Target audience"], ["provider", "Training provider"], ["instructorLocation", "Instructor location"], ["description", "Description"]
 ];
 

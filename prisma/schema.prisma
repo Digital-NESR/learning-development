@@ -85,6 +85,8 @@ model Training {
   targetAudience     String? @map("target_audience")
   provider           String?
   instructorLocation String? @map("instructor_location")
+  /// In-Person, Online or Hybrid (calendar "Delivery Method")
+  deliveryMethod     String? @map("delivery_method")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -149,6 +151,8 @@ model Attendance {
   employeeId String   @map("employee_id")
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   attended   Boolean
+  /// Partially attended (some days only): attended is false, the request is not completed
+  partial    Boolean  @default(false)
   /// Set automatically because every training day was marked present (rather than by L&D pressing Attended / No show)
   fromDays   Boolean  @default(false) @map("from_days")
   markedById String?  @map("marked_by_id")
@@ -227,6 +231,8 @@ model InstructorProfile {
   fileName  String?  @map("file_name")
   fileType  String?  @map("file_type")
   fileData  Bytes?   @map("file_data")
+  /// Training categories the instructor delivers (for the filter on Resources)
+  categories String[] @default([])
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

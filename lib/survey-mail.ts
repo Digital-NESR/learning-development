@@ -20,7 +20,8 @@ async function outstanding(t: Training, where: Prisma.TrainingRequestWhereInput)
       where: { trainingId: t.id, state: { in: ["enrolled", "completed"] }, employee: { isExternal: false }, ...where },
       include: { employee: true }
     }),
-    prisma.attendance.findMany({ where: { trainingId: t.id, attended: false }, select: { employeeId: true } }),
+    // No shows only: people who partially attended still get the survey
+    prisma.attendance.findMany({ where: { trainingId: t.id, attended: false, partial: false }, select: { employeeId: true } }),
     prisma.surveyResponse.findMany({ where: { trainingId: t.id }, select: { employeeId: true } })
   ]);
   const skip = new Set([...noShows, ...answered].map(x => x.employeeId));
