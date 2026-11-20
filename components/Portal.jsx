@@ -4,7 +4,7 @@
 import React from "react";
 import PortalView from "./PortalView";
 import * as actions from "@/app/actions";
-import { APPROVAL_LEVELS, CATEGORIES, DELIVERY_METHODS, DEPTS, EXTERNAL_ORGS, LOCATIONS, NATIONALITIES, SHEET_TEMPLATES, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
+import { APPROVAL_LEVELS, CATEGORIES, DELIVERY_METHODS, DEPTS, EXTERNAL_ORGS, LOCATIONS, NATIONALITIES, SHEET_TEMPLATES, TRAINING_CYCLE_YEAR, TRAINING_STATUSES, TYPES, statusLabel } from "@/lib/constants.js";
 import { AUDIENCES, ENROLLED_STATES, PLACEHOLDERS, REGISTERED_STATES, audienceIds } from "@/lib/audience.js";
 import { dateRange } from "@/lib/training-format.js";
 import { trainingDays, weekdayDate } from "@/lib/training-days.js";
@@ -74,6 +74,7 @@ export default class Portal extends React.Component {
       surveyOpen: {},
       approvalsQ: "", teamQ: "", waitTab: "all",
       prof: null, // instructor profile being added / edited (L&D)
+      outl: null, // training outline being added / edited (L&D)
       histQ: "", histResults: null, histImport: null, // Training History page (L&D)
       changeLog: null, // {id, entries, loading} for the open session (L&D)
       attRep: {year: String(new Date().getFullYear()), quarter: "", type: ""},
@@ -85,7 +86,7 @@ export default class Portal extends React.Component {
     return {
       meId: d.meId, isAdminUser: d.isAdmin, canManage: d.canManage, people: d.people,
       trainings: d.trainings, requests: d.requests, attended: d.attended, days: d.days || {}, surveyAnswered: d.surveyAnswered || {},
-      templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || [], instructors: d.instructors || [],
+      templatesOff: d.templatesOff, templateRows: d.templates, mailInfo: d.mail, directory: d.directory || [], instructors: d.instructors || [], outlines: d.outlines || [],
       history: d.history || {}, historyStats: d.historyStats || null
     };
   }
@@ -367,6 +368,56 @@ export default class Portal extends React.Component {
     }, 300);
   }
 
+  setOutl(patch) { this.setState({outl: Object.assign({}, this.state.outl, patch)}); }
+
+  pickOutlineFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!/\.(pdf|docx?|pptx)$/i.test(file.name)) return this.flash("Use a PDF, Word or PowerPoint file", "The outline must be a .pdf, .docx, .doc or .pptx file.");
+    if (file.size > 4 * 1024 * 1024) return this.flash("File too large", "Use a file under 4 MB (save it as PDF to make it smaller), or add a link instead.");
+    this.setOutl({file, fileName: file.name, removeFile: false, title: this.state.outl.title || file.name.replace(/\.[^.]+$/, "")});
+  }
+
+  async saveOutline() {
+    const o = this.state.outl;
+    if (!o || this.state.busy) return;
+    if (!o.title.trim()) return this.flash("Name needed", "Enter the training name.");
+    if (!o.link.trim() && !o.fileName) return this.flash("Add the outline", "Upload the outline or paste a link to it.");
+    const fd = new FormData();
+    if (o.id) fd.append("id", o.id);
+    fd.append("title", o.title); fd.append("category", o.category); fd.append("link", o.link);
+    if (o.file) fd.append("file", o.file);
+    if (o.removeFile) fd.append("removeFile", "1");
+    this.setState({busy: true, busyOp: "outl"});
+    try {
+      const res = await fetch("/api/outlines", {method: "POST", body: fd});
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) return this.flash("Couldn't save the outline", out.error || "Try again in a moment.");
+      this.setState({outl: null});
+      await this.refreshQuiet();
+      this.flash(o.id ? "Outline updated" : "Outline added", o.title.trim() + " is listed under Resources for everyone.");
+    } catch {
+      this.flash("Couldn't reach the server", "Check your connection and try again.");
+    } finally {
+      this.setState({busy: false, busyOp: null});
+    }
+  }
+
+  async removeOutline(o) {
+    if (this.state.busy || !window.confirm("Remove the outline for " + o.title + " from Resources?")) return;
+    this.setState({busy: true, busyOp: "outl"});
+    try {
+      const res = await fetch("/api/outlines?id=" + encodeURIComponent(o.id), {method: "DELETE"});
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) return this.flash("Couldn't remove the outline", out.error || "Try again in a moment.");
+      await this.refreshQuiet();
+      this.flash("Outline removed", o.title + " is no longer listed.");
+    } finally {
+      this.setState({busy: false, busyOp: null});
+    }
+  }
+
   setProf(patch) { this.setState({prof: Object.assign({}, this.state.prof, patch)}); }
 
   pickProfileFile(e) {
@@ -474,7 +525,6 @@ export default class Portal extends React.Component {
     const st = this.state;
     const scr = st.screen;
     const mk = (k, v, d) => ({k, v, d});
-    const YEAR = new Date().getFullYear();
     const TODAY = todayIso();
 
     const meP = this.me();
@@ -526,8 +576,17 @@ export default class Portal extends React.Component {
 
     const list = this.filtered();
     const rows = list.map((t, i) => this.row(t, i));
+    // Catalog: one box per category; a box opens to show its trainings. Picking a category in the filters opens just that one.
+    const catGroups = CATEGORIES.concat([...new Set(list.map(t => t.category))].filter(c => !CATEGORIES.includes(c)))
+      .map(c => ({c, items: rows.filter(r => r.category === c)})).filter(g => g.items.length)
+      .map(g => {
+        const open = st.fCat !== "All" || !!(st.catOpen || {})[g.c];
+        return {name: g.c, count: g.items.length + (g.items.length === 1 ? " session" : " sessions"), open, rows: g.items,
+          chevron: open ? "▾" : "▸", shadow: open ? "0 0 0 1px #2A7E4F" : "none",
+          onToggle: () => st.fCat === "All" && this.setState(s2 => ({catOpen: Object.assign({}, s2.catOpen, {[g.c]: !(s2.catOpen || {})[g.c]})}))};
+      });
 
-    const viewTabs = [["table","Table"],["month","Month"],["cards","Catalog"]].map(([k, label]) => ({
+    const viewTabs = [["table","Table"],["cards","Catalog"],["month","Month"]].map(([k, label]) => ({
       label, bg: st.calView === k ? "#FFFFFF" : "transparent", fg: st.calView === k ? "#2A7E4F" : "#58595B",
       onClick: () => this.setState({calView: k})
     }));
@@ -829,7 +888,7 @@ export default class Portal extends React.Component {
     const showTrainings = status => () => this.setState({screen: "trainings", fStatus: status, q: "", fType: "All", fCat: "All", fLoc: "All"});
     const statusTiles = list => list.map(([v, label, note, color]) => tile(label, nStatus(v), note, color, showTrainings(v), "List " + label.toLowerCase() + " sessions"));
     // 1. Session status
-    const sessionKpis = [tile("Total Sessions", st.trainings.length, YEAR + " calendar", "#2A7E4F", showTrainings(""), "List all sessions")].concat(statusTiles([
+    const sessionKpis = [tile("Total Sessions", st.trainings.length, "In the calendar", "#2A7E4F", showTrainings(""), "List all sessions")].concat(statusTiles([
       ["ongoing", "Ongoing Sessions", "Running now", "#1F4E79"],
       ["completed", "Completed", "Training completed", "#3E403E"],
       ["cancelled", "Cancelled", "Called off", "#8A2B2B"]
@@ -1318,6 +1377,38 @@ export default class Portal extends React.Component {
       onSave: () => this.saveProfile()
     };
 
+    // Training outlines (Resources): same category filter as the instructor profiles
+    const ol = st.outl;
+    const outlList = st.outlines.filter(o => !st.profCat || o.category === st.profCat);
+    const outl = {
+      canEdit: isAdmin,
+      empty: outlList.length === 0 && !ol,
+      emptyText: st.outlines.length && st.profCat ? "No training outlines for " + st.profCat + " yet."
+        : isAdmin ? "No training outlines yet. Add the outline PDF for each training." : "Training outlines will be listed here.",
+      list: outlList.map(o => ({
+        title: o.title, category: o.category, hasCategory: !!o.category, hasFile: !!o.fileName, hasLink: !!o.link,
+        onOpenFile: () => window.open("/api/outlines?id=" + encodeURIComponent(o.id), "_blank", "noopener"),
+        onOpenLink: () => window.open(o.link, "_blank", "noopener"),
+        onEdit: () => this.setState({outl: {id: o.id, title: o.title, category: o.category, link: o.link, fileName: o.fileName, file: null, removeFile: false}}),
+        onRemove: () => this.removeOutline(o)
+      })),
+      onNew: () => this.setState({outl: {id: "", title: "", category: st.profCat || "", link: "", fileName: "", file: null, removeFile: false}}),
+      editing: !!ol,
+      heading: ol && ol.id ? "Edit Training Outline" : "Add Training Outline",
+      title: ol ? ol.title : "", link: ol ? ol.link : "",
+      category: {value: ol ? ol.category : "", options: [{value: "", label: "No category"}].concat(CATEGORIES.map(c => ({value: c, label: c}))),
+        onChange: e => this.setOutl({category: e.target.value})},
+      onTitle: e => this.setOutl({title: e.target.value}), onLink: e => this.setOutl({link: e.target.value}),
+      hasFile: !!(ol && ol.fileName),
+      fileButton: ol && ol.fileName ? "Replace file" : "Upload file",
+      fileNote: ol && ol.fileName ? ol.fileName : "No file chosen",
+      onFile: e => this.pickOutlineFile(e),
+      onClearFile: () => this.setOutl({file: null, fileName: "", removeFile: true}),
+      onCancel: () => this.setState({outl: null}),
+      saveLabel: st.busyOp === "outl" ? "Saving…" : "Save Outline",
+      onSave: () => this.saveOutline()
+    };
+
     let session = null;
     if (s.aSession) {
       const t = this.t(st.sessionId);
@@ -1437,7 +1528,7 @@ export default class Portal extends React.Component {
       user: {name: meP.name, first: meP.first, initials: initialsOf(meP.name),
         sub: [meP.title, meP.nesrId && meP.nesrId !== "—" ? "NESR ID " + meP.nesrId : ""].filter(Boolean).join(" · ")},
       onSignOut: () => actions.logout(),
-      year: YEAR, nav, s,
+      year: TRAINING_CYCLE_YEAR, nav, s,
       rows, adminRows, viewTabs, typeTabs, filters, q: st.q,
       onSearch: e => this.setState({q: e.target.value}),
       clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All", fStatus:""}),
@@ -1447,7 +1538,7 @@ export default class Portal extends React.Component {
       teamQ: st.teamQ, onTeamQ: e => this.setState({teamQ: e.target.value}),
       noTeamMatch: teamPeople.length > 0 && teamStats.length === 0,
       onCalExport: () => this.downloadFile("/api/export/calendar", "Training calendar (" + list.length + (list.length === 1 ? " session" : " sessions") + ") downloaded as Excel.", {body: {ids: list.map(t => t.id)}}),
-      isTable: st.calView === "table", isMonth: st.calView === "month", isCards: st.calView === "cards",
+      catGroups, isTable: st.calView === "table", isMonth: st.calView === "month", isCards: st.calView === "cards",
       noResults: rows.length === 0,
       resultLabel: rows.length + " of " + st.trainings.length + " sessions in the calendar",
       catalogLabel: st.trainings.length + " sessions published",
@@ -1463,7 +1554,7 @@ export default class Portal extends React.Component {
       myRequests, teamRequests, queueRows, teamStats,
       reqBox: {open: !st.reqBoxClosed, label: st.reqBoxClosed ? "Show" : "Hide", count: myRequests.length + (myRequests.length === 1 ? " request" : " requests"),
         onToggle: () => this.setState(s => ({reqBoxClosed: !s.reqBoxClosed}))},
-      empKpis, dashList, sessionKpis, regKpis, approvalKpis, myHistory, hist, waitlist, prof, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
+      outl, empKpis, dashList, sessionKpis, regKpis, approvalKpis, myHistory, hist, waitlist, prof, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
       resources: RESOURCES,
       detail, formFields, justification: st.justification,
       justificationBorder: st.formError && !String(st.justification || "").trim() ? "#8A2B2B" : "#D9DDDB",

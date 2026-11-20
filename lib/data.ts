@@ -37,7 +37,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
   const me = typeof meOrId === "string" ? await prisma.employee.findUniqueOrThrow({ where: { id: meOrId } }) : meOrId;
 
   // Everything that doesn't depend on another query is fetched at once: each round trip to the database adds latency.
-  const [trainings, requests, reports, chain, templates, adminAttendance, attendanceDays, surveyResponses, directory, instructors] = await Promise.all([
+  const [trainings, requests, reports, chain, templates, adminAttendance, attendanceDays, surveyResponses, directory, instructors, outlines] = await Promise.all([
     prisma.training.findMany({ where: { isActive: true }, orderBy: { startDate: "asc" } }),
     prisma.trainingRequest.findMany({
       // Non-admins: their own requests, requests they approve, and all requests from their direct reports.
@@ -58,7 +58,9 @@ export async function loadSnapshot(meOrId: string | Employee) {
       ? prisma.employee.findMany({ where: { isExternal: false }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } })
       : Promise.resolve([]),
     // Instructor profiles for Resources (the documents themselves are fetched from /api/instructors)
-    prisma.instructorProfile.findMany({ select: { id: true, name: true, title: true, bio: true, link: true, fileName: true, categories: true }, orderBy: { name: "asc" } })
+    prisma.instructorProfile.findMany({ select: { id: true, name: true, title: true, bio: true, link: true, fileName: true, categories: true }, orderBy: { name: "asc" } }),
+    // Training outlines for Resources (documents are fetched from /api/outlines)
+    prisma.trainingOutline.findMany({ select: { id: true, title: true, category: true, link: true, fileName: true }, orderBy: { title: "asc" } })
   ]);
 
   const days: Record<string, Record<string, boolean>> = {};
@@ -146,6 +148,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
     history,
     // L&D only: what the last history import loaded
     historyStats: hs ? { records: hs.records, people: hs.people, first: hs.first, last: hs.last, at: hs.at ? pretty(hs.at) : "" } : null,
+    outlines: outlines.map(o => ({ id: o.id, title: o.title, category: o.category || "", link: o.link || "", fileName: o.fileName || "" })),
     instructors: instructors.map(p => ({ id: p.id, name: p.name, title: p.title || "", bio: p.bio || "", link: p.link || "", fileName: p.fileName || "", categories: p.categories || [] })),
     // L&D only: who has answered each training's feedback survey ("tid:emp" → date)
     surveyAnswered: Object.fromEntries(surveyResponses.map(r => [`${r.trainingId}:${r.employeeId}`, pretty(r.createdAt)])),

@@ -256,3 +256,18 @@ model TrainingHistory {
   @@index([nameKey])
   @@map("training_history")
 }
+
+/// Training outlines under Resources: an uploaded document (PDF, Word, PowerPoint) and/or a link.
+model TrainingOutline {
+  id        String   @id @default(cuid())
+  title     String
+  category  String?
+  link      String?
+  fileName  String?  @map("file_name")
+  fileType  String?  @map("file_type")
+  fileData  Bytes?   @map("file_data")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("training_outlines")
+}
