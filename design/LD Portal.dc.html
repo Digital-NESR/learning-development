@@ -81,11 +81,12 @@
               <div style="position:absolute;top:-40px;right:-60px;width:180px;height:90px;border-radius:0 0 180px 180px;background:rgba(197,224,210,.18)"></div>
             </div>
             <div style="position:relative">
-              <div style="font-size:11px;font-weight:bold;letter-spacing:1.3px;text-transform:uppercase;color:#C5E0D2">{{ year }} Training Cycle</div>
+              <div style="font-size:11px;font-weight:bold;letter-spacing:1.3px;text-transform:uppercase;color:#C5E0D2">{{ year }} Learning Journey</div>
               <div style="font-size:26px;font-weight:bold;color:#fff;margin-top:5px">Welcome back, {{ user.first }}</div>
               <div style="font-size:13px;color:#DCEAE2;margin-top:4px">Here is where your learning journey stands this year.</div>
             </div>
           </div>
+          <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Training Status</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px">
             <sc-for list="{{ empKpis }}" as="k" hint-placeholder-count="4">
               <div onClick="{{ k.onClick }}" title="Show these trainings" style="background:{{ k.bg }};border:1px solid {{ k.border }};border-top:4px solid #2A7E4F;border-radius:5px;padding:14px 16px;cursor:pointer" style-hover="box-shadow:0 4px 14px rgba(31,31,29,.08)">
@@ -117,7 +118,7 @@
           </sc-if>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
             <div onClick="{{ reqBox.onToggle }}" style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
-              <span style="flex:1">Your Requests <span style="font-weight:normal;color:#8A8F8C">· {{ reqBox.count }}</span></span>
+              <span style="flex:1">Training Requests <span style="font-weight:normal;color:#8A8F8C">· {{ reqBox.count }}</span></span>
               <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ reqBox.label }}</span>
             </div>
             <sc-if value="{{ reqBox.open }}" hint-placeholder-val="{{ true }}">
@@ -169,11 +170,11 @@
           </div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin-top:18px">
             <div onClick="{{ myHistory.onToggle }}" style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
-              <span style="flex:1">My Training History <span style="font-weight:normal;color:#8A8F8C">· {{ myHistory.count }} completed</span></span>
+              <span style="flex:1">Training Records <span style="font-weight:normal;color:#8A8F8C">· {{ myHistory.count }} completed</span></span>
               <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ myHistory.label }}</span>
             </div>
             <sc-if value="{{ myHistory.open }}" hint-placeholder-val="{{ true }}">
-              <div style="margin:12px 16px 0;padding:9px 12px;background:#FDF2D9;border:1px solid #F0DDA8;border-radius:4px;font-size:12px;color:#7A5400;line-height:1.5"><b>Before you request a training,</b> check this list to make sure you haven't already completed the course. It includes trainings from before the portal.</div>
+              <div style="margin:12px 16px 0;padding:9px 12px;background:#FDF2D9;border:1px solid #F0DDA8;border-radius:4px;font-size:12px;color:#7A5400;line-height:1.5">Before registering for a new course, please review your completed training records to avoid duplicate training registrations.</div>
               <sc-if value="{{ myHistory.empty }}" hint-placeholder-val="{{ false }}">
                 <div style="padding:26px 16px;text-align:center;color:#8A8F8C;font-size:13px">No completed trainings on record yet. If a training you completed is missing, contact the L&amp;D team.</div>
               </sc-if>
@@ -290,7 +291,7 @@
                 <button onClick="{{ nextMonth }}" style="width:30px;height:30px;border:1px solid #D1D3D4;background:#fff;border-radius:4px;cursor:pointer;font-weight:bold">&#8594;</button>
                 <div style="flex:1"></div>
                 <div style="display:flex;gap:14px;font-size:11px;color:#58595B;align-items:center">
-                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#2A7E4F;display:inline-block"></span>Registration open</span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#2A7E4F;display:inline-block"></span>Ongoing</span>
                   <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#8A8F8C;display:inline-block"></span>Registration closed</span>
                 </div>
               </div>
@@ -363,7 +364,7 @@
           <div style="position:relative;overflow:hidden;border-radius:7px;padding:28px;margin-bottom:18px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;background-color:#1F5E3A;background-image:linear-gradient(90deg,rgba(31,94,58,.95) 0%,rgba(42,126,79,.7) 55%,rgba(31,31,29,.35) 100%),url(assets/photo-toolbox-talk.png);background-size:cover,cover;background-position:center,center 32%">
             <div style="font-size:11px;font-weight:bold;letter-spacing:1.3px;text-transform:uppercase;color:#C5E0D2">Training Portal</div>
             <div style="font-size:24px;font-weight:bold;color:#fff;margin-top:5px">Resources</div>
-            <div style="font-size:13px;color:#DCEAE2;margin-top:4px">Instructor profiles, training outlines and learning resources for the {{ year }} training cycle.</div>
+            <div style="font-size:13px;color:#DCEAE2;margin-top:4px">Learning &amp; Development Resources, Instructor Profiles and Training Outlines.</div>
           </div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:10px 14px;margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B">Training category</div>
@@ -437,33 +438,46 @@
           <sc-if value="{{ prof.empty }}" hint-placeholder-val="{{ false }}">
             <div style="background:#fff;border:1px dashed #D1D3D4;border-radius:5px;padding:24px;text-align:center;color:#8A8F8C;font-size:13px;margin-bottom:20px">{{ prof.emptyText }}</div>
           </sc-if>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-bottom:24px">
-            <sc-for list="{{ prof.list }}" as="ip" hint-placeholder-count="3">
-              <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:16px;display:flex;flex-direction:column;gap:8px">
-                <div style="display:flex;gap:12px;align-items:center">
-                  <div style="width:42px;height:42px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;flex:0 0 auto">{{ ip.initials }}</div>
-                  <div style="min-width:0">
-                    <div style="font-size:14px;font-weight:bold">{{ ip.name }}</div>
-                    <div style="font-size:11.5px;color:#58595B">{{ ip.title }}</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+            <sc-for list="{{ prof.groups }}" as="pg" hint-placeholder-count="3">
+              <div style="background:#fff;border:1px solid #E1E5E3;border-left:4px solid #2A7E4F;border-radius:5px;overflow:hidden;box-shadow:{{ pg.shadow }}">
+                <div onClick="{{ pg.onToggle }}" style="display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none" style-hover="background:#F7F9F8">
+                  <div style="flex:1;font-size:15px;font-weight:bold">{{ pg.name }}</div>
+                  <div style="font-size:12px;color:#58595B">{{ pg.count }}</div>
+                  <div style="width:16px;text-align:center;color:#2A7E4F;font-size:13px">{{ pg.chevron }}</div>
+                </div>
+                <sc-if value="{{ pg.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;border-top:1px solid #EEF1EF">
+                    <sc-for list="{{ pg.list }}" as="ip" hint-placeholder-count="2">
+                    <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:16px;display:flex;flex-direction:column;gap:8px">
+                      <div style="display:flex;gap:12px;align-items:center">
+                        <div style="width:42px;height:42px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;flex:0 0 auto">{{ ip.initials }}</div>
+                        <div style="min-width:0">
+                          <div style="font-size:14px;font-weight:bold">{{ ip.name }}</div>
+                          <div style="font-size:11.5px;color:#58595B">{{ ip.title }}</div>
+                        </div>
+                      </div>
+                      <sc-if value="{{ ip.hasCats }}" hint-placeholder-val="{{ false }}">
+                        <div style="font-size:10.5px;font-weight:bold;color:#1F5E3A;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:3px;padding:4px 8px;align-self:flex-start">{{ ip.cats }}</div>
+                      </sc-if>
+                      <div style="font-size:12px;color:#3E403E;line-height:1.5;flex:1">{{ ip.bio }}</div>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                        <sc-if value="{{ ip.hasFile }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ ip.onOpenFile }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">View profile</button>
+                        </sc-if>
+                        <sc-if value="{{ ip.hasLink }}" hint-placeholder-val="{{ false }}">
+                          <button onClick="{{ ip.onOpenLink }}" style="padding:6px 12px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Open link</button>
+                        </sc-if>
+                        <div style="flex:1"></div>
+                        <sc-if value="{{ prof.canEdit }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ ip.onEdit }}" style="border:0;background:none;color:#2A7E4F;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Edit</button>
+                          <button onClick="{{ ip.onRemove }}" style="border:0;background:none;color:#8A2B2B;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Remove</button>
+                        </sc-if>
+                      </div>
+                    </div>
+                    </sc-for>
                   </div>
-                </div>
-                <sc-if value="{{ ip.hasCats }}" hint-placeholder-val="{{ false }}">
-                  <div style="font-size:10.5px;font-weight:bold;color:#1F5E3A;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:3px;padding:4px 8px;align-self:flex-start">{{ ip.cats }}</div>
                 </sc-if>
-                <div style="font-size:12px;color:#3E403E;line-height:1.5;flex:1">{{ ip.bio }}</div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <sc-if value="{{ ip.hasFile }}" hint-placeholder-val="{{ true }}">
-                    <button onClick="{{ ip.onOpenFile }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">View profile</button>
-                  </sc-if>
-                  <sc-if value="{{ ip.hasLink }}" hint-placeholder-val="{{ false }}">
-                    <button onClick="{{ ip.onOpenLink }}" style="padding:6px 12px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Open link</button>
-                  </sc-if>
-                  <div style="flex:1"></div>
-                  <sc-if value="{{ prof.canEdit }}" hint-placeholder-val="{{ true }}">
-                    <button onClick="{{ ip.onEdit }}" style="border:0;background:none;color:#2A7E4F;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Edit</button>
-                    <button onClick="{{ ip.onRemove }}" style="border:0;background:none;color:#8A2B2B;cursor:pointer;font-size:11.5px;font-weight:bold;padding:0">Remove</button>
-                  </sc-if>
-                </div>
               </div>
             </sc-for>
           </div>
@@ -1582,7 +1596,7 @@
               <sc-if value="{{ detail.histWarn }}" hint-placeholder-val="{{ false }}">
                 <div style="background:#FDF2D9;border:1px solid #F0DDA8;border-radius:5px;padding:10px 12px;font-size:12px;color:#7A5400;line-height:1.5"><b>Already completed?</b> {{ detail.histWarn }}</div>
               </sc-if>
-              <div style="font-size:11.5px;color:#58595B;line-height:1.5">Not sure if you've taken this course before? <button onClick="{{ detail.onHistory }}" style="border:0;background:none;padding:0;color:#2A7E4F;font-weight:bold;cursor:pointer;font-size:11.5px;text-decoration:underline">Check My Training History</button> first.</div>
+              <div style="font-size:11.5px;color:#58595B;line-height:1.5">Not sure if you've taken this course before? <button onClick="{{ detail.onHistory }}" style="border:0;background:none;padding:0;color:#2A7E4F;font-weight:bold;cursor:pointer;font-size:11.5px;text-decoration:underline">Check your Training Records</button> first.</div>
               <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px;padding:10px 12px">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>
                 <span style="font-size:12px;font-weight:bold;color:#1F5E3A">{{ detail.chainNote }}</span>

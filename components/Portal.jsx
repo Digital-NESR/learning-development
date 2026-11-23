@@ -889,7 +889,7 @@ export default class Portal extends React.Component {
     const statusTiles = list => list.map(([v, label, note, color]) => tile(label, nStatus(v), note, color, showTrainings(v), "List " + label.toLowerCase() + " sessions"));
     // 1. Session status
     const sessionKpis = [tile("Total Sessions", st.trainings.length, "In the calendar", "#2A7E4F", showTrainings(""), "List all sessions")].concat(statusTiles([
-      ["ongoing", "Ongoing Sessions", "Running now", "#1F4E79"],
+      ["open", "Ongoing Sessions", "Taking requests", "#1F4E79"],
       ["completed", "Completed", "Training completed", "#3E403E"],
       ["cancelled", "Cancelled", "Called off", "#8A2B2B"]
     ]));
@@ -1348,7 +1348,8 @@ export default class Portal extends React.Component {
         : isAdmin ? "No instructor profiles yet. Add one with the approved profile document or a link to it." : "Instructor profiles will be listed here.",
       catFilter: {value: st.profCat || "", options: [{value: "", label: "All training categories"}].concat(CATEGORIES.map(c => ({value: c, label: c}))),
         onChange: e => this.setState({profCat: e.target.value})},
-      list: profList.map(ip => ({
+      groups: (() => {
+        const card = ip => ({
         name: ip.name, title: ip.title, bio: ip.bio, initials: initialsOf(ip.name),
         cats: (ip.categories || []).join(" · "), hasCats: (ip.categories || []).length > 0,
         hasFile: !!ip.fileName, hasLink: !!ip.link,
@@ -1356,7 +1357,18 @@ export default class Portal extends React.Component {
         onOpenLink: () => window.open(ip.link, "_blank", "noopener"),
         onEdit: () => this.setState({prof: {id: ip.id, name: ip.name, title: ip.title, bio: ip.bio, link: ip.link, fileName: ip.fileName, file: null, removeFile: false, categories: (ip.categories || []).slice()}}),
         onRemove: () => this.removeProfile(ip)
-      })),
+        });
+        // One box per category; a profile in several categories appears in each. Picking a category at the top opens just that one.
+        return CATEGORIES.concat(["Other"]).map(c => ({c, items: profList.filter(ip => c === "Other"
+            ? !(ip.categories || []).some(x => CATEGORIES.includes(x)) : (ip.categories || []).includes(c))}))
+          .filter(g => g.items.length && (!st.profCat || g.c === st.profCat))
+          .map(g => {
+            const open = !!st.profCat || !!(st.profOpen || {})[g.c];
+            return {name: g.c === "Other" ? "No category" : g.c, count: g.items.length + (g.items.length === 1 ? " instructor" : " instructors"),
+              open, chevron: open ? "▾" : "▸", shadow: open ? "0 0 0 1px #2A7E4F" : "none", list: g.items.map(card),
+              onToggle: () => !st.profCat && this.setState(s2 => ({profOpen: Object.assign({}, s2.profOpen, {[g.c]: !(s2.profOpen || {})[g.c]})}))};
+          });
+      })(),
       onNew: () => this.setState({prof: {id: "", name: "", title: "", bio: "", link: "", fileName: "", file: null, removeFile: false, categories: st.profCat ? [st.profCat] : []}}),
       catChoices: CATEGORIES.map(c => {
         const on = !!(pr && (pr.categories || []).includes(c));
