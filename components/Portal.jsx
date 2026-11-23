@@ -554,12 +554,13 @@ export default class Portal extends React.Component {
     const nav = section("Employee", [["dashboard","My Dashboard"],["calendar","Training Calendar"],["resources","Resources"]], true)
       .concat(canManage ? section("Manager", [["approvals","Team Approvals"],["team","Team Training History"]]) : [])
       .concat(isAdmin ? section("L&D Team", [["adminDash","Dashboard"],["trainings","Manage Trainings"],["queue","Waitlist Queue"],["attendance","Attendance"],["history","Training History"],
-        ["surveys","Surveys"],["certificates","Certificates"],["nametags","Name Tags"],["templates","Notifications"]]) : []);
+        ["surveys","Surveys"],["certificates","Certificates"],["nametags","Name Tags"],["resManage","Manage Resources"],["templates","Notifications"]]) : []);
 
     const s = {
       empDash: scr === "dashboard",
       cal: scr === "calendar",
-      res: scr === "resources",
+      // Resources: everyone views it; L&D edits instructor profiles and training outlines from Manage Resources
+      res: scr === "resources" || (isAdmin && scr === "resManage"),
       mgrApp: canManage && scr === "approvals",
       mgrTeam: canManage && scr === "team",
       aDash: isAdmin && scr === "adminDash",
@@ -888,8 +889,8 @@ export default class Portal extends React.Component {
     const showTrainings = status => () => this.setState({screen: "trainings", fStatus: status, q: "", fType: "All", fCat: "All", fLoc: "All"});
     const statusTiles = list => list.map(([v, label, note, color]) => tile(label, nStatus(v), note, color, showTrainings(v), "List " + label.toLowerCase() + " sessions"));
     // 1. Session status
-    const sessionKpis = [tile("Total Sessions", st.trainings.length, "In the calendar", "#2A7E4F", showTrainings(""), "List all sessions")].concat(statusTiles([
-      ["open", "Ongoing Sessions", "Taking requests", "#1F4E79"],
+    const sessionKpis = [tile("Total", st.trainings.length, "In the calendar", "#2A7E4F", showTrainings(""), "List all sessions")].concat(statusTiles([
+      ["open", "Ongoing", "Taking requests", "#1F4E79"],
       ["completed", "Completed", "Training completed", "#3E403E"],
       ["cancelled", "Cancelled", "Called off", "#8A2B2B"]
     ]));
@@ -1342,10 +1343,10 @@ export default class Portal extends React.Component {
     const pr = st.prof;
     const profList = st.instructors.filter(ip => !st.profCat || (ip.categories || []).includes(st.profCat));
     const prof = {
-      canEdit: isAdmin,
+      canEdit: isAdmin && scr === "resManage",
       empty: profList.length === 0 && !pr,
       emptyText: st.instructors.length && st.profCat ? "No instructor profiles for " + st.profCat + " yet."
-        : isAdmin ? "No instructor profiles yet. Add one with the approved profile document or a link to it." : "Instructor profiles will be listed here.",
+        : isAdmin && scr === "resManage" ? "No instructor profiles yet. Add one with the approved profile document or a link to it." : "Instructor profiles will be listed here.",
       catFilter: {value: st.profCat || "", options: [{value: "", label: "All training categories"}].concat(CATEGORIES.map(c => ({value: c, label: c}))),
         onChange: e => this.setState({profCat: e.target.value})},
       groups: (() => {
@@ -1393,10 +1394,10 @@ export default class Portal extends React.Component {
     const ol = st.outl;
     const outlList = st.outlines.filter(o => !st.profCat || o.category === st.profCat);
     const outl = {
-      canEdit: isAdmin,
+      canEdit: isAdmin && scr === "resManage",
       empty: outlList.length === 0 && !ol,
       emptyText: st.outlines.length && st.profCat ? "No training outlines for " + st.profCat + " yet."
-        : isAdmin ? "No training outlines yet. Add the outline PDF for each training." : "Training outlines will be listed here.",
+        : isAdmin && scr === "resManage" ? "No training outlines yet. Add the outline PDF for each training." : "Training outlines will be listed here.",
       list: outlList.map(o => ({
         title: o.title, category: o.category, hasCategory: !!o.category, hasFile: !!o.fileName, hasLink: !!o.link,
         onOpenFile: () => window.open("/api/outlines?id=" + encodeURIComponent(o.id), "_blank", "noopener"),
@@ -1541,6 +1542,9 @@ export default class Portal extends React.Component {
         sub: [meP.title, meP.nesrId && meP.nesrId !== "—" ? "NESR ID " + meP.nesrId : ""].filter(Boolean).join(" · ")},
       onSignOut: () => actions.logout(),
       year: TRAINING_CYCLE_YEAR, nav, s,
+      resTitle: scr === "resManage" ? "Manage Resources" : "Resources",
+      resSub: scr === "resManage" ? "Add, edit or remove instructor profiles and training outlines. Employees see them under Resources."
+        : "Learning & Development Resources, Instructor Profiles and Training Outlines.",
       rows, adminRows, viewTabs, typeTabs, filters, q: st.q,
       onSearch: e => this.setState({q: e.target.value}),
       clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All", fStatus:""}),

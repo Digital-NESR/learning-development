@@ -336,8 +336,8 @@ export default function PortalView({ v }) {
 <div>
 <div style={{ position: "relative", overflow: "hidden", borderRadius: "7px", padding: "28px", marginBottom: "18px", minHeight: "150px", display: "flex", flexDirection: "column", justifyContent: "flex-end", backgroundColor: "#1F5E3A", backgroundImage: "linear-gradient(90deg,rgba(31,94,58,.95) 0%,rgba(42,126,79,.7) 55%,rgba(31,31,29,.35) 100%),url(/assets/photo-toolbox-talk.png)", backgroundSize: "cover,cover", backgroundPosition: "center,center 32%" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: "1.3px", textTransform: "uppercase", color: "#C5E0D2" }}>Training Portal</div>
-<div style={{ fontSize: "24px", fontWeight: "bold", color: "#fff", marginTop: "5px" }}>Resources</div>
-<div style={{ fontSize: "13px", color: "#DCEAE2", marginTop: "4px" }}>Learning &amp; Development Resources, Instructor Profiles and Training Outlines.</div>
+<div style={{ fontSize: "24px", fontWeight: "bold", color: "#fff", marginTop: "5px" }}>{v.resTitle}</div>
+<div style={{ fontSize: "13px", color: "#DCEAE2", marginTop: "4px" }}>{v.resSub}</div>
 </div>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "10px 14px", marginBottom: "18px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B" }}>Training category</div>
