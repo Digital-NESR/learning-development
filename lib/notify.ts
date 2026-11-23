@@ -55,7 +55,7 @@ export function buildMessage(t: Training, tag: string, subject: string, body: st
   // Templates that don't mention {{comment}} still get the decline reason
   if (r.comment && !body.includes("{{comment}}")) text += `\n\nComment from ${r.managerName || "the approver"}: ${r.comment}`;
   const filledSubject = fillPlaceholders(subject, values);
-  const testTo = (process.env.LD_MAIL_TEST_RECIPIENT || "").trim();
+  const testTo = testRecipients();
   const html = trainingEmailHtml({
     tag: tag.toUpperCase(), eyebrow: `${t.code} · NESR Training Portal`, title: filledSubject, firstName: r.to.firstName, message: text,
     details: [["Session", t.code], ["Training", t.title], ["Dates", shared.dates], ["Location", t.location]],
@@ -66,6 +66,14 @@ export function buildMessage(t: Training, tag: string, subject: string, body: st
     to: testTo || r.to.email, intendedTo: r.to.email, name: r.to.name,
     subject: testTo ? `[TEST → ${r.to.email}] ${filledSubject}` : filledSubject, text, html
   };
+}
+
+/**
+ * Test mode: LD_MAIL_TEST_RECIPIENT holds one or more addresses (separated by commas or semicolons).
+ * Every email then goes to all of them, as one comma-separated "to", instead of the real recipient.
+ */
+export function testRecipients(): string {
+  return (process.env.LD_MAIL_TEST_RECIPIENT || "").split(/[,;]/).map(s => s.trim()).filter(Boolean).join(", ");
 }
 
 /**
@@ -86,7 +94,7 @@ export async function postToN8n(t: Training, audience: string, messages: Message
     method: "POST",
     headers: { "Content-Type": "application/json", ...(process.env.LD_N8N_EMAIL_WEBHOOK_SECRET ? { "x-webhook-secret": process.env.LD_N8N_EMAIL_WEBHOOK_SECRET } : {}) },
     body: JSON.stringify({
-      from: process.env.LD_MAIL_FROM || null, testMode: !!process.env.LD_MAIL_TEST_RECIPIENT,
+      from: process.env.LD_MAIL_FROM || null, testMode: !!testRecipients(),
       training: { id: t.id, ...trainingValues(t) }, audience, count: messages.length, messages
     }),
     signal: AbortSignal.timeout(10_000)

@@ -17,7 +17,7 @@ An L&D admin opens **Notifications → Send Training Email**, picks a training a
 | `LD_MAIL_FROM` | *(leave unset)* | Optional and informational only. Emails are sent **from the Outlook account connected in the n8n node**. If set, it's passed to n8n as `from`, but n8n should not use it as the sender unless that account has Send As rights |
 | `LD_N8N_EMAIL_WEBHOOK_URL` | `https://<n8n-host>/webhook/ld-portal-email` | Production URL of the n8n Webhook node |
 | `LD_N8N_EMAIL_WEBHOOK_SECRET` | random string | Optional. Sent as the `x-webhook-secret` header so n8n can reject anything else |
-| `LD_MAIL_TEST_RECIPIENT` | `sbagalkot@nesr.com` | **Test mode.** Every email goes to this address instead of the real recipients, and the subject starts with `[TEST → real@address]`. The Notifications page shows a test-mode banner. Remove it to send to the real people |
+| `LD_MAIL_TEST_RECIPIENT` | `sbagalkot@nesr.com, colleague@nesr.com` | **Test mode.** One address, or several separated by commas. Every email goes to these addresses instead of the real recipients, and the subject starts with `[TEST → real@address]`. The Notifications page shows a test-mode banner. Remove it to send to the real people |
 
 The Send button stays disabled until `LD_N8N_EMAIL_WEBHOOK_URL` is set.
 
@@ -53,7 +53,7 @@ The Send button stays disabled until `LD_N8N_EMAIL_WEBHOOK_URL` is set.
 
 - `audience` is `registered` (everyone except declined requests), `enrolled` (enrolled or completed) or `participants` (marked attended).
 - `html` is the complete branded email (NESR header, message, training details table, "Open Training Portal" button, footer). Use it as the Outlook node body with content type HTML. `text` is the plain-text version.
-- In test mode, `testMode` is `true`, every `to` is the test address, and `intendedTo` holds the real recipient. n8n should always send to `to`.
+- In test mode, `testMode` is `true`, every `to` is the test address list (comma-separated when there are several, which the Outlook node accepts), and `intendedTo` holds the real recipient. n8n should always send to `to`.
 - n8n must reply with **2xx**. Any other response, or no response, makes the portal tell the admin that **nothing was sent**.
 
 ### Suggested n8n workflow

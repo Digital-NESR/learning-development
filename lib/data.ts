@@ -3,6 +3,7 @@ import type { Employee } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { APPROVAL_LEVELS } from "@/lib/constants.js";
 import { normId, nameKey, nameWords } from "@/lib/history";
+import { testRecipients } from "@/lib/notify";
 
 const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -158,7 +159,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
       ? {
           from: process.env.LD_MAIL_FROM || "",
           configured: !!process.env.LD_N8N_EMAIL_WEBHOOK_URL,
-          testRecipient: (process.env.LD_MAIL_TEST_RECIPIENT || "").trim()
+          testRecipient: testRecipients()
         }
       : null
   };

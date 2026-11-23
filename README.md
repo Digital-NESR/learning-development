@@ -95,7 +95,7 @@ The names match the **Digital-NESR** Vercel project, so the shared database and 
 | `LD_PUBLIC_URL` | Optional | Address used for the "Open Training Portal" button in emails, e.g. `https://training.nesr.com`. Defaults to the address the admin is using |
 | `CRON_SECRET` | For reminders | Any long random string. Vercel uses it to call the daily approval-reminder job (06:00 UTC); without it the job refuses to run |
 | `LD_REMINDER_AFTER_DAYS` / `LD_REMINDER_EVERY_DAYS` | Optional | First reminder after N days pending (default 2), then every N days (default 2) |
-| `LD_MAIL_TEST_RECIPIENT` | Optional | Test mode: all emails go to this one address, with the real recipient shown in the subject. Remove before go-live |
+| `LD_MAIL_TEST_RECIPIENT` | Optional | Test mode: all emails go to these addresses instead (one, or several separated by commas), with the real recipient shown in the subject. Remove before go-live |
 | `LD_NAMEPLATE_API_KEY` | Optional | Enables `POST /api/hooks/nameplate` for n8n. Without it the endpoint is closed |
 | `LD_DEMO_LOGIN` | Optional | `true` shows a demo login with sample people. **Testing only — remove before go-live** |
 | `DATABASE_URL` | Optional | A full connection string. Overrides the `DB_*` parts if set |
