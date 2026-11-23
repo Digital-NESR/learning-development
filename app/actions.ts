@@ -363,15 +363,14 @@ export async function setAttendance(trainingId: string, employeeId: string, mark
         create: { trainingId, employeeId, attended, partial, markedById: me.id }
       });
       if (attended) {
-        // Attended overall = present on every day of the training
-        for (const day of trainingDays(t.startDate.toISOString().slice(0, 10), t.endDate.toISOString().slice(0, 10))) {
-          const date = new Date(day + "T00:00:00Z");
-          await tx.attendanceDay.upsert({
-            where: { trainingId_employeeId_day: { trainingId, employeeId, day: date } },
-            update: { present: true, method: "manual", markedById: me.id, at: new Date() },
-            create: { trainingId, employeeId, day: date, present: true, method: "manual", markedById: me.id }
-          });
-        }
+        // Attended overall = present on every day of the training (two statements, whatever the number of days)
+        const now = new Date();
+        await tx.attendanceDay.updateMany({ where: { trainingId, employeeId }, data: { present: true, method: "manual", markedById: me.id, at: now } });
+        await tx.attendanceDay.createMany({
+          data: trainingDays(t.startDate.toISOString().slice(0, 10), t.endDate.toISOString().slice(0, 10))
+            .map(day => ({ trainingId, employeeId, day: new Date(day + "T00:00:00Z"), present: true, method: "manual", markedById: me.id, at: now })),
+          skipDuplicates: true
+        });
       }
       await tx.trainingRequest.updateMany({
         where: { trainingId, employeeId, state: { in: attended ? ["enrolled"] : ["completed"] } },

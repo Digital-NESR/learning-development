@@ -142,6 +142,48 @@ export default class Portal extends React.Component {
     return false;
   }
 
+  /**
+   * Attendance clicks: the mark shows at once and is saved in the background, so L&D can mark people quickly.
+   * Fresh data from the server is applied once the last pending save finishes; a failed save is shown and undone.
+   */
+  saveAttendance(optimistic, save, failTitle) {
+    this.setState(optimistic);
+    this._attPending = (this._attPending || 0) + 1;
+    const done = res => {
+      this._attPending--;
+      if (!res || !res.ok) {
+        this.flash(failTitle, (res && res.error) || "Check your connection and try again.");
+        if (!this._attPending) this.refreshQuiet();
+      } else if (!this._attPending) {
+        this.setState(this.fromSnapshot(res.data));
+      }
+    };
+    save().then(done, () => done(null));
+  }
+
+  /** Overall result for one person: true = attended (every day present), "partial", false = no show. */
+  markOverall(t, pk, mark) {
+    const key = t.id + ":" + pk;
+    this.saveAttendance(s => {
+      const out = {attended: Object.assign({}, s.attended, {[key]: mark})};
+      if (mark === true) out.days = Object.assign({}, s.days, {[key]: Object.fromEntries(trainingDays(t.start, t.end).map(d => [d, true]))});
+      out.requests = s.requests.map(r => r.tid !== t.id || r.who !== pk ? r
+        : mark === true && r.state === "enrolled" ? Object.assign({}, r, {state: "completed"})
+        : mark !== true && r.state === "completed" ? Object.assign({}, r, {state: "enrolled"}) : r);
+      return out;
+    }, () => actions.setAttendance(t.id, pk, mark), "Couldn't save the attendance");
+  }
+
+  /** One day for one person: true present, false absent, null cleared. The overall result follows from the server. */
+  markDay(t, pk, day, value) {
+    const key = t.id + ":" + pk;
+    this.saveAttendance(s => {
+      const marks = Object.assign({}, s.days[key] || {});
+      if (value === null) delete marks[day]; else marks[day] = value;
+      return {days: Object.assign({}, s.days, {[key]: marks})};
+    }, () => actions.setDayAttendance(t.id, pk, day, value), "Couldn't save the day");
+  }
+
   /** Re-reads data from the server in the background (e.g. latest seat counts). */
   async refreshQuiet() {
     try {
@@ -936,9 +978,9 @@ export default class Portal extends React.Component {
         attBg: mark === true ? "#2A7E4F" : "#FFFFFF", attFg: mark === true ? "#FFFFFF" : "#58595B",
         partBg: mark === "partial" ? "#B07A00" : "#FFFFFF", partFg: mark === "partial" ? "#FFFFFF" : "#58595B",
         noBg: mark === false ? "#8A2B2B" : "#FFFFFF", noFg: mark === false ? "#FFFFFF" : "#58595B",
-        onAttended: () => { if (mark !== true) this.act(() => actions.setAttendance(t.id, pk, true), "Marked attended", p.name + " · " + t.code + " · every day marked present"); },
-        onPartial: () => { if (mark !== "partial") this.act(() => actions.setAttendance(t.id, pk, "partial"), "Marked partially attended", p.name + " · " + t.code + ". Mark the days they were present."); },
-        onNoShow: () => { if (mark !== false) this.act(() => actions.setAttendance(t.id, pk, false), "Marked no show", p.name + " · " + t.code); }
+        onAttended: () => { if (mark !== true) this.markOverall(t, pk, true); },
+        onPartial: () => { if (mark !== "partial") this.markOverall(t, pk, "partial"); },
+        onNoShow: () => { if (mark !== false) this.markOverall(t, pk, false); }
       };
     };
 
@@ -964,8 +1006,7 @@ export default class Portal extends React.Component {
             bg: v === true ? "#C5E0D2" : v === false ? "#F7DEDE" : "#FFFFFF",
             fg: v === true ? "#1F5E3A" : v === false ? "#8A2B2B" : "#8A8F8C",
             border: v === true ? "#2A7E4F" : v === false ? "#E3B5B5" : "#D1D3D4",
-            onClick: () => this.act(() => actions.setDayAttendance(t.id, pk, d, next),
-              next === true ? "Marked present" : next === false ? "Marked absent" : "Day cleared", name + " · " + t.code + " · Day " + (i + 1), {}, "day")
+            onClick: () => this.markDay(t, pk, d, next)
           };
         });
         return a;
