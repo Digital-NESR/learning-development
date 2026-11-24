@@ -7,7 +7,7 @@ import { dateRange } from "@/lib/training-format.js";
 export const runtime = "nodejs";
 
 const STATUS: Record<string, string> = {
-  pending: "Pending Approval", enrolled: "Registered", waitlist: "Waitlisted", completed: "Completed", rejected: "Rejected"
+  pending: "Pending Approval", enrolled: "Approved", waitlist: "Waitlisted", completed: "Completed", rejected: "Rejected"
 };
 const ORDER = ["enrolled", "completed", "waitlist", "pending", "rejected"];
 

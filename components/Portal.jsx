@@ -15,7 +15,7 @@ const SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov"
 
 const STATE_STYLE = {
   pending:   {label:"Pending Approval",  bg:"#FDF2D9", fg:"#8A6100"},
-  enrolled:  {label:"Registered",        bg:"#C5E0D2", fg:"#1F5E3A"},
+  enrolled:  {label:"Approved",          bg:"#C5E0D2", fg:"#1F5E3A"},
   waitlist:  {label:"Waitlisted",        bg:"#E3EEFA", fg:"#1F4E79"},
   rejected:  {label:"Rejected",          bg:"#F7DEDE", fg:"#8A2B2B"},
   completed: {label:"Completed",         bg:"#C5E0D2", fg:"#1F5E3A"}
@@ -58,7 +58,7 @@ export default class Portal extends React.Component {
       screen: "dashboard",
       calView: "table",
       month: now.getMonth(), calYear: now.getFullYear(),
-      q: "", fType: "All", fCat: "All", fLoc: "All", fStatus: "", addValue: "", extName: "", extOrg: "CPVEN", extEmail: "",
+      q: "", fType: "All", fCat: "All", fLoc: "All", fStatus: "open", addValue: "", extName: "", extOrg: "CPVEN", extEmail: "",
       detailId: null,
       form: null,
       justification: "",
@@ -588,15 +588,16 @@ export default class Portal extends React.Component {
         edge: on ? "#2A7E4F" : "transparent",
         badge: badges[k] || 0,
         badgeBg: on ? "#2A7E4F" : "#E7EBE9", badgeFg: on ? "#FFFFFF" : "#58595B",
-        onClick: () => this.setState({screen: k, detailId: null})
+        // The calendar opens on "Registration Open"; Manage Trainings on all statuses
+        onClick: () => this.setState(Object.assign({screen: k, detailId: null}, k === "calendar" ? {fStatus: "open"} : k === "trainings" ? {fStatus: ""} : {}))
       };
     };
     const section = (label, items, first) =>
       [{isHeader: true, isItem: false, label, pad: first ? "0 16px 8px" : "18px 16px 8px"}].concat(items.map(navItem));
     const nav = section("Employee", [["dashboard","My Dashboard"],["calendar","Training Calendar"],["resources","Resources"]], true)
-      .concat(canManage ? section("Manager", [["approvals","Team Approvals"],["team","Team Training History"]]) : [])
+      .concat(canManage ? section("Manager", [["approvals","Team Requests"],["team","Team Training History"]]) : [])
       .concat(isAdmin ? section("L&D Team", [["adminDash","Dashboard"],["trainings","Manage Trainings"],["queue","Waitlist Queue"],["attendance","Attendance"],["history","Training History"],
-        ["surveys","Surveys"],["certificates","Certificates"],["nametags","Name Tags"],["resManage","Manage Resources"],["templates","Notifications"]]) : []);
+        ["surveys","Surveys"],["certificates","Certificates"],["nametags","Name Tags"],["templates","Notifications"]]) : []);
 
     const s = {
       empDash: scr === "dashboard",
@@ -629,7 +630,7 @@ export default class Portal extends React.Component {
           onToggle: () => st.fCat === "All" && this.setState(s2 => ({catOpen: Object.assign({}, s2.catOpen, {[g.c]: !(s2.catOpen || {})[g.c]})}))};
       });
 
-    const viewTabs = [["table","Table"],["cards","Catalog"],["month","Month"]].map(([k, label]) => ({
+    const viewTabs = [["table","Table"],["cards","Catalog"]].map(([k, label]) => ({
       label, bg: st.calView === k ? "#FFFFFF" : "transparent", fg: st.calView === k ? "#2A7E4F" : "#58595B",
       onClick: () => this.setState({calView: k})
     }));
@@ -667,7 +668,7 @@ export default class Portal extends React.Component {
       const chainPeople = (r.chain || []).map(k => this.P(k)).filter(Boolean);
       const cur = r.state === "pending" ? chainPeople[r.step] : null;
       const base = STATE_STYLE[r.state] || STATE_STYLE.pending;
-      const outcome = {enrolled: "Registered", completed: "Completed", waitlist: "Waitlisted"}[r.state] || "Confirmed";
+      const outcome = {enrolled: "Approved", completed: "Completed", waitlist: "Waitlisted"}[r.state] || "Confirmed";
       const stepDefs = [{label:"Submitted", note: r.submitted}]
         .concat(chainPeople.map(p => ({label: p.first + " (manager)", note: p.title})))
         .concat([{label: outcome, note: r.state === "waitlist" ? "Class full or registration closed" : "Seat confirmed"}]);
@@ -797,7 +798,7 @@ export default class Portal extends React.Component {
         railBorder: canApply ? "1px solid #EAEEEC" : "0",
         ctaLabel: st.busyOp === "action" ? "Submitting…" : "Submit Request",
         chainNote,
-        footNote: already ? "You already have a request on file for this session." :
+        footNote: already ? "You have already applied for this training." :
           !detailT.registrationOpen ? "This session isn't taking registrations (" + statusLabel(detailT.status) + ")." : "All fields are required.",
         facts: [
           mk("Dates", this.range(detailT), "M7 3v3M17 3v3M4 9.5h16M5.5 6h13a1.5 1.5 0 011.5 1.5v11A1.5 1.5 0 0118.5 20h-13A1.5 1.5 0 014 18.5v-11A1.5 1.5 0 015.5 6z"),
@@ -920,7 +921,7 @@ export default class Portal extends React.Component {
     };
     const timelineRows = [
       Object.assign({label:"Pending Approval", color:"#B07A00"}, stageAvg(["pending"])),
-      Object.assign({label:"Registered", color:"#2A7E4F"}, stageAvg(["enrolled"])),
+      Object.assign({label:"Approved", color:"#2A7E4F"}, stageAvg(["enrolled"])),
       Object.assign({label:"Waitlisted", color:"#58595B"}, stageAvg(["waitlist"])),
       Object.assign({label:"Rejected", color:"#8A2B2B"}, stageAvg(["rejected"]))
     ];
@@ -932,14 +933,12 @@ export default class Portal extends React.Component {
     const statusTiles = list => list.map(([v, label, note, color]) => tile(label, nStatus(v), note, color, showTrainings(v), "List " + label.toLowerCase() + " sessions"));
     // 1. Session status
     const sessionKpis = [tile("Total", st.trainings.length, "In the calendar", "#2A7E4F", showTrainings(""), "List all sessions")].concat(statusTiles([
-      ["open", "Ongoing", "Taking requests", "#1F4E79"],
       ["completed", "Completed", "Training completed", "#3E403E"],
       ["cancelled", "Cancelled", "Called off", "#8A2B2B"]
     ]));
     // 2. Registration status (whether a session is taking requests)
     const regKpis = statusTiles([
-      ["open", "Open Registration", "Taking requests", "#2A7E4F"],
-      ["class_full", "Class Full", "No seats left", "#8A6100"],
+      ["open", "Registration Open", "Taking requests", "#2A7E4F"],
       ["registration_closed", "Registration Closed", "Not taking requests", "#58595B"]
     ]);
     // 3. Approval status of everyone who registered
@@ -1161,11 +1160,11 @@ export default class Portal extends React.Component {
     };
     const card = (key, label, value, note) => {
       const on = st.dashCard === key;
-      return {label, value: String(value), note, bg: on ? "#F2F7F4" : "#FFFFFF", border: on ? "#2A7E4F" : "#E1E5E3",
-        onClick: () => this.setState({dashCard: on ? null : key})};
+      return {label, value: String(value), note, bg: on ? "#F2F7F4" : "#FFFFFF", ring: on ? "0 0 0 1px #2A7E4F" : "none",
+        onClick: () => this.setState({dashCard: on ? null : key, reqBoxClosed: false})};
     };
     const empKpis = [
-      card("enrolled", "Registered", cardGroups.enrolled.length, "Confirmed sessions"),
+      card("enrolled", "Approved", cardGroups.enrolled.length, "Seat confirmed"),
       card("pending", "Pending Approval", cardGroups.pending.length, "With your manager"),
       card("waitlist", "Waitlisted", cardGroups.waitlist.length, "Approved, waiting for a seat"),
       card("completed", "Completed", cardGroups.completed.length, "Attended sessions"),
@@ -1519,7 +1518,7 @@ export default class Portal extends React.Component {
           countBig, countUnit,
           kpis: [
             {label:"Pending Approvals", value: String(by("pending").length), note:"Waiting on managers"},
-            {label:"Registered", value: String(enrolledN), note: t.enrolled + " of " + t.seats + " seats taken"},
+            {label:"Approved", value: String(enrolledN), note: t.enrolled + " of " + t.seats + " seats taken"},
             {label:"Waitlisted", value: String(by("waitlist").length), note:"Manager approved, no seat"},
             {label:"Rejected", value: String(by("rejected").length), note:"Not approved"}
           ],
@@ -1585,10 +1584,12 @@ export default class Portal extends React.Component {
       year: TRAINING_CYCLE_YEAR, nav, s,
       resTitle: scr === "resManage" ? "Manage Resources" : "Resources",
       resSub: scr === "resManage" ? "Add, edit or remove instructor profiles and training outlines. Employees see them under Resources."
-        : "Learning & Development Resources, Instructor Profiles and Training Outlines.",
+        : "",
+      // Instructor profiles and training outlines come back when NESR goes live with SAP
+      resExtras: false,
       rows, adminRows, viewTabs, typeTabs, filters, q: st.q,
       onSearch: e => this.setState({q: e.target.value}),
-      clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All", fStatus:""}),
+      clearFilters: () => this.setState({q:"", fType:"All", fCat:"All", fLoc:"All", fStatus: scr === "calendar" ? "open" : ""}),
       statusFilter,
       approvalsQ: st.approvalsQ, onApprovalsQ: e => this.setState({approvalsQ: e.target.value}),
       noApprovalMatch: allTeamRequests.length > 0 && teamRequests.length === 0,
@@ -1599,7 +1600,7 @@ export default class Portal extends React.Component {
       noResults: rows.length === 0,
       resultLabel: rows.length + " of " + st.trainings.length + " sessions in the calendar",
       catalogLabel: st.trainings.length + " sessions published",
-      pendingLabel: onMe + " request" + (onMe === 1 ? "" : "s") + " waiting on you · your approval is final: the person is registered, or waitlisted if the class is full or registration has closed",
+      pendingLabel: onMe + " Pending Request" + (onMe === 1 ? "" : "s") + ". Your approval/rejection is final.",
       dayNames: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
       monthCells, monthLabel: MONTHS[st.month] + " " + st.calYear,
       prevMonth: () => this.setState(st.month === 0 ? {month: 11, calYear: st.calYear - 1} : {month: st.month - 1}),
@@ -1608,10 +1609,13 @@ export default class Portal extends React.Component {
         myRequests: myRequests.length === 0, teamRequests: allTeamRequests.length === 0, teamStats: teamPeople.length === 0,
         queueRows: queueRows.length === 0, attendance: attendanceSessions.length === 0, surveys: surveySessions.length === 0
       },
-      myRequests, teamRequests, queueRows, teamStats,
+      // The Training Status cards filter this list
+      myRequests: st.dashCard ? cardGroups[st.dashCard] : myRequests, teamRequests, queueRows, teamStats,
+      reqFilter: st.dashCard ? {label: "Showing " + ({enrolled: "Approved", pending: "Pending Approval", waitlist: "Waitlisted", completed: "Completed", rejected: "Rejected"}[st.dashCard] || "") + " (" + cardGroups[st.dashCard].length + " of " + myRequests.length + ")",
+        empty: cardGroups[st.dashCard].length === 0, emptyText: LISTS[st.dashCard][1], onClear: () => this.setState({dashCard: null})} : null,
       reqBox: {open: !st.reqBoxClosed, label: st.reqBoxClosed ? "Show" : "Hide", count: myRequests.length + (myRequests.length === 1 ? " request" : " requests"),
         onToggle: () => this.setState(s => ({reqBoxClosed: !s.reqBoxClosed}))},
-      outl, empKpis, dashList, sessionKpis, regKpis, approvalKpis, myHistory, hist, waitlist, prof, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
+      outl, empKpis, sessionKpis, regKpis, approvalKpis, myHistory, hist, waitlist, prof, fillRows, catRows, attendanceSessions, attReport, sheet, surveySessions, cert, templates, ageingRows, timelineRows,
       resources: RESOURCES,
       detail, formFields, justification: st.justification,
       justificationBorder: st.formError && !String(st.justification || "").trim() ? "#8A2B2B" : "#D9DDDB",

@@ -8,7 +8,7 @@ import { CANCELLED_KEEP, waitlistKind, waitlistReason } from "@/lib/waitlist.js"
 
 export const runtime = "nodejs";
 
-const STATE: Record<string, string> = { pending: "Pending Approval", enrolled: "Registered", waitlist: "Waitlisted" };
+const STATE: Record<string, string> = { pending: "Pending Approval", enrolled: "Approved", waitlist: "Waitlisted" };
 const day = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 
 /** GET /api/export/waitlist?kind=all|waitlist|cancelled — the Waitlist Queue as Excel (L&D only). */

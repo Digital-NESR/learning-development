@@ -81,7 +81,6 @@
               <div style="position:absolute;top:-40px;right:-60px;width:180px;height:90px;border-radius:0 0 180px 180px;background:rgba(197,224,210,.18)"></div>
             </div>
             <div style="position:relative">
-              <div style="font-size:11px;font-weight:bold;letter-spacing:1.3px;text-transform:uppercase;color:#C5E0D2">{{ year }} Learning Journey</div>
               <div style="font-size:26px;font-weight:bold;color:#fff;margin-top:5px">Welcome back, {{ user.first }}</div>
               <div style="font-size:13px;color:#DCEAE2;margin-top:4px">Here is where your learning journey stands this year.</div>
             </div>
@@ -89,39 +88,28 @@
           <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Training Status</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px">
             <sc-for list="{{ empKpis }}" as="k" hint-placeholder-count="4">
-              <div onClick="{{ k.onClick }}" title="Show these trainings" style="background:{{ k.bg }};border:1px solid {{ k.border }};border-top:4px solid #2A7E4F;border-radius:5px;padding:14px 16px;cursor:pointer" style-hover="box-shadow:0 4px 14px rgba(31,31,29,.08)">
+              <div onClick="{{ k.onClick }}" title="Show these trainings" style="background:{{ k.bg }};border:1px solid #E1E5E3;border-top:4px solid #2A7E4F;box-shadow:{{ k.ring }};border-radius:5px;padding:14px 16px;cursor:pointer" style-hover="box-shadow:0 4px 14px rgba(31,31,29,.08)">
                 <div style="font-size:11px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#58595B">{{ k.label }}</div>
                 <div style="font-size:30px;font-weight:bold;color:#2A7E4F;line-height:1.2;margin-top:4px">{{ k.value }}</div>
                 <div style="font-size:11px;color:#8A8F8C">{{ k.note }}</div>
               </div>
             </sc-for>
           </div>
-          <sc-if value="{{ dashList }}" hint-placeholder-val="{{ false }}">
-            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;margin:-6px 0 20px;animation:fadeIn .15s ease">
-              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px">
-                <div style="font-size:13px;font-weight:bold;flex:1">{{ dashList.title }}</div>
-                <button onClick="{{ dashList.onClose }}" title="Close" style="border:0;background:#EEF1EF;color:#58595B;width:24px;height:24px;border-radius:4px;cursor:pointer;font-weight:bold">&times;</button>
-              </div>
-              <sc-if value="{{ dashList.empty }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:26px 16px;text-align:center;color:#8A8F8C;font-size:13px">{{ dashList.emptyText }}</div>
-              </sc-if>
-              <sc-for list="{{ dashList.rows }}" as="dr" hint-placeholder-count="3">
-                <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F2F1">
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:bold">{{ dr.title }}</div>
-                    <div style="font-size:11px;color:#58595B;margin-top:2px">{{ dr.meta }}</div>
-                  </div>
-                  <span style="background:{{ dr.stBg }};color:{{ dr.stFg }};font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ dr.status }}</span>
-                </div>
-              </sc-for>
-            </div>
-          </sc-if>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
             <div onClick="{{ reqBox.onToggle }}" style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
               <span style="flex:1">Training Requests <span style="font-weight:normal;color:#8A8F8C">· {{ reqBox.count }}</span></span>
               <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ reqBox.label }}</span>
             </div>
             <sc-if value="{{ reqBox.open }}" hint-placeholder-val="{{ true }}">
+            <sc-if value="{{ reqFilter }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 18px;background:#F2F7F4;border-bottom:1px solid #E1E5E3;font-size:12px">
+                <span style="flex:1;font-weight:bold;color:#1F5E3A">{{ reqFilter.label }}</span>
+                <button onClick="{{ reqFilter.onClear }}" style="border:0;background:none;color:#2A7E4F;cursor:pointer;font-weight:bold;font-size:12px;padding:0">Show all requests</button>
+              </div>
+              <sc-if value="{{ reqFilter.empty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:26px 16px;text-align:center;color:#8A8F8C;font-size:13px">{{ reqFilter.emptyText }}</div>
+              </sc-if>
+            </sc-if>
             <sc-if value="{{ empty.myRequests }}" hint-placeholder-val="{{ false }}">
               <div style="padding:30px 16px;text-align:center;color:#8A8F8C;font-size:13px">You haven't requested any training yet. Open the Training Calendar, choose a session and click Submit Request.</div>
             </sc-if>
@@ -174,7 +162,6 @@
               <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ myHistory.label }}</span>
             </div>
             <sc-if value="{{ myHistory.open }}" hint-placeholder-val="{{ true }}">
-              <div style="margin:12px 16px 0;padding:9px 12px;background:#FDF2D9;border:1px solid #F0DDA8;border-radius:4px;font-size:12px;color:#7A5400;line-height:1.5">Before registering for a new course, please review your completed training records to avoid duplicate training registrations.</div>
               <sc-if value="{{ myHistory.empty }}" hint-placeholder-val="{{ false }}">
                 <div style="padding:26px 16px;text-align:center;color:#8A8F8C;font-size:13px">No completed trainings on record yet. If a training you completed is missing, contact the L&amp;D team.</div>
               </sc-if>
@@ -203,7 +190,6 @@
               <div style="font-size:13px;color:#58595B;margin-top:3px">{{ resultLabel }}</div>
             </div>
             <div style="flex:1"></div>
-            <button onClick="{{ onCalExport }}" style="padding:8px 14px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Export to Excel</button>
             <div style="display:flex;gap:2px;background:#E7EBE9;padding:3px;border-radius:4px">
               <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="3">
                 <button onClick="{{ v.onClick }}" style="border:0;cursor:pointer;padding:7px 15px;border-radius:3px;font-size:12px;font-weight:bold;background:{{ v.bg }};color:{{ v.fg }}">{{ v.label }}</button>
@@ -364,8 +350,10 @@
           <div style="position:relative;overflow:hidden;border-radius:7px;padding:28px;margin-bottom:18px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;background-color:#1F5E3A;background-image:linear-gradient(90deg,rgba(31,94,58,.95) 0%,rgba(42,126,79,.7) 55%,rgba(31,31,29,.35) 100%),url(assets/photo-toolbox-talk.png);background-size:cover,cover;background-position:center,center 32%">
             <div style="font-size:11px;font-weight:bold;letter-spacing:1.3px;text-transform:uppercase;color:#C5E0D2">Training Portal</div>
             <div style="font-size:24px;font-weight:bold;color:#fff;margin-top:5px">{{ resTitle }}</div>
-            <div style="font-size:13px;color:#DCEAE2;margin-top:4px">{{ resSub }}</div>
+            <sc-if value="{{ resSub }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#DCEAE2;margin-top:4px">{{ resSub }}</div></sc-if>
           </div>
+          <sc-if value="{{ resExtras }}" hint-placeholder-val="{{ false }}">
+          <div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;padding:10px 14px;margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B">Training category</div>
             <select value="{{ prof.catFilter.value }}" onChange="{{ prof.catFilter.onChange }}" title="Show instructor profiles and training outlines for one category" style="padding:8px 8px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;min-width:240px">
@@ -556,6 +544,8 @@
               </div>
             </sc-for>
           </div>
+          </div>
+          </sc-if>
           <div style="font-size:16px;font-weight:bold;margin-bottom:12px">Learning and Development Resources</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px">
             <sc-for list="{{ resources }}" as="rs" hint-placeholder-count="4">
@@ -571,7 +561,7 @@
 
       <sc-if value="{{ s.mgrApp }}" hint-placeholder-val="{{ false }}">
         <div>
-          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Approvals</div>
+          <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Requests</div>
           <div style="font-size:13px;color:#58595B;margin-bottom:14px">{{ pendingLabel }}</div>
           <div style="margin-bottom:14px;max-width:360px">
             <input value="{{ approvalsQ }}" onChange="{{ onApprovalsQ }}" placeholder="Search by employee name" style="width:100%;padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
@@ -626,7 +616,7 @@
       <sc-if value="{{ s.mgrTeam }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Team Training History</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:14px">Completed trainings for your team, including records from before the portal. Click a person to see the list. Requests waiting for a decision are in Team Approvals.</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:14px">Completed trainings for your team, including records from before the portal. Click a person to see the list. Requests waiting for a decision are in Team Requests.</div>
           <div style="margin-bottom:14px;max-width:360px">
             <input value="{{ teamQ }}" onChange="{{ onTeamQ }}" placeholder="Search by employee name" style="width:100%;padding:9px 11px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
           </div>
@@ -1591,12 +1581,13 @@
             <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px">
               <div>
                 <div style="font-size:14px;font-weight:bold">Registration</div>
-                <div style="font-size:11.5px;color:#58595B;margin-top:3px;line-height:1.55">Your request goes to your line manager. Their approval is final: you're registered if a seat is free, or placed on the waitlist if the class is full or registration has closed. All fields are required.</div>
+                <div style="font-size:11.5px;color:#58595B;margin-top:3px;line-height:1.55">Your request will be sent to your direct manager for approval. Enrollment by the L&amp;D team will only be considered after receiving your manager's approval and is subject to class capacity.</div>
+                <div style="font-size:11.5px;color:#58595B;margin-top:6px;line-height:1.55">By submitting this form, you confirm that you've discussed this training request with your manager.</div>
               </div>
               <sc-if value="{{ detail.histWarn }}" hint-placeholder-val="{{ false }}">
                 <div style="background:#FDF2D9;border:1px solid #F0DDA8;border-radius:5px;padding:10px 12px;font-size:12px;color:#7A5400;line-height:1.5"><b>Already completed?</b> {{ detail.histWarn }}</div>
               </sc-if>
-              <div style="font-size:11.5px;color:#58595B;line-height:1.5">Not sure if you've taken this course before? <button onClick="{{ detail.onHistory }}" style="border:0;background:none;padding:0;color:#2A7E4F;font-weight:bold;cursor:pointer;font-size:11.5px;text-decoration:underline">Check your Training Records</button> first.</div>
+              <div style="font-size:11.5px;color:#58595B;line-height:1.5">Please review your completed <button onClick="{{ detail.onHistory }}" style="border:0;background:none;padding:0;color:#2A7E4F;font-weight:bold;cursor:pointer;font-size:11.5px;text-decoration:underline">training records</button> to avoid duplicate training registrations.</div>
               <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px;padding:10px 12px">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>
                 <span style="font-size:12px;font-weight:bold;color:#1F5E3A">{{ detail.chainNote }}</span>

@@ -31,7 +31,7 @@ export function trainingChanges(before: Record<string, unknown>, after: Record<s
 
 const SESSION_ACTIONS = ["create", "update", "status", "email"];
 const PEOPLE_ACTIONS = ["add_participant", "remove_participant", "add_external", "enroll"];
-const STATE: Record<string, string> = { pending: "Pending Approval", enrolled: "Registered", waitlist: "Waitlisted", rejected: "Rejected", completed: "Completed" };
+const STATE: Record<string, string> = { pending: "Pending Approval", enrolled: "Approved", waitlist: "Waitlisted", rejected: "Rejected", completed: "Completed" };
 const AUDIENCE: Record<string, string> = { registered: "everyone registered", enrolled: "registered participants", participants: "attendees" };
 
 export type ChangeEntry = { at: Date; who: string; trainingId: string; what: string; changes: { field: string; from: string; to: string }[]; reason: string };

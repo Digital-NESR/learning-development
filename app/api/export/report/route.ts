@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const REG_STATUS: Record<string, string> = {
-  pending: "Pending Approval", enrolled: "Registered", waitlist: "Waitlisted", completed: "Completed", rejected: "Rejected", lnd: "Registered"
+  pending: "Pending Approval", enrolled: "Approved", waitlist: "Waitlisted", completed: "Completed", rejected: "Rejected", lnd: "Approved"
 };
 const APPROVAL: Record<string, string> = { approved: "Approved", rejected: "Rejected", waiting: "Pending" };
 
