@@ -66,7 +66,7 @@
       <div style="flex:1"></div>
       <div style="margin:0 16px;padding:12px;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px">
         <div style="font-size:11px;font-weight:bold;color:#1F5E3A;margin-bottom:4px">Need help?</div>
-        <div style="font-size:11px;color:#58595B;line-height:1.5">Contact the L&amp;D team at <a href="mailto:learning@nesr.com">learning@nesr.com</a></div>
+        <div style="font-size:11px;color:#58595B;line-height:1.5">Contact the L&amp;D team at <a href="mailto:training@nesr.com">training@nesr.com</a></div>
       </div>
     </div>
 
@@ -1740,7 +1740,7 @@ function defaultForms(){
   const out = {};
   Object.keys(PEOPLE).forEach(k => {
     const p = PEOPLE[k];
-    out[k] = {nesrId:p.nesrId, name:p.name, loc:p.loc, dept:p.dept, nat:"Saudi Arabia", mgr: p.boss ? PEOPLE[p.boss].email : "learning@nesr.com"};
+    out[k] = {nesrId:p.nesrId, name:p.name, loc:p.loc, dept:p.dept, nat:"Saudi Arabia", mgr: p.boss ? PEOPLE[p.boss].email : "training@nesr.com"};
   });
   return out;
 }

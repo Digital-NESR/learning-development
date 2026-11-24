@@ -75,7 +75,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           )}
 
           <div style={{ fontSize: 11, color: "#58595B", marginTop: 22 }}>
-            Need help? Contact the L&amp;D team at <a href="mailto:learning@nesr.com">learning@nesr.com</a>
+            Need help? Contact the L&amp;D team at <a href="mailto:training@nesr.com">training@nesr.com</a>
           </div>
         </div>
       </div>

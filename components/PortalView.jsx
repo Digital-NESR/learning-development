@@ -47,7 +47,7 @@ export default function PortalView({ v }) {
 <div style={{ flex: "1" }}></div>
 <div style={{ margin: "0 16px", padding: "12px", background: "#F2F7F4", border: "1px solid #D9E7E0", borderRadius: "5px" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#1F5E3A", marginBottom: "4px" }}>Need help?</div>
-<div style={{ fontSize: "11px", color: "#58595B", lineHeight: "1.5" }}>Contact the L&amp;D team at <a href="mailto:learning@nesr.com">learning@nesr.com</a></div>
+<div style={{ fontSize: "11px", color: "#58595B", lineHeight: "1.5" }}>Contact the L&amp;D team at <a href="mailto:training@nesr.com">training@nesr.com</a></div>
 </div>
 </div>
 <div style={{ flex: "1", minWidth: "0", overflow: "auto", padding: "22px 26px 40px" }}>
