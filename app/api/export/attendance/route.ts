@@ -12,13 +12,13 @@ export const runtime = "nodejs";
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const quarterOf = (d: Date) => "Q" + (Math.floor(d.getUTCMonth() / 3) + 1);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const GREEN = "FF2A7E4F", PALE = "FFE8F2EC";
+const GREEN = "FF2A7E4F";
 const thin = { style: "thin" as const, color: { argb: "FFBFC5C2" } };
 const box = { top: thin, left: thin, bottom: thin, right: thin };
 
 /**
  * GET /api/export/attendance?id=<trainingId>  — one training, in L&D's "Training Attendance Sheet" layout
- * GET /api/export/attendance?quarter=Q4&type=HSE&year=2026 — consolidated attendance across trainings
+ * GET /api/export/attendance?year=2026&month=11 (or &quarter=Q4) &type=HSE — consolidated attendance across trainings
  */
 export async function GET(req: Request) {
   const me = await currentEmployee();
@@ -125,10 +125,14 @@ async function oneTraining(id: string, actorId: string) {
 async function consolidated(q: URLSearchParams, actorId: string) {
   const year = Number(q.get("year")) || new Date().getUTCFullYear();
   const quarter = /^Q[1-4]$/.test(q.get("quarter") || "") ? q.get("quarter")! : "";
+  const monthNo = Number(q.get("month")); // 1-12; a month wins over a quarter
+  const month = monthNo >= 1 && monthNo <= 12 ? monthNo : 0;
   const type = (q.get("type") || "").slice(0, 60);
 
   let from = new Date(Date.UTC(year, 0, 1)), to = new Date(Date.UTC(year + 1, 0, 1));
-  if (quarter) {
+  if (month) {
+    from = new Date(Date.UTC(year, month - 1, 1)); to = new Date(Date.UTC(year, month, 1));
+  } else if (quarter) {
     const qi = Number(quarter[1]) - 1;
     from = new Date(Date.UTC(year, qi * 3, 1)); to = new Date(Date.UTC(year, qi * 3 + 3, 1));
   }
@@ -143,19 +147,18 @@ async function consolidated(q: URLSearchParams, actorId: string) {
   const sum = wb.addWorksheet("Summary");
   sum.columns = [
     { header: "Training Code", key: "code", width: 13 }, { header: "Training", key: "title", width: 40 },
-    { header: "Type of Training", key: "type", width: 16 }, { header: "Training Category", key: "category", width: 24 },
+    { header: "Training Category", key: "type", width: 16 }, { header: "Training Subcategory", key: "category", width: 24 },
     { header: "Quarter", key: "quarter", width: 9 }, { header: "Month", key: "month", width: 8 },
     { header: "Start Date", key: "start", width: 13, style: { numFmt: "dd/mm/yyyy" } }, { header: "End Date", key: "end", width: 13, style: { numFmt: "dd/mm/yyyy" } },
     { header: "Location", key: "location", width: 20 }, { header: "Days", key: "days", width: 7 },
     { header: "Registered", key: "registered", width: 11 }, { header: "Attended", key: "attended", width: 10 },
-    { header: "No show", key: "noShow", width: 10 }, { header: "Not marked", key: "unmarked", width: 11 },
-    { header: "Attendance Rate", key: "rate", width: 14, style: { numFmt: "0%" } }
+    { header: "Partially Attended", key: "partial", width: 11 }, { header: "No show", key: "noShow", width: 10 }, { header: "Not marked", key: "unmarked", width: 11 }
   ];
   // Sheet 2: one row per participant per training
   const det = wb.addWorksheet("Participants");
   det.columns = [
     { header: "Training Code", key: "code", width: 13 }, { header: "Training", key: "title", width: 38 },
-    { header: "Type of Training", key: "type", width: 16 }, { header: "Quarter", key: "quarter", width: 9 },
+    { header: "Training Category", key: "type", width: 16 }, { header: "Quarter", key: "quarter", width: 9 }, { header: "Month", key: "month", width: 8 },
     { header: "Start Date", key: "start", width: 13, style: { numFmt: "dd/mm/yyyy" } }, { header: "Location", key: "location", width: 20 },
     { header: "Employee ID", key: "nesrId", width: 12 }, { header: "Employee Name", key: "name", width: 30 },
     { header: "Department", key: "department", width: 22 }, { header: "Work Location", key: "workLocation", width: 18 },
@@ -166,23 +169,22 @@ async function consolidated(q: URLSearchParams, actorId: string) {
   for (const t of trainings) {
     const days = trainingDays(iso(t.startDate), iso(t.endDate));
     const people = requests.filter(r => r.trainingId === t.id).map(r => r.employee).sort((a, b) => a.name.localeCompare(b.name));
-    let attended = 0, noShow = 0;
+    let attended = 0, partial = 0, noShow = 0;
     for (const p of people) {
       const o = overallMap.get(`${t.id}:${p.id}`);
-      if (o === true) attended++; else if (o === false) noShow++;
+      if (o === true) attended++; else if (o === "partial") partial++; else if (o === false) noShow++;
       det.addRow({
-        code: t.code, title: t.title, type: t.type, quarter: quarterOf(t.startDate), start: t.startDate, location: t.location,
+        code: t.code, title: t.title, type: t.type, quarter: quarterOf(t.startDate), month: MONTHS[t.startDate.getUTCMonth()], start: t.startDate, location: t.location,
         nesrId: p.nesrId || "", name: p.name, department: p.department || "", workLocation: p.location || p.country || "",
         org: p.isExternal ? p.organization || "External" : "NESR",
         present: days.filter(d => dayMap.get(`${t.id}:${p.id}:${d}`) === true).length, total: days.length,
-        overall: o === true ? "Attended" : o === false ? "No show" : ""
+        overall: o === true ? "Attended" : o === "partial" ? "Partially attended" : o === false ? "No show" : ""
       });
     }
     sum.addRow({
       code: t.code, title: t.title, type: t.type, category: t.category, quarter: quarterOf(t.startDate), month: MONTHS[t.startDate.getUTCMonth()],
       start: t.startDate, end: t.endDate, location: t.location, days: days.length,
-      registered: people.length, attended, noShow, unmarked: people.length - attended - noShow,
-      rate: attended + noShow ? attended / (attended + noShow) : null
+      registered: people.length, attended, partial, noShow, unmarked: people.length - attended - partial - noShow
     });
   }
 
@@ -195,8 +197,8 @@ async function consolidated(q: URLSearchParams, actorId: string) {
     ws.views = [{ state: "frozen", ySplit: 1 }];
     ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: ws.columnCount } };
   }
-  sum.getColumn("rate").eachCell((c, n) => { if (n > 1) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: PALE } }; });
 
-  await prisma.auditLog.create({ data: { actorId, action: "export_attendance", entity: "report", entityId: "all", details: { year, quarter, type, trainings: trainings.length } } });
-  return send(await wb.xlsx.writeBuffer(), `Attendance report ${year}${quarter ? " " + quarter : ""}${type ? " " + type : ""}`);
+  await prisma.auditLog.create({ data: { actorId, action: "export_attendance", entity: "report", entityId: "all", details: { year, month, quarter, type, trainings: trainings.length } } });
+  const period = month ? " " + MONTHS[month - 1] : quarter ? " " + quarter : "";
+  return send(await wb.xlsx.writeBuffer(), `Attendance report ${year}${period}${type ? " " + type : ""}`);
 }

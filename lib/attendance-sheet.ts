@@ -34,8 +34,9 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const DAYS_PER_TABLE = 5;
 /** Blank rows after the registered people, for walk-ins (more when no one is registered yet). */
 const EXTRA_ROWS = 3, EMPTY_ROWS = 10;
-const TABLE_W = 15661, INDENT = -539;
-const FIXED = { no: 681, id: 1443, name: 4194, loc: 1779 };
+// Both tables line up exactly with the page header band: the width between the margins (16820 − 2 × 1440), no indent
+const TABLE_W = 13940, INDENT = 0;
+const FIXED = { no: 600, id: 1300, name: 3600, loc: 1600 };
 
 const run = (text: string, o: { bold?: boolean; size?: number } = {}) =>
   `<w:r><w:rPr>${o.bold ? "<w:b/><w:bCs/>" : ""}<w:sz w:val="${o.size ?? 21}"/><w:szCs w:val="${o.size ?? 21}"/><w:lang w:val="en-US"/></w:rPr><w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
@@ -67,14 +68,16 @@ function attendanceTable(days: string[], firstDay: number, people: SheetInput["p
     + `<w:tblGrid>${widths.map(w => `<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>${header}${rows}</w:tbl>`;
 }
 
-/** Details table column widths, wider than the template's so each value stays on the label's line. */
-const DETAIL_COLS = [4100, 150, 2700, 150, 2700, 150, 4400, 369];
+/** Details table column widths (same total width as the header band), so each value stays on the label's line. */
+const DETAIL_COLS = [3650, 150, 2750, 150, 2750, 150, 3971, 369];
 
 /** Writes the training details after the labels in the template's details table (Name, Start, End, Location). */
 function fillDetails(tbl: string, values: string[]) {
   let i = 0, g = 0, w = 0;
   if ((tbl.match(/<w:gridCol /g) || []).length === DETAIL_COLS.length) {
-    tbl = tbl.replace(/<w:gridCol w:w="\d+"\/>/g, () => `<w:gridCol w:w="${DETAIL_COLS[g++]}"/>`)
+    tbl = tbl.replace(/<w:tblW w:w="\d+" w:type="dxa"\/>/, `<w:tblW w:w="${TABLE_W}" w:type="dxa"/>`)
+      .replace(/<w:tblInd w:w="-?\d+" w:type="dxa"\/>/, `<w:tblInd w:w="${INDENT}" w:type="dxa"/>`)
+      .replace(/<w:gridCol w:w="\d+"\/>/g, () => `<w:gridCol w:w="${DETAIL_COLS[g++]}"/>`)
       .replace(/<w:tcW w:w="\d+" w:type="dxa"\/>/g, () => `<w:tcW w:w="${DETAIL_COLS[w++] ?? 0}" w:type="dxa"/>`);
   }
   return tbl.replace(/<w:tc>[\s\S]*?<\/w:tc>/g, tc => {

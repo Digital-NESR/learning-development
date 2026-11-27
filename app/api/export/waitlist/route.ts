@@ -8,10 +8,10 @@ import { CANCELLED_KEEP, waitlistKind, waitlistReason } from "@/lib/waitlist.js"
 
 export const runtime = "nodejs";
 
-const STATE: Record<string, string> = { pending: "Pending Approval", enrolled: "Approved", waitlist: "Waitlisted" };
+const STATE: Record<string, string> = { pending: "Pending Approval", enrolled: "Approved", waitlist: "Waitlisted", rejected: "Rejected" };
 const day = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 
-/** GET /api/export/waitlist?kind=all|waitlist|cancelled — the Waitlist Queue as Excel (L&D only). */
+/** GET /api/export/waitlist?kind=all|waitlist|cancelled|rejected — the Waitlist Queue as Excel (L&D only). */
 export async function GET(req: Request) {
   const me = await currentEmployee();
   if (!me?.isAdmin) return NextResponse.json({ error: "Only the L&D team can export the waitlist." }, { status: 403 });
@@ -20,7 +20,8 @@ export async function GET(req: Request) {
   const requests = await prisma.trainingRequest.findMany({
     where: {
       training: { isActive: true },
-      OR: [{ state: "waitlist" }, { state: { in: CANCELLED_KEEP as RequestState[] }, training: { status: "cancelled" } }]
+      OR: [{ state: "waitlist" }, { state: { in: CANCELLED_KEEP as RequestState[] }, training: { status: "cancelled" } },
+        { state: "rejected", OR: [{ rejectedFrom: "waitlist" }, { training: { status: "cancelled" } }] }]
     },
     include: { employee: true, training: true, steps: { orderBy: { stepNo: "desc" }, take: 1, include: { approver: true } } },
     orderBy: [{ training: { startDate: "asc" } }, { submittedAt: "asc" }]
@@ -45,11 +46,18 @@ export async function GET(req: Request) {
     { header: "Reason", key: "reason", width: 28 },
     { header: "Approved By", key: "approver", width: 24 },
     { header: "Approved On", key: "approvedOn", width: 12, style: { numFmt: "dd/mm/yyyy" } },
-    { header: "Requested On", key: "submitted", width: 12, style: { numFmt: "dd/mm/yyyy" } }
+    { header: "Requested On", key: "submitted", width: 12, style: { numFmt: "dd/mm/yyyy" } },
+    { header: "Rejected By", key: "rejectedBy", width: 22 },
+    { header: "Rejection Date", key: "rejectedAt", width: 12, style: { numFmt: "dd/mm/yyyy" } },
+    { header: "Rejection Justification", key: "rejectReason", width: 40 }
   ];
+  const rejecters = new Map((await prisma.employee.findMany({
+    where: { id: { in: [...new Set(requests.map(r => r.rejectedById).filter((x): x is string => !!x))] } }, select: { id: true, name: true }
+  })).map(p => [p.id, p.name]));
   let n = 0;
   for (const r of requests) {
-    const kind = waitlistKind(r.state, r.training.status);
+    const byLd = r.state === "rejected" && r.steps[0]?.status !== "rejected";
+    const kind = waitlistKind(r.state, r.training.status, r.rejectedFrom, byLd);
     if (!kind || (want !== "all" && want !== kind)) continue;
     const form = (r.form || {}) as Record<string, string>;
     const step = r.steps[0];
@@ -62,7 +70,10 @@ export async function GET(req: Request) {
       reason: waitlistReason(kind, r.training),
       approver: step ? step.approver.name : r.employee.isExternal ? "External" : "Added by L&D",
       approvedOn: step?.status === "approved" && step.decidedAt ? day(step.decidedAt) : null,
-      submitted: day(r.submittedAt)
+      submitted: day(r.submittedAt),
+      rejectedBy: kind === "rejected" ? (r.rejectedById && rejecters.get(r.rejectedById)) || "L&D" : "",
+      rejectedAt: kind === "rejected" && r.rejectedAt ? day(r.rejectedAt) : null,
+      rejectReason: kind === "rejected" ? r.decisionComment || "" : ""
     });
     n++;
   }
@@ -77,7 +88,7 @@ export async function GET(req: Request) {
   await prisma.auditLog.create({ data: { actorId: me.id, action: "export", entity: "waitlist", entityId: want, details: { rows: n } } });
   const buf = await wb.xlsx.writeBuffer();
   const stamp = new Date().toISOString().slice(0, 10);
-  const label = want === "cancelled" ? "Cancelled Sessions" : want === "waitlist" ? "Waitlist" : "Waitlist and Cancelled Sessions";
+  const label = want === "cancelled" ? "Cancelled Sessions" : want === "waitlist" ? "Waitlist" : want === "rejected" ? "Rejected by L&D" : "Waitlist Queue";
   return new NextResponse(Buffer.from(buf), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

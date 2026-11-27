@@ -17,7 +17,8 @@ export const runtime = "nodejs";
  *   format?: "pdf" | "pptx",
  *   instructorName?, instructorTitle?,
  *   signature?: "data:image/png;base64,…"   (optional instructor signature)
- *   third?: { name, title, signature? }       (optional third signatory, between the other two)
+ *   signName?: boolean                        (no signature image: write the instructor's name in the signature area)
+ *   third?: { name, title, signature?, signName? } (optional third signatory, between the other two)
  * }
  */
 export async function POST(req: Request) {
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
   if (thirdName) {
     const thirdSig = readSignature(body.third?.signature, "third signatory's");
     if (typeof thirdSig === "string") return NextResponse.json({ error: thirdSig }, { status: 400 });
-    third = { name: thirdName, title: String(body.third?.title ?? "").trim().slice(0, 120), signature: thirdSig };
+    third = { name: thirdName, title: String(body.third?.title ?? "").trim().slice(0, 120), signature: thirdSig, signName: !!body.third?.signName };
   }
 
   const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -77,6 +78,7 @@ export async function POST(req: Request) {
     instructorName: String(body.instructorName ?? t.instructor ?? "").trim().slice(0, 120),
     instructorTitle: String(body.instructorTitle ?? "Instructor").trim().slice(0, 120),
     signature,
+    signName: !!body.signName,
     third
   };
 
@@ -92,7 +94,7 @@ export async function POST(req: Request) {
   }
   await prisma.auditLog.create({ data: { actorId: me.id, action: "certificates", entity: "training", entityId: t.id, details: { count: names.length, brand, format, third: !!third } } });
 
-  const base = names.length === 1 ? `Certificate - ${names[0]}` : `Certificates - ${t.code}${brand === "cpven" ? " (CPVEN)" : ""}`;
+  const base = names.length === 1 ? `Certificate - ${names[0]}` : `Certificates - ${t.code}${brand === "cpven" ? " (External)" : ""}`;
   return new NextResponse(Buffer.from(file), {
     headers: {
       "Content-Type": format === "pptx" ? "application/vnd.openxmlformats-officedocument.presentationml.presentation" : "application/pdf",

@@ -76,7 +76,7 @@ export default function PortalView({ v }) {
 </div>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div onClick={v.reqBox.onToggle} style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", fontSize: "13px", fontWeight: "bold", borderLeft: "4px solid #2A7E4F", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", userSelect: "none" }}>
-<span style={{ flex: "1" }}>Training Requests <span style={{ fontWeight: "normal", color: "#8A8F8C" }}>· {v.reqBox.count}</span></span>
+<span style={{ flex: "1" }}>{v.year} Training Requests <span style={{ fontWeight: "normal", color: "#8A8F8C" }}>· {v.reqBox.count}</span></span>
 <span style={{ fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{v.reqBox.label}</span>
 </div>
 {v.reqBox.open ? (<>
@@ -125,7 +125,7 @@ export default function PortalView({ v }) {
 </div>
 {r.comment ? (<>
 <div style={{ marginTop: "10px", background: "#FBF2F2", border: "1px solid #F0DADA", borderRadius: "4px", padding: "10px 12px" }}>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#8A8F8C", color: "#8A2B2B" }}>Reason given</div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#8A2B2B" }}>{r.commentLabel}</div>
 <div style={{ fontSize: "12px", marginTop: "3px", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{r.comment}</div>
 </div>
 </>) : null}
@@ -180,7 +180,7 @@ export default function PortalView({ v }) {
 <input value={v.q} onChange={v.onSearch} placeholder="Title, code or keyword" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px" }} />
 </div>
 <div>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Type</div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Training Category</div>
 <div style={{ display: "flex", gap: "2px", background: "#E7EBE9", padding: "3px", borderRadius: "4px" }}>
 {(v.typeTabs || []).map((tt, i6) => (<React.Fragment key={i6}>
 <button onClick={tt.onClick} style={{ border: "0", cursor: "pointer", padding: "6px 12px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold", whiteSpace: "nowrap", background: tt.bg, color: tt.fg }}>{tt.label}</button>
@@ -201,8 +201,9 @@ export default function PortalView({ v }) {
 </div>
 {v.isTable ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflowX: "auto" }}>
-<div style={{ display: "grid", minWidth: "1840px", gridTemplateColumns: "minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 78px 92px 72px 104px", background: "#2A7E4F", color: "#fff", fontSize: "11px", fontWeight: "bold", letterSpacing: ".4px" }}>
+<div style={{ display: "grid", minWidth: "1770px", gridTemplateColumns: "112px minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 92px 72px", background: "#2A7E4F", color: "#fff", fontSize: "11px", fontWeight: "bold", letterSpacing: ".4px" }}>
 <div style={{ padding: "11px 10px" }}>Training Category</div>
+<div style={{ padding: "11px 10px" }}>Training Subcategory</div>
 <div style={{ padding: "11px 10px" }}>Training Code</div>
 <div style={{ padding: "11px 10px" }}>Training Name</div>
 <div style={{ padding: "11px 10px" }}>Training Status</div>
@@ -211,16 +212,15 @@ export default function PortalView({ v }) {
 <div style={{ padding: "11px 10px" }}>Training Start Date</div>
 <div style={{ padding: "11px 10px" }}>Training End Date</div>
 <div style={{ padding: "11px 10px" }}>Training Location</div>
-<div style={{ padding: "11px 10px" }}>Primary Audience</div>
+<div style={{ padding: "11px 10px" }}>Target Audience</div>
 <div style={{ padding: "11px 10px" }}>Training Provider</div>
 <div style={{ padding: "11px 10px" }}>Instructor</div>
-<div style={{ padding: "11px 10px" }}>Training Duration</div>
 <div style={{ padding: "11px 10px" }}>Delivery Method</div>
 <div style={{ padding: "11px 10px" }}>Class Capacity</div>
-<div style={{ padding: "11px 10px" }}>Training Type</div>
 </div>
 {(v.rows || []).map((r, i9) => (<React.Fragment key={i9}>
-<div onClick={r.onClick} style={{ display: "grid", minWidth: "1840px", gridTemplateColumns: "minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 78px 92px 72px 104px", borderBottom: "1px solid #F0F2F1", cursor: "pointer", background: r.zebra, alignItems: "center" }} className="dc-h1">
+<div onClick={r.onClick} style={{ display: "grid", minWidth: "1770px", gridTemplateColumns: "112px minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 92px 72px", borderBottom: "1px solid #F0F2F1", cursor: "pointer", background: r.zebra, alignItems: "center" }} className="dc-h1">
+<div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.type}</div>
 <div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.category}</div>
 <div style={{ padding: "11px 10px", fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{r.code}</div>
 <div style={{ padding: "11px 10px", fontSize: "12.5px", fontWeight: "bold" }}>{r.title}</div>
@@ -233,10 +233,8 @@ export default function PortalView({ v }) {
 <div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.targetAudience}</div>
 <div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.provider}</div>
 <div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.instructor}</div>
-<div style={{ padding: "11px 10px", fontSize: "12px" }}>{r.duration}</div>
 <div style={{ padding: "11px 10px", fontSize: "12px" }}>{r.delivery}</div>
 <div style={{ padding: "11px 10px", fontSize: "12px" }}>{r.capacity}</div>
-<div style={{ padding: "11px 10px", fontSize: "12px", color: "#58595B" }}>{r.type}</div>
 </div>
 </React.Fragment>))}
 {v.noResults ? (<>
@@ -294,7 +292,7 @@ export default function PortalView({ v }) {
 <span style={{ background: r.st.bg, color: r.st.fg, fontSize: "10px", fontWeight: "bold", padding: "3px 8px", borderRadius: "3px" }}>{r.st.label}</span>
 </div>
 <div style={{ fontSize: "14.5px", fontWeight: "bold", lineHeight: "1.3", textWrap: "pretty" }}>{r.title}</div>
-<div style={{ fontSize: "11.5px", color: "#58595B" }}>{r.category} &middot; {r.type}</div>
+<div style={{ fontSize: "11.5px", color: "#58595B" }}>{r.type} &middot; {r.category}</div>
 <div style={{ flex: "1" }}></div>
 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11.5px", color: "#1F1F1D", borderTop: "1px solid #F0F2F1", paddingTop: "9px" }}>
 <span>{r.dates}</span>
@@ -555,7 +553,8 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>{r.meta}</div>
 <div style={{ fontSize: "11px", color: "#1F5E3A", fontWeight: "bold", marginTop: "5px" }}>Approver: {r.approver}</div>
 <button onClick={r.onHistory} title="See the trainings this person has already completed" style={{ marginTop: "6px", border: "0", background: "none", padding: "0", color: "#1F4E79", cursor: "pointer", fontSize: "11.5px", fontWeight: "bold", textDecoration: "underline" }}>{r.histLabel}</button>
-<div style={{ fontSize: "12px", color: "#1F1F1D", marginTop: "9px", background: "#F7F9F8", border: "1px solid #EAEEEC", borderRadius: "4px", padding: "9px 11px", lineHeight: "1.55" }}>{r.justification}</div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#8A8F8C", marginTop: "10px" }}>Justification</div>
+<div style={{ fontSize: "12px", color: "#1F1F1D", marginTop: "4px", background: "#F7F9F8", border: "1px solid #EAEEEC", borderRadius: "4px", padding: "9px 11px", lineHeight: "1.55" }}>{r.justification}</div>
 </div>
 <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "stretch", minWidth: "150px" }}>
 <span style={{ background: r.st.bg, color: r.st.fg, fontSize: "11px", fontWeight: "bold", padding: "5px 11px", borderRadius: "3px", textAlign: "center" }}>{r.st.label}</span>
@@ -578,7 +577,7 @@ export default function PortalView({ v }) {
 </div>
 </>) : null}
 {r.comment ? (<>
-<div style={{ marginTop: "12px", fontSize: "12px", color: "#8A2B2B", background: "#FBF2F2", border: "1px solid #F0DADA", borderRadius: "4px", padding: "8px 11px", lineHeight: "1.5", whiteSpace: "pre-wrap" }}><b>Reason given:</b> {r.comment}</div>
+<div style={{ marginTop: "12px", fontSize: "12px", color: "#8A2B2B", background: "#FBF2F2", border: "1px solid #F0DADA", borderRadius: "4px", padding: "8px 11px", lineHeight: "1.5", whiteSpace: "pre-wrap" }}><b>{r.commentLabel}:</b> {r.comment}</div>
 </>) : null}
 </div>
 </React.Fragment>))}
@@ -695,7 +694,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", color: "#58595B", margin: "0 0 8px" }}>Session status</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(138px,1fr))", gap: "12px", marginBottom: "18px" }}>
 {(v.sessionKpis || []).map((k, i27) => (<React.Fragment key={i27}>
-<div onClick={k.onClick} title={k.hint} style={{ background: "#fff", border: "1px solid #E1E5E3", borderTop: `4px solid ${k.color}`, borderRadius: "5px", padding: "12px 14px", cursor: k.cursor }} className="dc-h7">
+<div onClick={k.onClick} title={k.hint} style={{ background: "#fff", border: "1px solid #E1E5E3", boxShadow: `inset 0 4px 0 ${k.color}`, borderRadius: "5px", padding: "15px 14px 12px", cursor: k.cursor }} className="dc-h7">
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", minHeight: "26px" }}>{k.label}</div>
 <div style={{ fontSize: "26px", fontWeight: "bold", color: k.color, lineHeight: "1.2", marginTop: "2px" }}>{k.value}</div>
 <div style={{ fontSize: "10.5px", color: "#8A8F8C" }}>{k.note}</div>
@@ -705,7 +704,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", color: "#58595B", margin: "0 0 8px" }}>Registration status</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(138px,1fr))", gap: "12px", marginBottom: "18px" }}>
 {(v.regKpis || []).map((k, i28) => (<React.Fragment key={i28}>
-<div onClick={k.onClick} title={k.hint} style={{ background: "#fff", border: "1px solid #E1E5E3", borderTop: `4px solid ${k.color}`, borderRadius: "5px", padding: "12px 14px", cursor: k.cursor }} className="dc-h8">
+<div onClick={k.onClick} title={k.hint} style={{ background: "#fff", border: "1px solid #E1E5E3", boxShadow: `inset 0 4px 0 ${k.color}`, borderRadius: "5px", padding: "15px 14px 12px", cursor: k.cursor }} className="dc-h8">
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", minHeight: "26px" }}>{k.label}</div>
 <div style={{ fontSize: "26px", fontWeight: "bold", color: k.color, lineHeight: "1.2", marginTop: "2px" }}>{k.value}</div>
 <div style={{ fontSize: "10.5px", color: "#8A8F8C" }}>{k.note}</div>
@@ -715,7 +714,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", color: "#58595B", margin: "0 0 8px" }}>Approval status</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(138px,1fr))", gap: "12px", marginBottom: "18px" }}>
 {(v.approvalKpis || []).map((k, i29) => (<React.Fragment key={i29}>
-<div onClick={k.onClick} title={k.hint} style={{ background: "#fff", border: "1px solid #E1E5E3", borderTop: `4px solid ${k.color}`, borderRadius: "5px", padding: "12px 14px", cursor: k.cursor }} className="dc-h9">
+<div onClick={k.onClick} title={k.hint} style={{ background: "#fff", border: "1px solid #E1E5E3", boxShadow: `inset 0 4px 0 ${k.color}`, borderRadius: "5px", padding: "15px 14px 12px", cursor: k.cursor }} className="dc-h9">
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", minHeight: "26px" }}>{k.label}</div>
 <div style={{ fontSize: "26px", fontWeight: "bold", color: k.color, lineHeight: "1.2", marginTop: "2px" }}>{k.value}</div>
 <div style={{ fontSize: "10.5px", color: "#8A8F8C" }}>{k.note}</div>
@@ -825,7 +824,7 @@ export default function PortalView({ v }) {
 <div style={{ display: "grid", minWidth: "1040px", gridTemplateColumns: "86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1.3fr) 130px", background: "#2A7E4F", color: "#fff", fontSize: "11px", fontWeight: "bold" }}>
 <div style={{ padding: "11px 12px" }}>Code</div>
 <div style={{ padding: "11px 12px" }}>Title</div>
-<div style={{ padding: "11px 12px" }}>Category</div>
+<div style={{ padding: "11px 12px" }}>Training Category</div>
 <div style={{ padding: "11px 12px" }}>Dates</div>
 <div style={{ padding: "11px 12px" }}>Location</div>
 <div style={{ padding: "11px 12px" }}>Seats &middot; Status</div>
@@ -835,7 +834,7 @@ export default function PortalView({ v }) {
 <div style={{ display: "grid", minWidth: "1040px", gridTemplateColumns: "86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1.3fr) 130px", borderBottom: "1px solid #F0F2F1", alignItems: "center", background: r.zebra }}>
 <div style={{ padding: "10px 12px", fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{r.code}</div>
 <div style={{ padding: "10px 12px", fontSize: "12.5px", fontWeight: "bold" }}>{r.title}</div>
-<div style={{ padding: "10px 12px", fontSize: "12px", color: "#58595B" }}>{r.category}</div>
+<div style={{ padding: "10px 12px", fontSize: "12px", color: "#58595B" }}>{r.type}<div style={{ fontSize: "11px", color: "#8A8F8C" }}>{r.category}</div></div>
 <div style={{ padding: "10px 12px", fontSize: "12px" }}>{r.dates}</div>
 <div style={{ padding: "10px 12px", fontSize: "12px", color: "#58595B" }}>{r.location}</div>
 <div style={{ padding: "10px 12px" }}>
@@ -870,10 +869,6 @@ export default function PortalView({ v }) {
 <span style={{ background: v.session.statusBg, color: v.session.statusFg, fontSize: "11px", fontWeight: "bold", padding: "3px 9px", borderRadius: "3px" }}>{v.session.statusLabel}</span>
 </div>
 </div>
-<div style={{ position: "relative", background: "rgba(255,255,255,.14)", border: "1px solid rgba(255,255,255,.28)", borderRadius: "6px", padding: "16px 22px", textAlign: "center", minWidth: "150px" }}>
-<div style={{ fontSize: "30px", fontWeight: "bold", color: "#fff", lineHeight: "1.1" }}>{v.session.countBig}</div>
-<div style={{ fontSize: "11px", fontWeight: "bold", letterSpacing: ".8px", textTransform: "uppercase", color: "#C5E0D2", marginTop: "4px" }}>{v.session.countUnit}</div>
-</div>
 <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "8px" }}>
 <button onClick={v.session.onEdit} style={{ padding: "9px 15px", border: "0", background: "#fff", color: "#1F5E3A", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Edit Session</button>
 <select value={v.session.statusValue} onChange={v.session.onStatus} title="Training status" style={{ padding: "9px 10px", border: "1px solid rgba(255,255,255,.55)", background: "#fff", color: "#1F5E3A", borderRadius: "4px", fontWeight: "bold" }}>
@@ -881,7 +876,7 @@ export default function PortalView({ v }) {
 <option value={o.value}>Status: {o.label}</option>
 </React.Fragment>))}
 </select>
-<button onClick={v.session.onExport} style={{ padding: "9px 15px", border: "1px solid rgba(255,255,255,.55)", background: "transparent", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Export List</button>
+<button onClick={v.session.onExport} style={{ padding: "9px 15px", border: "1px solid rgba(255,255,255,.55)", background: "transparent", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Export List (Excel)</button>
 </div>
 </div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "14px", marginBottom: "18px" }}>
@@ -893,7 +888,7 @@ export default function PortalView({ v }) {
 </div>
 </React.Fragment>))}
 </div>
-<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(330px,1fr))", gap: "18px", marginBottom: "18px" }}>
+<div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "18px", marginBottom: "18px" }}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", fontSize: "13px", fontWeight: "bold" }}>Session Details</div>
 <div style={{ padding: "14px 16px" }}>
@@ -911,66 +906,46 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "12px", lineHeight: "1.6", color: "#58595B", marginTop: "14px" }}>{v.session.desc}</div>
 </div>
 </div>
-<div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
-<div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", fontSize: "13px", fontWeight: "bold" }}>Waitlist Queue</div>
-{(v.session.waitlist || []).map((r, i39) => (<React.Fragment key={i39}>
-<div style={{ padding: "13px 16px", borderBottom: "1px solid #F0F2F1", display: "flex", gap: "11px", alignItems: "center", flexWrap: "wrap" }}>
-<div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11.5px", fontWeight: "bold", flex: "0 0 auto" }}>{r.initials}</div>
-<div style={{ flex: "1", minWidth: "160px" }}>
-<div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{r.employee}</div>
-<div style={{ fontSize: "11px", color: "#58595B" }}>{r.empMeta}</div>
-<div style={{ fontSize: "11px", color: "#58595B", marginTop: "2px" }}>Approved by {r.manager}</div>
-</div>
-<div style={{ display: "flex", gap: "7px" }}>
-<button onClick={r.onEnroll} style={{ padding: "6px 12px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Register</button>
-<button onClick={r.onDecline} style={{ padding: "6px 12px", border: "1px solid #D1D3D4", background: "#fff", color: "#8A2B2B", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Reject</button>
-</div>
-</div>
-</React.Fragment>))}
-{v.session.noWaitlist ? (<>
-<div style={{ padding: "30px 16px", textAlign: "center", fontSize: "12.5px", color: "#8A8F8C" }}>No one is waitlisted for this session.</div>
-</>) : null}
-</div>
 </div>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px" }}>
 <div style={{ padding: "10px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
 <div style={{ display: "flex", gap: "2px", background: "#E7EBE9", padding: "3px", borderRadius: "4px" }}>
-{(v.session.rosterTabs || []).map((rt, i40) => (<React.Fragment key={i40}>
+{(v.session.rosterTabs || []).map((rt, i39) => (<React.Fragment key={i39}>
 <button onClick={rt.onClick} style={{ border: "0", cursor: "pointer", padding: "6px 13px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold", background: rt.bg, color: rt.fg }}>{rt.label}</button>
 </React.Fragment>))}
 </div>
 <div style={{ flex: "1" }}></div>
-{v.session.showAttendance ? (<>
-<div style={{ fontSize: "11.5px", fontWeight: "bold", color: "#2A7E4F" }}>{v.session.completionLabel}</div>
-</>) : null}
 </div>
 <div style={{ padding: "10px 16px", borderBottom: "1px solid #F0F2F1", display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", background: "#FAFBFA" }}>
 <input list="ld-directory" value={v.session.addValue} onChange={v.session.onAddValue} placeholder="Add a person: type a name or email" style={{ flex: "1", minWidth: "220px", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
 <datalist id="ld-directory">
-{(v.session.directory || []).map((o, i41) => (<React.Fragment key={i41}>
+{(v.session.directory || []).map((o, i40) => (<React.Fragment key={i40}>
 <option value={o}></option>
 </React.Fragment>))}
 </datalist>
 <button onClick={v.session.onAdd} style={{ padding: "8px 14px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>Add NESR employee</button>
 </div>
 <div style={{ padding: "10px 16px", borderBottom: "1px solid #F0F2F1", display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", background: "#FAFBFA" }}>
-<span style={{ fontSize: "11px", fontWeight: "bold", color: "#58595B", whiteSpace: "nowrap" }}>External (e.g. CPVEN):</span>
+<span style={{ fontSize: "11px", fontWeight: "bold", color: "#58595B", whiteSpace: "nowrap" }}>External participant:</span>
 <input value={v.session.extName} onChange={v.session.onExtName} placeholder="Full name" style={{ flex: "2", minWidth: "160px", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
-<input list="ld-orgs" value={v.session.extOrg} onChange={v.session.onExtOrg} placeholder="Organisation" style={{ flex: "1", minWidth: "110px", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
+<input list="ld-orgs" value={v.session.extOrg} onChange={v.session.onExtOrg} placeholder="Organisation (optional)" style={{ flex: "1", minWidth: "110px", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
 <datalist id="ld-orgs">
-{(v.session.orgOptions || []).map((o, i42) => (<React.Fragment key={i42}>
+{(v.session.orgOptions || []).map((o, i41) => (<React.Fragment key={i41}>
 <option value={o}></option>
 </React.Fragment>))}
 </datalist>
 <input value={v.session.extEmail} onChange={v.session.onExtEmail} placeholder="Email (optional, for records)" style={{ flex: "2", minWidth: "180px", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
 <button onClick={v.session.onAddExternal} style={{ padding: "8px 14px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" }}>Add external</button>
 </div>
-{(v.session.roster || []).map((p, i43) => (<React.Fragment key={i43}>
+{(v.session.roster || []).map((p, i42) => (<React.Fragment key={i42}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "11px 16px", borderBottom: "1px solid #F4F6F5" }}>
 <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11.5px", fontWeight: "bold" }}>{p.initials}</div>
 <div style={{ flex: "1", minWidth: "0" }}>
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{p.name}</div>
 <div style={{ fontSize: "11px", color: "#58595B" }}>{p.meta}</div>
+{p.note ? (<>
+<div style={{ fontSize: "11.5px", color: "#8A2B2B", marginTop: "3px", whiteSpace: "pre-wrap" }}>{p.note}</div>
+</>) : null}
 </div>
 {p.badge ? (<>
 <span style={{ background: p.badgeBg, color: p.badgeFg, fontSize: "10px", fontWeight: "bold", padding: "3px 9px", borderRadius: "3px", whiteSpace: "nowrap" }}>{p.badge}</span>
@@ -982,8 +957,11 @@ export default function PortalView({ v }) {
 <button onClick={p.onNoShow} title="Mark as no show" style={{ padding: "6px 12px", border: "0", borderLeft: "1px solid #D1D3D4", background: p.noBg, color: p.noFg, cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>No show</button>
 </div>
 </>) : null}
+{p.canReject ? (<>
+<button onClick={p.onReject} title="Reject: a justification is required and is emailed to the employee and their manager" style={{ padding: "6px 10px", border: "1px solid #D1D3D4", background: "#fff", color: "#8A2B2B", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Reject</button>
+</>) : null}
 {p.canRemove ? (<>
-<button onClick={p.onRemove} title="Remove from this training" style={{ padding: "6px 10px", border: "1px solid #D1D3D4", background: "#fff", color: "#8A2B2B", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Remove</button>
+<button onClick={p.onRemove} title="Remove this external participant from the training" style={{ padding: "6px 10px", border: "1px solid #D1D3D4", background: "#fff", color: "#8A2B2B", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Remove</button>
 </>) : null}
 </div>
 </React.Fragment>))}
@@ -1008,7 +986,7 @@ export default function PortalView({ v }) {
 {v.session.log.empty ? (<>
 <div style={{ padding: "22px 16px", textAlign: "center", fontSize: "12.5px", color: "#8A8F8C" }}>No changes recorded for this session yet.</div>
 </>) : null}
-{(v.session.log.rows || []).map((lg, i44) => (<React.Fragment key={i44}>
+{(v.session.log.rows || []).map((lg, i43) => (<React.Fragment key={i43}>
 <div style={{ display: "flex", gap: "14px", padding: "11px 16px", borderBottom: "1px solid #F0F2F1", flexWrap: "wrap" }}>
 <div style={{ width: "150px", flex: "0 0 auto" }}>
 <div style={{ fontSize: "11.5px", fontWeight: "bold", color: "#1F1F1D" }}>{lg.when}</div>
@@ -1018,7 +996,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{lg.what}</div>
 {lg.hasChanges ? (<>
 <div style={{ marginTop: "6px", display: "grid", gridTemplateColumns: "minmax(110px,auto) 1fr", gap: "4px 12px", fontSize: "11.5px" }}>
-{(lg.changes || []).map((ch, i45) => (<React.Fragment key={i45}>
+{(lg.changes || []).map((ch, i44) => (<React.Fragment key={i44}>
 <div style={{ color: "#58595B", fontWeight: "bold" }}>{ch.field}</div>
 <div style={{ lineHeight: "1.45" }}><span style={{ color: "#8A2B2B", textDecoration: "line-through" }}>{ch.from}</span> &rarr; <span style={{ color: "#1F5E3A", fontWeight: "bold" }}>{ch.to}</span></div>
 </React.Fragment>))}
@@ -1038,12 +1016,12 @@ export default function PortalView({ v }) {
 <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", flexWrap: "wrap", marginBottom: "14px" }}>
 <div style={{ flex: "1", minWidth: "260px" }}>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Waitlist Queue</div>
-<div style={{ fontSize: "13px", color: "#58595B" }}>Manager-approved requests that couldn't be registered because the class was full or registration had closed, and everyone who was registered for a session that was cancelled, so they can be offered another one.</div>
+<div style={{ fontSize: "13px", color: "#58595B" }}>Manager-approved requests that couldn't be registered because the class was full or registration had closed, and everyone who was registered for a session that was cancelled, so they can be offered another one. People L&amp;D rejects from here move to Rejected, with the justification.</div>
 </div>
 <button onClick={v.waitlist.onExport} style={{ padding: "10px 16px", border: "1px solid #2A7E4F", background: "#fff", color: "#2A7E4F", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{v.waitlist.exportLabel}</button>
 </div>
 <div style={{ display: "inline-flex", gap: "2px", background: "#EEF1EF", borderRadius: "4px", padding: "3px", marginBottom: "12px" }}>
-{(v.waitlist.tabs || []).map((wt, i46) => (<React.Fragment key={i46}>
+{(v.waitlist.tabs || []).map((wt, i45) => (<React.Fragment key={i45}>
 <button onClick={wt.onClick} style={{ border: "0", cursor: "pointer", padding: "6px 13px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold", background: wt.bg, color: wt.fg }}>{wt.label}</button>
 </React.Fragment>))}
 </div>
@@ -1058,7 +1036,7 @@ export default function PortalView({ v }) {
 {v.empty.queueRows ? (<>
 <div style={{ padding: "30px 16px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>{v.waitlist.emptyText}</div>
 </>) : null}
-{(v.queueRows || []).map((r, i47) => (<React.Fragment key={i47}>
+{(v.queueRows || []).map((r, i46) => (<React.Fragment key={i46}>
 <div style={{ display: "grid", minWidth: "900px", gridTemplateColumns: "minmax(0,1.3fr) minmax(0,1.8fr) minmax(0,1fr) 150px 210px", borderBottom: "1px solid #F0F2F1", alignItems: "center", background: r.zebra }}>
 <div style={{ padding: "10px 12px" }}>
 <div style={{ fontSize: "12.5px", fontWeight: "bold" }}>{r.employee}</div>
@@ -1080,6 +1058,10 @@ export default function PortalView({ v }) {
 </>) : null}
 {r.isCancelled ? (<>
 <span style={{ fontSize: "11.5px", color: "#58595B", lineHeight: "1.4" }}>Offer another session, then add them to it from Manage Trainings.</span>
+<button onClick={r.onDecline} style={{ padding: "6px 11px", border: "1px solid #D1D3D4", background: "#fff", color: "#8A2B2B", borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px" }}>Reject</button>
+</>) : null}
+{r.isRejected ? (<>
+<span style={{ fontSize: "11.5px", color: "#8A2B2B", lineHeight: "1.4", whiteSpace: "pre-wrap" }}><b>Justification:</b> {r.comment}</span>
 </>) : null}
 </div>
 </div>
@@ -1098,11 +1080,11 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Printable sign-in sheet with the participants and one column per day. Word, to print with the certificates and name tags.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr", gap: "12px", flex: "1", alignContent: "start" }}>
-{(v.sheet.selects || []).map((f, i48) => (<React.Fragment key={i48}>
+{(v.sheet.selects || []).map((f, i47) => (<React.Fragment key={i47}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i49) => (<React.Fragment key={i49}>
+{(f.options || []).map((o, i48) => (<React.Fragment key={i48}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -1117,14 +1099,14 @@ export default function PortalView({ v }) {
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
 <div style={{ fontSize: "13px", fontWeight: "bold" }}>Attendance Report</div>
-<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>All trainings in the period, with every participant's days present and overall result. Excel.</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>All trainings in the month (or quarter, or year), with every participant's days present and overall result. Excel.</div>
 </div>
-<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px", flex: "1", alignContent: "start" }}>
-{(v.attReport.selects || []).map((f, i50) => (<React.Fragment key={i50}>
+<div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: "12px", flex: "1", alignContent: "start" }}>
+{(v.attReport.selects || []).map((f, i49) => (<React.Fragment key={i49}>
 <div>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i51) => (<React.Fragment key={i51}>
+{(f.options || []).map((o, i50) => (<React.Fragment key={i50}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -1139,7 +1121,7 @@ export default function PortalView({ v }) {
 {v.empty.attendance ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No current or upcoming sessions with registered participants yet.</div>
 </>) : null}
-{(v.attendanceSessions || []).map((sess, i52) => (<React.Fragment key={i52}>
+{(v.attendanceSessions || []).map((sess, i51) => (<React.Fragment key={i51}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "16px", overflow: "hidden" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", borderBottom: "1px solid #E1E5E3", flexWrap: "wrap" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{sess.code}</div>
@@ -1156,12 +1138,12 @@ export default function PortalView({ v }) {
 <div style={{ overflowX: "auto" }}>
 <div style={{ display: "grid", gridTemplateColumns: sess.cols, minWidth: sess.minW, gap: "6px", padding: "8px 16px", background: "#FAFBFA", borderBottom: "1px solid #EAEEEC", fontSize: "10.5px", fontWeight: "bold", color: "#58595B", alignItems: "end" }}>
 <div>PARTICIPANT</div>
-{(sess.dayHeads || []).map((dh, i53) => (<React.Fragment key={i53}>
+{(sess.dayHeads || []).map((dh, i52) => (<React.Fragment key={i52}>
 <div style={{ textAlign: "center" }}>{dh.label}<div style={{ fontWeight: "normal", color: "#8A8F8C" }}>{dh.date}</div></div>
 </React.Fragment>))}
 <div style={{ textAlign: "center" }}>OVERALL</div>
 </div>
-{(sess.people || []).map((p, i54) => (<React.Fragment key={i54}>
+{(sess.people || []).map((p, i53) => (<React.Fragment key={i53}>
 <div style={{ display: "grid", gridTemplateColumns: sess.cols, minWidth: sess.minW, gap: "6px", alignItems: "center", padding: "9px 16px", borderBottom: "1px solid #F4F6F5" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: "0" }}>
 <div style={{ width: "30px", height: "30px", flex: "0 0 30px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "bold" }}>{p.initials}</div>
@@ -1170,7 +1152,7 @@ export default function PortalView({ v }) {
 <div style={{ fontSize: "11px", color: "#58595B" }}>{p.meta}</div>
 </div>
 </div>
-{(p.days || []).map((dy, i55) => (<React.Fragment key={i55}>
+{(p.days || []).map((dy, i54) => (<React.Fragment key={i54}>
 <button onClick={dy.onClick} title={dy.title} style={{ width: "100%", padding: "6px 4px", border: `1px solid ${dy.border}`, background: dy.bg, color: dy.fg, borderRadius: "3px", cursor: "pointer", fontWeight: "bold", fontSize: "11px", whiteSpace: "nowrap" }}>{dy.label}</button>
 </React.Fragment>))}
 <div style={{ display: "flex", border: "1px solid #D1D3D4", borderRadius: "4px", overflow: "hidden" }}>
@@ -1199,7 +1181,7 @@ export default function PortalView({ v }) {
 {v.empty.surveys ? (<>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", padding: "38px", textAlign: "center", color: "#8A8F8C", fontSize: "13px" }}>No trainings have started yet, so there are no surveys to track.</div>
 </>) : null}
-{(v.surveySessions || []).map((sv, i56) => (<React.Fragment key={i56}>
+{(v.surveySessions || []).map((sv, i55) => (<React.Fragment key={i55}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", marginBottom: "14px", overflow: "hidden" }}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", flexWrap: "wrap" }}>
 <div style={{ fontSize: "11px", fontWeight: "bold", color: "#2A7E4F" }}>{sv.code}</div>
@@ -1223,7 +1205,7 @@ export default function PortalView({ v }) {
 <button onClick={sv.onToggle} style={{ border: "0", background: "none", color: "#2A7E4F", cursor: "pointer", fontWeight: "bold", fontSize: "11.5px", padding: "4px 0" }}>{sv.chev} {sv.toggleLabel}</button>
 </div>
 {sv.open ? (<>
-{(sv.rows || []).map((sp, i57) => (<React.Fragment key={i57}>
+{(sv.rows || []).map((sp, i56) => (<React.Fragment key={i56}>
 <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "9px 16px", borderTop: "1px solid #F4F6F5" }}>
 <div style={{ width: "28px", height: "28px", flex: "0 0 28px", borderRadius: "50%", background: "#C5E0D2", color: "#1F5E3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10.5px", fontWeight: "bold" }}>{sp.initials}</div>
 <div style={{ flex: "1", minWidth: "0" }}>
@@ -1241,19 +1223,19 @@ export default function PortalView({ v }) {
 {v.s.aCerts ? (<>
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Certificates</div>
-<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Certificates of completion for a training: NESR or CPVEN template, PDF to print or PowerPoint to edit.</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Certificates of completion for a training: NESR or External template, PDF to print or PowerPoint to edit.</div>
 <div style={{ maxWidth: "720px" }}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
 <div style={{ fontSize: "13px", fontWeight: "bold" }}>Certificates of Completion</div>
-<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>NESR or CPVEN template, one page per person. PDF to print, or PowerPoint to edit.</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>NESR or External template, one page per person. PDF to print, or PowerPoint to edit.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
-{(v.cert.selects || []).map((f, i58) => (<React.Fragment key={i58}>
+{(v.cert.selects || []).map((f, i57) => (<React.Fragment key={i57}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i59) => (<React.Fragment key={i59}>
+{(f.options || []).map((o, i58) => (<React.Fragment key={i58}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -1261,7 +1243,7 @@ export default function PortalView({ v }) {
 </React.Fragment>))}
 {v.cert.showPick ? (<>
 <div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "180px", overflow: "auto", padding: "4px 0" }}>
-{(v.cert.people || []).map((cp, i60) => (<React.Fragment key={i60}>
+{(v.cert.people || []).map((cp, i59) => (<React.Fragment key={i59}>
 <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
 <input type="checkbox" checked={cp.checked} onChange={cp.onToggle} />
 <span style={{ flex: "1" }}>{cp.name}</span>
@@ -1276,7 +1258,7 @@ export default function PortalView({ v }) {
 {v.cert.showTyped ? (<>
 <div style={{ gridColumn: "1 / -1" }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Names (one per line)</div>
-<textarea value={v.cert.typedNames} onChange={v.cert.onTypedNames} rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
+<textarea value={v.cert.typedNames} onChange={v.cert.onTypedNames} rows="4" placeholder="e.g. external participants who registered outside the portal" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
 </div>
 </>) : null}
 <div>
@@ -1300,6 +1282,12 @@ export default function PortalView({ v }) {
 </>) : null}
 <span style={{ fontSize: "11px", color: "#8A8F8C" }}>{v.cert.sigNote}</span>
 </div>
+{v.cert.noSig ? (<>
+<label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", marginTop: "8px" }}>
+<input type="checkbox" checked={v.cert.signName} onChange={v.cert.onSignName} />
+                    No signature? Write the instructor's name in the signature area
+                  </label>
+</>) : null}
 </div>
 <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", borderTop: "1px solid #EAEEEC", paddingTop: "12px" }}>
 <input type="checkbox" checked={v.cert.third} onChange={v.cert.onThird} />
@@ -1327,6 +1315,12 @@ export default function PortalView({ v }) {
 </>) : null}
 <span style={{ fontSize: "11px", color: "#8A8F8C" }}>{v.cert.thirdSigNote}</span>
 </div>
+{v.cert.noThirdSig ? (<>
+<label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", marginTop: "8px" }}>
+<input type="checkbox" checked={v.cert.thirdSignName} onChange={v.cert.onThirdSignName} />
+                      No signature? Write the name in the signature area
+                    </label>
+</>) : null}
 </div>
 </>) : null}
 <div style={{ gridColumn: "1 / -1", fontSize: "11.5px", color: "#58595B" }}>{v.cert.summary}</div>
@@ -1342,19 +1336,19 @@ export default function PortalView({ v }) {
 {v.s.aPlates ? (<>
 <div>
 <div style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "3px" }}>Name Tags</div>
-<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Desk name tags for participants and the instructor, NESR or CPVEN.</div>
+<div style={{ fontSize: "13px", color: "#58595B", marginBottom: "16px" }}>Desk name tags for participants and the instructor, NESR or External.</div>
 <div style={{ maxWidth: "720px" }}>
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
 <div style={{ fontSize: "13px", fontWeight: "bold" }}>Name Tag Generator</div>
-<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Fold-in-half desk name tags as a PDF, one A4 page per person. NESR or CPVEN.</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Fold-in-half desk name tags as a PDF, one A4 page per person. NESR or External.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignContent: "start", flex: "1" }}>
-{(v.plate.selects || []).map((f, i61) => (<React.Fragment key={i61}>
+{(v.plate.selects || []).map((f, i60) => (<React.Fragment key={i60}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i62) => (<React.Fragment key={i62}>
+{(f.options || []).map((o, i61) => (<React.Fragment key={i61}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
@@ -1362,7 +1356,7 @@ export default function PortalView({ v }) {
 </React.Fragment>))}
 {v.plate.showPick ? (<>
 <div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "180px", overflow: "auto", padding: "4px 0" }}>
-{(v.plate.people || []).map((pp, i63) => (<React.Fragment key={i63}>
+{(v.plate.people || []).map((pp, i62) => (<React.Fragment key={i62}>
 <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
 <input type="checkbox" checked={pp.checked} onChange={pp.onToggle} />
 <span style={{ flex: "1" }}>{pp.name}</span>
@@ -1377,7 +1371,7 @@ export default function PortalView({ v }) {
 {v.plate.showTyped ? (<>
 <div style={{ gridColumn: "1 / -1" }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Names (one per line)</div>
-<textarea value={v.plate.typedNames} onChange={v.plate.onTypedNames} rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
+<textarea value={v.plate.typedNames} onChange={v.plate.onTypedNames} rows="4" placeholder="e.g. external participants who registered outside the portal" style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff", resize: "vertical", lineHeight: "1.5" }}></textarea>
 </div>
 </>) : null}
 <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -1387,7 +1381,7 @@ export default function PortalView({ v }) {
                 </label>
 {v.plate.withInstructor ? (<>
 <div style={{ flexBasis: "100%", display: "flex", flexDirection: "column", gap: "6px" }}>
-{(v.plate.instructors || []).map((ins, i64) => (<React.Fragment key={i64}>
+{(v.plate.instructors || []).map((ins, i63) => (<React.Fragment key={i63}>
 <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 <input value={ins.name} onChange={ins.onName} placeholder="Instructor name" style={{ flex: "1", minWidth: "150px", padding: "6px 9px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
 <input value={ins.role} onChange={ins.onRole} placeholder="Role under the name, e.g. Instructor" title="Printed under the instructor's name" style={{ flex: "1", minWidth: "150px", padding: "6px 9px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }} />
@@ -1425,19 +1419,33 @@ export default function PortalView({ v }) {
 <div style={{ background: "#fff", border: "1px solid #E1E5E3", borderRadius: "5px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
 <div style={{ padding: "13px 16px", borderBottom: "1px solid #E1E5E3", borderLeft: "4px solid #2A7E4F" }}>
 <div style={{ fontSize: "13px", fontWeight: "bold" }}>Send Training Email</div>
-<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Goes only to people registered for the selected training. Each email is personalised.</div>
+<div style={{ fontSize: "11.5px", color: "#58595B", marginTop: "2px" }}>Goes only to people linked to the selected training: a whole group, or the people you choose (e.g. a training invitation). Each email is personalised.</div>
 </div>
 <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: "1" }}>
-{(v.mail.selects || []).map((f, i65) => (<React.Fragment key={i65}>
+{(v.mail.selects || []).map((f, i64) => (<React.Fragment key={i64}>
 <div style={{ gridColumn: f.span }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>{f.label}</div>
 <select value={f.value} onChange={f.onChange} style={{ width: "100%", padding: "8px 10px", border: "1px solid #D1D3D4", borderRadius: "4px", background: "#fff" }}>
-{(f.options || []).map((o, i66) => (<React.Fragment key={i66}>
+{(f.options || []).map((o, i65) => (<React.Fragment key={i65}>
 <option value={o.value}>{o.label}</option>
 </React.Fragment>))}
 </select>
 </div>
 </React.Fragment>))}
+{v.mail.showPick ? (<>
+<div style={{ gridColumn: "1 / -1", border: "1px solid #E1E5E3", borderRadius: "4px", maxHeight: "200px", overflow: "auto", padding: "4px 0" }}>
+{(v.mail.people || []).map((mp, i66) => (<React.Fragment key={i66}>
+<label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", fontSize: "12px", cursor: "pointer" }}>
+<input type="checkbox" checked={mp.checked} onChange={mp.onToggle} />
+<span style={{ flex: "1" }}>{mp.name}</span>
+<span style={{ fontSize: "10.5px", color: "#8A8F8C" }}>{mp.note}</span>
+</label>
+</React.Fragment>))}
+{v.mail.noPeople ? (<>
+<div style={{ padding: "10px", fontSize: "12px", color: "#8A8F8C" }}>No one has applied for this training yet.</div>
+</>) : null}
+</div>
+</>) : null}
 <div style={{ gridColumn: "1 / -1", background: v.mail.recipientBg, border: `1px solid ${v.mail.recipientBorder}`, borderRadius: "4px", padding: "9px 12px", fontSize: "12px", fontWeight: "bold", color: v.mail.recipientFg }}>{v.mail.recipientLabel}</div>
 <div style={{ gridColumn: "1 / -1" }}>
 <div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "4px" }}>Subject</div>
@@ -1518,8 +1526,8 @@ export default function PortalView({ v }) {
 </React.Fragment>))}
 </div>
 <div style={{ borderTop: "1px solid #EAEEEC", paddingTop: "14px" }}>
-<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#8A8F8C", marginBottom: "5px" }}>About this session</div>
-<div style={{ fontSize: "12.5px", lineHeight: "1.65", color: "#3E403E" }}>{v.detail.desc}</div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#8A8F8C", marginBottom: "5px" }}>Target Audience</div>
+<div style={{ fontSize: "12.5px", lineHeight: "1.65", color: "#3E403E" }}>{v.detail.audience}</div>
 </div>
 </div>
 {v.detail.canApply ? (<>
@@ -1533,10 +1541,6 @@ export default function PortalView({ v }) {
 <div style={{ background: "#FDF2D9", border: "1px solid #F0DDA8", borderRadius: "5px", padding: "10px 12px", fontSize: "12px", color: "#7A5400", lineHeight: "1.5" }}><b>Already completed?</b> {v.detail.histWarn}</div>
 </>) : null}
 <div style={{ fontSize: "11.5px", color: "#58595B", lineHeight: "1.5" }}>Please review your completed <button onClick={v.detail.onHistory} style={{ border: "0", background: "none", padding: "0", color: "#2A7E4F", fontWeight: "bold", cursor: "pointer", fontSize: "11.5px", textDecoration: "underline" }}>training records</button> to avoid duplicate training registrations.</div>
-<div style={{ display: "flex", gap: "9px", alignItems: "center", flexWrap: "wrap", background: "#F2F7F4", border: "1px solid #D9E7E0", borderRadius: "5px", padding: "10px 12px" }}>
-<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>
-<span style={{ fontSize: "12px", fontWeight: "bold", color: "#1F5E3A" }}>{v.detail.chainNote}</span>
-</div>
 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "11px" }}>
 {(v.formFields || []).map((fl, i69) => (<React.Fragment key={i69}>
 <div>
@@ -1614,6 +1618,26 @@ export default function PortalView({ v }) {
 <div style={{ padding: "14px 20px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", gap: "10px", justifyContent: "flex-end" }}>
 <button onClick={v.closeModal} style={{ padding: "10px 16px", border: "1px solid #D1D3D4", background: "#fff", color: "#58595B", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Cancel</button>
 <button onClick={v.saveTraining} style={{ padding: "10px 20px", border: "0", background: "#2A7E4F", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{v.editor.cta}</button>
+</div>
+</div>
+</div>
+</>) : null}
+{v.ldReject ? (<>
+<div onClick={v.closeModal} style={{ position: "fixed", inset: "0", background: "rgba(31,31,29,.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "80px 20px", zIndex: "55", overflow: "auto", animation: "fadeIn .15s ease" }}>
+<div onClick={v.stop} style={{ width: "100%", maxWidth: "520px", background: "#fff", borderRadius: "6px", overflow: "hidden", animation: "popIn .18s ease", boxShadow: "0 22px 60px rgba(0,0,0,.3)" }}>
+<div style={{ background: "#8A2B2B", padding: "14px 20px", display: "flex", alignItems: "center", gap: "12px" }}>
+<div style={{ color: "#fff", fontSize: "15px", fontWeight: "bold", flex: "1" }}>Reject {v.ldReject.name}</div>
+<button onClick={v.ldReject.onCancel} style={{ border: "0", background: "rgba(255,255,255,.18)", color: "#fff", width: "28px", height: "28px", borderRadius: "4px", cursor: "pointer", fontSize: "15px", fontWeight: "bold" }}>&times;</button>
+</div>
+<div style={{ padding: "16px 20px" }}>
+<div style={{ fontSize: "12px", color: "#58595B", marginBottom: "12px" }}>{v.ldReject.sub}</div>
+<div style={{ fontSize: "10px", fontWeight: "bold", letterSpacing: ".7px", textTransform: "uppercase", color: "#58595B", marginBottom: "5px" }}>Justification *</div>
+<textarea value={v.ldReject.text} onChange={v.ldReject.onText} rows="4" placeholder="e.g. The training is not relevant to the employee's position or grade" style={{ width: "100%", padding: "9px 10px", border: `1px solid ${v.ldReject.border}`, borderRadius: "4px", resize: "vertical", lineHeight: "1.5" }}></textarea>
+<div style={{ fontSize: "11px", color: "#8A8F8C", marginTop: "6px", lineHeight: "1.5" }}>Sent in one email to the employee and their manager, and kept for reporting. The person moves to Rejected and any seat is freed.</div>
+</div>
+<div style={{ padding: "12px 20px", background: "#F7F9F8", borderTop: "1px solid #EAEEEC", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+<button onClick={v.ldReject.onCancel} style={{ padding: "9px 15px", border: "1px solid #D1D3D4", background: "#fff", color: "#58595B", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Cancel</button>
+<button onClick={v.ldReject.onConfirm} style={{ padding: "9px 18px", border: "0", background: "#8A2B2B", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{v.ldReject.cta}</button>
 </div>
 </div>
 </div>

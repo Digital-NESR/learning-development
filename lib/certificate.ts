@@ -19,8 +19,10 @@ export type CertInput = {
   instructorName: string;
   instructorTitle: string;
   signature?: CertSignature | null;
+  /** No signature image: write the instructor's name in the signature area instead */
+  signName?: boolean;
   /** Optional third signatory, placed between the instructor and the fixed signatory */
-  third?: { name: string; title: string; signature?: CertSignature | null } | null;
+  third?: { name: string; title: string; signature?: CertSignature | null; signName?: boolean } | null;
 };
 export type CertSignature = { bytes: Uint8Array; type: "png" | "jpg" };
 
@@ -106,6 +108,7 @@ export async function certificatePdf(input: CertInput) {
   const bg = await doc.embedJpg(await fs.readFile(path.join(TEMPLATE_DIR, `cert-${input.brand}-bg.jpg`)));
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const regular = await doc.embedFont(StandardFonts.Helvetica);
+  const italic = await doc.embedFont(StandardFonts.HelveticaOblique);
   const embed = (x?: CertSignature | null) => x ? (x.type === "png" ? doc.embedPng(x.bytes) : doc.embedJpg(x.bytes)) : Promise.resolve(null);
   const sig = await embed(input.signature);
   const thirdSig = await embed(input.third?.signature);
@@ -117,6 +120,11 @@ export async function certificatePdf(input: CertInput) {
   const third = input.third && input.third.name.trim() ? {
     name: printable(L.instructor.bold ? bold : regular, input.third.name), title: printable(L.instructor.bold ? bold : regular, input.third.title)
   } : null;
+  // Name written in the signature area (just above the line) when there is no signature image
+  const signedName = (text: string) => printable(italic, text);
+  const signLine = (page: PDFPage, text: string, x: number) => {
+    if (text) centred(page, text, x, L.line.y - 6, fitSize(italic, text, 17, 150, 10), italic);
+  };
 
   // Long course titles shrink, then wrap onto a second line (pushing the dates down)
   const courseFont = L.course.bold ? bold : regular;
@@ -149,6 +157,7 @@ export async function certificatePdf(input: CertInput) {
       page.drawImage(img, { x: x - w / 2, y: H - L.signature.bottom, width: w, height: h });
     };
     drawSig(sig, L.signature.x);
+    if (!sig && input.signName) signLine(page, signedName(input.instructorName), L.signature.x);
 
     // Third signatory: the same line, name and title as the instructor's, between the two signatures
     if (third) {
@@ -158,6 +167,7 @@ export async function certificatePdf(input: CertInput) {
       centred(page, third.name, L.third, L.instructor.nameY, fitSize(f, third.name, L.instructor.nameSize, 190, 10), f);
       if (third.title) centred(page, third.title, L.third, L.instructor.titleY, fitSize(f, third.title, L.instructor.titleSize, 190, 9), f);
       drawSig(thirdSig, L.third);
+      if (!thirdSig && input.third?.signName) signLine(page, signedName(input.third.name), L.third);
     }
   }
   return doc.save();
@@ -228,6 +238,16 @@ function thirdShapes(L: Layout, name: string, title: string) {
     + para(name, L.instructor.nameSize) + (title ? para(title, L.instructor.titleSize) : "") + `</p:txBody></p:sp>`;
 }
 
+/** PowerPoint: a name written in the signature area (italic, just above the line), when there is no signature image. */
+function signedNameBox(L: Layout, x: number, name: string, id: number) {
+  const e = (v: number) => Math.round(v * EMU);
+  const w = 170, h = 24;
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Signed Name"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>`
+    + `<p:spPr><a:xfrm><a:off x="${e(x - w / 2)}" y="${e(L.line.y - h - 1)}"/><a:ext cx="${e(w)}" cy="${e(h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>`
+    + `<p:txBody><a:bodyPr wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="b"><a:normAutofit/></a:bodyPr><a:lstStyle/>`
+    + `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="en-US" sz="1600" i="1" dirty="0"/><a:t>${esc(name)}</a:t></a:r></a:p></p:txBody></p:sp>`;
+}
+
 /** Fits a signature image in 130 × 46 pt. */
 async function sigSize(sig: CertSignature) {
   const probe = await PDFDocument.create();
@@ -250,6 +270,8 @@ export async function certificatePptx(input: CertInput) {
     const { w, h } = await sigSize(input.signature);
     sigRel = `<Relationship Id="rIdSig" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/instructor-signature.${ext}"/>`;
     sigPic = signaturePic("rIdSig", L.signature.x, L.signature.bottom, w, h);
+  } else if (input.signName && input.instructorName.trim()) {
+    sigPic = signedNameBox(L, L.signature.x, input.instructorName.trim(), 904);
   }
   // Third signatory (optional), with its own signature image
   const third = input.third && input.third.name.trim() ? input.third : null;
@@ -261,6 +283,8 @@ export async function certificatePptx(input: CertInput) {
       const { w, h } = await sigSize(third.signature);
       sigRel += `<Relationship Id="rIdSig3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/third-signature.${ext}"/>`;
       sigPic += signaturePic("rIdSig3", L.third, L.signature.bottom, w, h, 903, "Third Signatory Signature");
+    } else if (third.signName) {
+      sigPic += signedNameBox(L, L.third, third.name.trim(), 905);
     }
   }
 

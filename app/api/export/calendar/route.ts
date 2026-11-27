@@ -27,7 +27,8 @@ export async function POST(req: Request) {
   wb.creator = "NESR Training Portal";
   const ws = wb.addWorksheet("Training Calendar");
   ws.columns = [
-    { header: "Training Category", key: "category", width: 24 },
+    { header: "Training Category", key: "type", width: 16 },
+    { header: "Training Subcategory", key: "category", width: 24 },
     { header: "Training Code", key: "code", width: 13 },
     { header: "Training Name", key: "title", width: 40 },
     { header: "Training Status", key: "status", width: 18 },
@@ -36,13 +37,12 @@ export async function POST(req: Request) {
     { header: "Training Start Date", key: "start", width: 13, style: { numFmt: "dd/mm/yyyy" } },
     { header: "Training End Date", key: "end", width: 13, style: { numFmt: "dd/mm/yyyy" } },
     { header: "Training Location", key: "location", width: 20 },
-    { header: "Primary Audience", key: "audience", width: 24 },
+    { header: "Target Audience", key: "audience", width: 24 },
     { header: "Training Provider", key: "provider", width: 22 },
     { header: "Instructor", key: "instructor", width: 22 },
     { header: "Training Duration", key: "duration", width: 12 },
     { header: "Delivery Method", key: "delivery", width: 14 },
     { header: "Class Capacity", key: "seats", width: 11 },
-    { header: "Training Type", key: "type", width: 16 },
     { header: "Instructor Location", key: "instructorLocation", width: 18 }
   ];
   for (const t of trainings) {

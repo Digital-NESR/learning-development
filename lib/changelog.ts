@@ -9,7 +9,7 @@ import { statusLabel } from "@/lib/constants.js";
 
 /** Editable training fields, in the order they appear in the editor. */
 export const TRAINING_FIELDS: [key: string, label: string][] = [
-  ["code", "Session code"], ["title", "Training title"], ["instructor", "Instructor"], ["category", "Category"], ["type", "Type"],
+  ["code", "Session code"], ["title", "Training title"], ["instructor", "Instructor"], ["type", "Training category"], ["category", "Training subcategory"],
   ["startDate", "Start date"], ["endDate", "End date"], ["location", "Location"], ["deliveryMethod", "Delivery method"], ["seats", "Seat capacity"], ["status", "Status"],
   ["targetAudience", "Target audience"], ["provider", "Training provider"], ["instructorLocation", "Instructor location"], ["description", "Description"]
 ];
@@ -30,7 +30,7 @@ export function trainingChanges(before: Record<string, unknown>, after: Record<s
 }
 
 const SESSION_ACTIONS = ["create", "update", "status", "email"];
-const PEOPLE_ACTIONS = ["add_participant", "remove_participant", "add_external", "enroll"];
+const PEOPLE_ACTIONS = ["add_participant", "remove_participant", "add_external", "enroll", "ld_reject"];
 const STATE: Record<string, string> = { pending: "Pending Approval", enrolled: "Approved", waitlist: "Waitlisted", rejected: "Rejected", completed: "Completed" };
 const AUDIENCE: Record<string, string> = { registered: "everyone registered", enrolled: "registered participants", participants: "attendees" };
 
@@ -75,9 +75,10 @@ export async function loadChangeLog(trainingId?: string, take = 500): Promise<Ch
       case "add_external": what = `Added external participant ${person}${d.organization ? ` (${d.organization})` : ""}`; break;
       case "remove_participant": what = `Removed ${person}` + (d.state ? ` (was ${STATE[String(d.state)] || d.state})` : ""); break;
       case "enroll": what = `Registered ${d.name || "a person"} from the waitlist`; break;
+      case "ld_reject": what = `Rejected ${person}` + (d.from ? ` (was ${STATE[String(d.from)] || d.from})` : ""); break;
       default: what = r.action;
     }
     const trainingIdOf = r.entity === "training" ? r.entityId : String(d.trainingId || "");
-    return { at: r.createdAt, who: (r.actorId && nameOf.get(r.actorId)) || "System", trainingId: trainingIdOf, what, changes, reason: String(d.reason || "") };
+    return { at: r.createdAt, who: (r.actorId && nameOf.get(r.actorId)) || "System", trainingId: trainingIdOf, what, changes, reason: String(d.reason || (r.action === "ld_reject" ? d.comment : "") || "") };
   });
 }

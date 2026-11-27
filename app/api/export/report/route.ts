@@ -47,6 +47,10 @@ export async function GET() {
     }),
     prisma.attendance.findMany()
   ]);
+  // Who rejected each rejected request (manager or L&D), for the justification columns
+  const rejecters = new Map((await prisma.employee.findMany({
+    where: { id: { in: [...new Set(requests.map(r => r.rejectedById).filter((x): x is string => !!x))] } }, select: { id: true, name: true, isAdmin: true }
+  })).map(p => [p.id, p]));
   const att = new Map<string, boolean | "partial">(attendance.map(a => [`${a.trainingId}:${a.employeeId}`, a.partial ? "partial" : a.attended]));
 
   const wb = new ExcelJS.Workbook();
@@ -63,8 +67,8 @@ export async function GET() {
     { header: "Country", key: "country", width: 16 },
     { header: "Department", key: "department", width: 24 },
     { header: "Request Date", key: "requestDate", width: 20, style: { numFmt: "dd/mm/yyyy hh:mm" } },
-    { header: "Type of Training", key: "type", width: 16 },
-    { header: "Training Category", key: "category", width: 24 },
+    { header: "Training Category", key: "type", width: 16 },
+    { header: "Training Subcategory", key: "category", width: 24 },
     { header: "Training", key: "training", width: 38 },
     { header: "Training Location", key: "location", width: 20 },
     { header: "Approval Status", key: "approval", width: 15 },
@@ -81,6 +85,11 @@ export async function GET() {
     { header: "Training End Date", key: "end", width: 15, style: { numFmt: "dd/mm/yyyy" } },
     // Portal fields
     { header: "Registration Status", key: "regStatus", width: 18 },
+    // Rejections (manager or L&D) with the justification, for L&D's reporting
+    { header: "Rejected By", key: "rejectedBy", width: 24 },
+    { header: "Rejected At Stage", key: "rejectedFrom", width: 16 },
+    { header: "Rejection Date", key: "rejectedAt", width: 14, style: { numFmt: "dd/mm/yyyy" } },
+    { header: "Rejection Justification", key: "rejectReason", width: 40 },
     { header: "Attendance", key: "attendance", width: 12 },
     { header: "Organization", key: "organization", width: 14 },
     { header: "Email", key: "email", width: 30 }
@@ -114,6 +123,14 @@ export async function GET() {
       start: day(t.startDate),
       end: day(t.endDate),
       regStatus: REG_STATUS[r.state] || r.state,
+      rejectedBy: r.state !== "rejected" ? "" : (() => {
+        const who = r.rejectedById ? rejecters.get(r.rejectedById) : null;
+        const byManager = r.steps[0]?.status === "rejected";
+        return (who?.name || (byManager ? last.approver.name : "")) + (byManager ? " (manager)" : who ? " (L&D)" : "");
+      })(),
+      rejectedFrom: r.state === "rejected" ? REG_STATUS[r.rejectedFrom || "pending"] || r.rejectedFrom || "" : "",
+      rejectedAt: r.state === "rejected" && r.rejectedAt ? day(r.rejectedAt) : null,
+      rejectReason: r.state === "rejected" ? r.decisionComment || "" : "",
       attendance: a === true ? "Attended" : a === "partial" ? "Partially attended" : a === false ? "No show" : "",
       organization: e.isExternal ? e.organization || "External" : "NESR",
       email: e.isExternal && e.email.endsWith("@external.invalid") ? "" : e.email
@@ -124,7 +141,8 @@ export async function GET() {
   // ---- Sheet 2: one row per training ----
   const ts = wb.addWorksheet("Trainings");
   ts.columns = [
-    { header: "Training Category", key: "category", width: 24 },
+    { header: "Training Category", key: "type", width: 16 },
+    { header: "Training Subcategory", key: "category", width: 24 },
     { header: "Training Code", key: "code", width: 13 },
     { header: "Training Name", key: "title", width: 38 },
     { header: "Training Status", key: "status", width: 18 },
@@ -133,7 +151,6 @@ export async function GET() {
     { header: "Training Start Date", key: "start", width: 15, style: { numFmt: "dd/mm/yyyy" } },
     { header: "Training End Date", key: "end", width: 15, style: { numFmt: "dd/mm/yyyy" } },
     { header: "Training Location", key: "location", width: 20 },
-    { header: "Type of Training", key: "type", width: 16 },
     { header: "Target Audience", key: "audience", width: 22 },
     { header: "Training Provider", key: "provider", width: 20 },
     { header: "Instructor", key: "instructor", width: 20 },

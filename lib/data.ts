@@ -68,7 +68,7 @@ export async function loadSnapshot(meOrId: string | Employee) {
   for (const d of attendanceDays) (days[`${d.trainingId}:${d.employeeId}`] ||= {})[iso(d.day)] = d.present;
 
   const ids = new Set<string>([me.id, ...reports.map(r => r.id), ...chain.map(c => c.id)]);
-  requests.forEach(r => { ids.add(r.employeeId); r.steps.forEach(s => ids.add(s.approverId)); });
+  requests.forEach(r => { ids.add(r.employeeId); r.steps.forEach(s => ids.add(s.approverId)); if (r.rejectedById) ids.add(r.rejectedById); });
   // Non-admins see attendance only for people whose requests they can see (themselves, their team).
   const requesters = [...new Set(requests.map(r => r.employeeId))];
   const [people, attendance] = await Promise.all([
@@ -140,6 +140,9 @@ export async function loadSnapshot(meOrId: string | Employee) {
       approvedAt: r.steps.length && r.steps[r.steps.length - 1].decidedAt ? pretty(r.steps[r.steps.length - 1].decidedAt!) : "",
       submitted: pretty(r.submittedAt), submittedAt: r.submittedAt.toISOString(),
       justification: r.justification || "—", form: r.form, comment: r.decisionComment || "",
+      // Rejections: who (person key), from which state, when; byLd = rejected by the L&D team rather than the manager
+      rejectedBy: r.rejectedById || "", rejectedFrom: r.rejectedFrom || "", rejectedAt: r.rejectedAt ? pretty(r.rejectedAt) : "",
+      byLd: r.state === "rejected" && !r.steps.some(s => s.status === "rejected"),
       // Feedback survey email (L&D's Surveys page)
       surveySent: r.surveySentAt ? pretty(r.surveySentAt) : "", surveyReminders: r.surveyReminders
     })),

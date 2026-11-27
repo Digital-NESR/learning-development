@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   const pdf = await nameplatePdf(plates, brand);
   await prisma.auditLog.create({ data: { actorId: me.id, action: "nameplates", entity: "training", entityId: t.id, details: { count: plates.length, brand } } });
 
-  const file = plates.length === 1 ? `Nameplate - ${plates[0].name}.pdf` : `Nameplates - ${t.code}${brand === "cpven" ? " (CPVEN)" : ""}.pdf`;
+  const file = plates.length === 1 ? `Nameplate - ${plates[0].name}.pdf` : `Nameplates - ${t.code}${brand === "cpven" ? " (External)" : ""}.pdf`;
   return new NextResponse(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",

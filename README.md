@@ -43,7 +43,7 @@ Managers see all of their direct reports' requests. Team Development lists each 
 
 **Seats:** a seat is taken when the manager approves (or when L&D enrolls or adds someone). Pending requests don't hold a seat. Seat numbers are only shown to the L&D team.
 
-**Approval flow:** employee requests (only while registration is open) → line manager approves or declines. **The manager's approval is final:** the person is **enrolled** if registration is still open and a seat is free, otherwise **waitlisted**. L&D enrolls or declines waitlisted people (Waitlist Queue), can add or remove anyone on a session, and can open, close or re-open registration. If Entra ID has no manager for a person, they must enter an approver email on the form.
+**Approval flow:** employee requests (only while registration is open) → line manager approves or rejects (with a reason). On approval the person is **Approved** ("Registration Approved") if registration is still open and a seat is free, otherwise **waitlisted**. The seat is confirmed when L&D sends the training invitation (Notifications → Send Training Email → Choose people). L&D can **reject** anyone who is pending, approved or waitlisted, with a required justification: one email goes to the employee and their manager, and the rejection (who, when, why) counts in the Rejected totals and appears in the exports. L&D registers waitlisted people from the Waitlist Queue (which also has a Rejected pool), adds people to a session, removes external participants, and opens, closes or re-opens registration. If Entra ID has no manager for a person, they must enter an approver email on the form.
 
 ## Database
 
@@ -141,7 +141,7 @@ Open http://localhost:3000.
 
 | Page | What it does |
 |---|---|
-| Manage Trainings | Add, edit (date pickers), delete (withdraw) sessions, open/close registration. **Export List** downloads a participant PDF. **View** opens the session with **Registered** / **Participants** tabs. Mark attendance on the Registered tab once the session has started; Participants lists only people marked attended |
+| Manage Trainings | Add and edit sessions (Training Category = type, Training Subcategory = category), set the status. **Export List (Excel)** downloads the participant list to review and annotate. **View** opens the session with **All applicants** / **Rejected** tabs; NESR applicants are rejected with a justification, external participants can be removed. Attendance is marked on the Attendance page only |
 | Change Log | Session page → Change Log: every edit (field, old → new, required reason), status change, person added/removed/registered from the waitlist and training email, with who and when. **Change Log** on Manage Trainings (or Export on the session) downloads it as Excel. Built from `audit_log` (`lib/changelog.ts`, `/api/changelog`) |
 | Notifications → Send Training Email | Email everyone registered, enrolled or attended for a training. Only a count is shown. Sent through n8n |
 | Notifications → Nameplate Generator | Fold-in-half A4 desk nameplates as a PDF, for one person, all enrolled, all participants or a typed name |

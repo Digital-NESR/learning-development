@@ -97,7 +97,7 @@
           </div>
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
             <div onClick="{{ reqBox.onToggle }}" style="padding:13px 16px;border-bottom:1px solid #E1E5E3;font-size:13px;font-weight:bold;border-left:4px solid #2A7E4F;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
-              <span style="flex:1">Training Requests <span style="font-weight:normal;color:#8A8F8C">· {{ reqBox.count }}</span></span>
+              <span style="flex:1">{{ year }} Training Requests <span style="font-weight:normal;color:#8A8F8C">· {{ reqBox.count }}</span></span>
               <span style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ reqBox.label }}</span>
             </div>
             <sc-if value="{{ reqBox.open }}" hint-placeholder-val="{{ true }}">
@@ -146,7 +146,7 @@
                 </div>
                 <sc-if value="{{ r.comment }}" hint-placeholder-val="{{ false }}">
                   <div style="margin-top:10px;background:#FBF2F2;border:1px solid #F0DADA;border-radius:4px;padding:10px 12px">
-                    <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;color:#8A2B2B">Reason given</div>
+                    <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A2B2B">{{ r.commentLabel }}</div>
                     <div style="font-size:12px;margin-top:3px;line-height:1.5;white-space:pre-wrap">{{ r.comment }}</div>
                   </div>
                 </sc-if>
@@ -203,7 +203,7 @@
               <input value="{{ q }}" onChange="{{ onSearch }}" placeholder="Title, code or keyword" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px" />
             </div>
             <div>
-              <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Type</div>
+              <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Training Category</div>
               <div style="display:flex;gap:2px;background:#E7EBE9;padding:3px;border-radius:4px">
                 <sc-for list="{{ typeTabs }}" as="tt" hint-placeholder-count="4">
                   <button onClick="{{ tt.onClick }}" style="border:0;cursor:pointer;padding:6px 12px;border-radius:3px;font-size:12px;font-weight:bold;white-space:nowrap;background:{{ tt.bg }};color:{{ tt.fg }}">{{ tt.label }}</button>
@@ -225,8 +225,9 @@
 
           <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow-x:auto">
-              <div style="display:grid;min-width:1840px;grid-template-columns:minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 78px 92px 72px 104px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
+              <div style="display:grid;min-width:1770px;grid-template-columns:112px minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 92px 72px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold;letter-spacing:.4px">
                 <div style="padding:11px 10px">Training Category</div>
+                <div style="padding:11px 10px">Training Subcategory</div>
                 <div style="padding:11px 10px">Training Code</div>
                 <div style="padding:11px 10px">Training Name</div>
                 <div style="padding:11px 10px">Training Status</div>
@@ -235,16 +236,15 @@
                 <div style="padding:11px 10px">Training Start Date</div>
                 <div style="padding:11px 10px">Training End Date</div>
                 <div style="padding:11px 10px">Training Location</div>
-                <div style="padding:11px 10px">Primary Audience</div>
+                <div style="padding:11px 10px">Target Audience</div>
                 <div style="padding:11px 10px">Training Provider</div>
                 <div style="padding:11px 10px">Instructor</div>
-                <div style="padding:11px 10px">Training Duration</div>
                 <div style="padding:11px 10px">Delivery Method</div>
                 <div style="padding:11px 10px">Class Capacity</div>
-                <div style="padding:11px 10px">Training Type</div>
               </div>
               <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
-                <div onClick="{{ r.onClick }}" style="display:grid;min-width:1840px;grid-template-columns:minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 78px 92px 72px 104px;border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
+                <div onClick="{{ r.onClick }}" style="display:grid;min-width:1770px;grid-template-columns:112px minmax(150px,1.2fr) 74px minmax(220px,2.1fr) 118px 58px 58px 94px 94px minmax(130px,1fr) minmax(150px,1.1fr) minmax(150px,1.1fr) minmax(130px,1fr) 92px 72px;border-bottom:1px solid #F0F2F1;cursor:pointer;background:{{ r.zebra }};align-items:center" style-hover="background:#EEF5F1">
+                  <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.type }}</div>
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.category }}</div>
                   <div style="padding:11px 10px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
                   <div style="padding:11px 10px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
@@ -257,10 +257,8 @@
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.targetAudience }}</div>
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.provider }}</div>
                   <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.instructor }}</div>
-                  <div style="padding:11px 10px;font-size:12px">{{ r.duration }}</div>
                   <div style="padding:11px 10px;font-size:12px">{{ r.delivery }}</div>
                   <div style="padding:11px 10px;font-size:12px">{{ r.capacity }}</div>
-                  <div style="padding:11px 10px;font-size:12px;color:#58595B">{{ r.type }}</div>
                 </div>
               </sc-for>
               <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
@@ -320,7 +318,7 @@
                           <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:10px;font-weight:bold;padding:3px 8px;border-radius:3px">{{ r.st.label }}</span>
                         </div>
                         <div style="font-size:14.5px;font-weight:bold;line-height:1.3;text-wrap:pretty">{{ r.title }}</div>
-                        <div style="font-size:11.5px;color:#58595B">{{ r.category }} &middot; {{ r.type }}</div>
+                        <div style="font-size:11.5px;color:#58595B">{{ r.type }} &middot; {{ r.category }}</div>
                         <div style="flex:1"></div>
                         <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#1F1F1D;border-top:1px solid #F0F2F1;padding-top:9px">
                           <span>{{ r.dates }}</span>
@@ -583,7 +581,8 @@
                   <div style="font-size:11.5px;color:#58595B;margin-top:2px">{{ r.meta }}</div>
                   <div style="font-size:11px;color:#1F5E3A;font-weight:bold;margin-top:5px">Approver: {{ r.approver }}</div>
                   <button onClick="{{ r.onHistory }}" title="See the trainings this person has already completed" style="margin-top:6px;border:0;background:none;padding:0;color:#1F4E79;cursor:pointer;font-size:11.5px;font-weight:bold;text-decoration:underline">{{ r.histLabel }}</button>
-                  <div style="font-size:12px;color:#1F1F1D;margin-top:9px;background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:9px 11px;line-height:1.55">{{ r.justification }}</div>
+                  <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;margin-top:10px">Justification</div>
+                  <div style="font-size:12px;color:#1F1F1D;margin-top:4px;background:#F7F9F8;border:1px solid #EAEEEC;border-radius:4px;padding:9px 11px;line-height:1.55">{{ r.justification }}</div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:150px">
                   <span style="background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:11px;font-weight:bold;padding:5px 11px;border-radius:3px;text-align:center">{{ r.st.label }}</span>
@@ -606,7 +605,7 @@
                  </div>
                </sc-if>
                <sc-if value="{{ r.comment }}" hint-placeholder-val="{{ false }}">
-                 <div style="margin-top:12px;font-size:12px;color:#8A2B2B;background:#FBF2F2;border:1px solid #F0DADA;border-radius:4px;padding:8px 11px;line-height:1.5;white-space:pre-wrap"><b>Reason given:</b> {{ r.comment }}</div>
+                 <div style="margin-top:12px;font-size:12px;color:#8A2B2B;background:#FBF2F2;border:1px solid #F0DADA;border-radius:4px;padding:8px 11px;line-height:1.5;white-space:pre-wrap"><b>{{ r.commentLabel }}:</b> {{ r.comment }}</div>
                </sc-if>
              </div>
            </sc-for>
@@ -726,7 +725,7 @@
 <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Session status</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-bottom:18px">
             <sc-for list="{{ sessionKpis }}" as="k" hint-placeholder-count="4">
-              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid {{ k.color }};border-radius:5px;padding:12px 14px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
+              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;box-shadow:inset 0 4px 0 {{ k.color }};border-radius:5px;padding:15px 14px 12px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
                 <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;min-height:26px">{{ k.label }}</div>
                 <div style="font-size:26px;font-weight:bold;color:{{ k.color }};line-height:1.2;margin-top:2px">{{ k.value }}</div>
                 <div style="font-size:10.5px;color:#8A8F8C">{{ k.note }}</div>
@@ -736,7 +735,7 @@
           <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Registration status</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-bottom:18px">
             <sc-for list="{{ regKpis }}" as="k" hint-placeholder-count="3">
-              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid {{ k.color }};border-radius:5px;padding:12px 14px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
+              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;box-shadow:inset 0 4px 0 {{ k.color }};border-radius:5px;padding:15px 14px 12px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
                 <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;min-height:26px">{{ k.label }}</div>
                 <div style="font-size:26px;font-weight:bold;color:{{ k.color }};line-height:1.2;margin-top:2px">{{ k.value }}</div>
                 <div style="font-size:10.5px;color:#8A8F8C">{{ k.note }}</div>
@@ -746,7 +745,7 @@
           <div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#58595B;margin:0 0 8px">Approval status</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-bottom:18px">
             <sc-for list="{{ approvalKpis }}" as="k" hint-placeholder-count="5">
-              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;border-top:4px solid {{ k.color }};border-radius:5px;padding:12px 14px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
+              <div onClick="{{ k.onClick }}" title="{{ k.hint }}" style="background:#fff;border:1px solid #E1E5E3;box-shadow:inset 0 4px 0 {{ k.color }};border-radius:5px;padding:15px 14px 12px;cursor:{{ k.cursor }}" style-hover="border-color:#2A7E4F">
                 <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;min-height:26px">{{ k.label }}</div>
                 <div style="font-size:26px;font-weight:bold;color:{{ k.color }};line-height:1.2;margin-top:2px">{{ k.value }}</div>
                 <div style="font-size:10.5px;color:#8A8F8C">{{ k.note }}</div>
@@ -857,7 +856,7 @@
             <div style="display:grid;min-width:1040px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1.3fr) 130px;background:#2A7E4F;color:#fff;font-size:11px;font-weight:bold">
               <div style="padding:11px 12px">Code</div>
               <div style="padding:11px 12px">Title</div>
-              <div style="padding:11px 12px">Category</div>
+              <div style="padding:11px 12px">Training Category</div>
               <div style="padding:11px 12px">Dates</div>
               <div style="padding:11px 12px">Location</div>
               <div style="padding:11px 12px">Seats &middot; Status</div>
@@ -867,7 +866,7 @@
               <div style="display:grid;min-width:1040px;grid-template-columns:86px minmax(0,2fr) minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,1.3fr) 130px;border-bottom:1px solid #F0F2F1;align-items:center;background:{{ r.zebra }}">
                 <div style="padding:10px 12px;font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ r.code }}</div>
                 <div style="padding:10px 12px;font-size:12.5px;font-weight:bold">{{ r.title }}</div>
-                <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.category }}</div>
+                <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.type }}<div style="font-size:11px;color:#8A8F8C">{{ r.category }}</div></div>
                 <div style="padding:10px 12px;font-size:12px">{{ r.dates }}</div>
                 <div style="padding:10px 12px;font-size:12px;color:#58595B">{{ r.location }}</div>
                 <div style="padding:10px 12px">
@@ -905,10 +904,6 @@
                 <span style="background:{{ session.statusBg }};color:{{ session.statusFg }};font-size:11px;font-weight:bold;padding:3px 9px;border-radius:3px">{{ session.statusLabel }}</span>
               </div>
             </div>
-            <div style="position:relative;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:6px;padding:16px 22px;text-align:center;min-width:150px">
-              <div style="font-size:30px;font-weight:bold;color:#fff;line-height:1.1">{{ session.countBig }}</div>
-              <div style="font-size:11px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#C5E0D2;margin-top:4px">{{ session.countUnit }}</div>
-            </div>
             <div style="position:relative;display:flex;flex-direction:column;gap:8px">
               <button onClick="{{ session.onEdit }}" style="padding:9px 15px;border:0;background:#fff;color:#1F5E3A;border-radius:4px;cursor:pointer;font-weight:bold">Edit Session</button>
               <select value="{{ session.statusValue }}" onChange="{{ session.onStatus }}" title="Training status" style="padding:9px 10px;border:1px solid rgba(255,255,255,.55);background:#fff;color:#1F5E3A;border-radius:4px;font-weight:bold">
@@ -916,7 +911,7 @@
                   <option value="{{ o.value }}">Status: {{ o.label }}</option>
                 </sc-for>
               </select>
-              <button onClick="{{ session.onExport }}" style="padding:9px 15px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">Export List</button>
+              <button onClick="{{ session.onExport }}" style="padding:9px 15px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">Export List (Excel)</button>
             </div>
           </div>
 
@@ -930,7 +925,7 @@
             </sc-for>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;margin-bottom:18px">
+          <div style="display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:18px">
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
               <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Session Details</div>
               <div style="padding:14px 16px">
@@ -949,26 +944,6 @@
               </div>
             </div>
 
-            <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
-              <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F;font-size:13px;font-weight:bold">Waitlist Queue</div>
-              <sc-for list="{{ session.waitlist }}" as="r" hint-placeholder-count="2">
-                <div style="padding:13px 16px;border-bottom:1px solid #F0F2F1;display:flex;gap:11px;align-items:center;flex-wrap:wrap">
-                  <div style="width:32px;height:32px;border-radius:50%;background:#C5E0D2;color:#1F5E3A;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:bold;flex:0 0 auto">{{ r.initials }}</div>
-                  <div style="flex:1;min-width:160px">
-                    <div style="font-size:12.5px;font-weight:bold">{{ r.employee }}</div>
-                    <div style="font-size:11px;color:#58595B">{{ r.empMeta }}</div>
-                    <div style="font-size:11px;color:#58595B;margin-top:2px">Approved by {{ r.manager }}</div>
-                  </div>
-                  <div style="display:flex;gap:7px">
-                    <button onClick="{{ r.onEnroll }}" style="padding:6px 12px;border:0;background:#2A7E4F;color:#fff;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Register</button>
-                    <button onClick="{{ r.onDecline }}" style="padding:6px 12px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Reject</button>
-                  </div>
-                </div>
-              </sc-for>
-              <sc-if value="{{ session.noWaitlist }}" hint-placeholder-val="{{ false }}">
-                <div style="padding:30px 16px;text-align:center;font-size:12.5px;color:#8A8F8C">No one is waitlisted for this session.</div>
-              </sc-if>
-            </div>
           </div>
 
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px">
@@ -979,9 +954,6 @@
                 </sc-for>
               </div>
               <div style="flex:1"></div>
-              <sc-if value="{{ session.showAttendance }}" hint-placeholder-val="{{ false }}">
-                <div style="font-size:11.5px;font-weight:bold;color:#2A7E4F">{{ session.completionLabel }}</div>
-              </sc-if>
             </div>
             <div style="padding:10px 16px;border-bottom:1px solid #F0F2F1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#FAFBFA">
               <input list="ld-directory" value="{{ session.addValue }}" onChange="{{ session.onAddValue }}" placeholder="Add a person: type a name or email" style="flex:1;min-width:220px;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
@@ -993,9 +965,9 @@
               <button onClick="{{ session.onAdd }}" style="padding:8px 14px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">Add NESR employee</button>
             </div>
             <div style="padding:10px 16px;border-bottom:1px solid #F0F2F1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#FAFBFA">
-              <span style="font-size:11px;font-weight:bold;color:#58595B;white-space:nowrap">External (e.g. CPVEN):</span>
+              <span style="font-size:11px;font-weight:bold;color:#58595B;white-space:nowrap">External participant:</span>
               <input value="{{ session.extName }}" onChange="{{ session.onExtName }}" placeholder="Full name" style="flex:2;min-width:160px;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
-              <input list="ld-orgs" value="{{ session.extOrg }}" onChange="{{ session.onExtOrg }}" placeholder="Organisation" style="flex:1;min-width:110px;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
+              <input list="ld-orgs" value="{{ session.extOrg }}" onChange="{{ session.onExtOrg }}" placeholder="Organisation (optional)" style="flex:1;min-width:110px;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff" />
               <datalist id="ld-orgs">
                 <sc-for list="{{ session.orgOptions }}" as="o" hint-placeholder-count="2">
                   <option value="{{ o }}"></option>
@@ -1010,6 +982,9 @@
                 <div style="flex:1;min-width:0">
                   <div style="font-size:12.5px;font-weight:bold">{{ p.name }}</div>
                   <div style="font-size:11px;color:#58595B">{{ p.meta }}</div>
+                  <sc-if value="{{ p.note }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:11.5px;color:#8A2B2B;margin-top:3px;white-space:pre-wrap">{{ p.note }}</div>
+                  </sc-if>
                 </div>
                 <sc-if value="{{ p.badge }}" hint-placeholder-val="{{ false }}">
                   <span style="background:{{ p.badgeBg }};color:{{ p.badgeFg }};font-size:10px;font-weight:bold;padding:3px 9px;border-radius:3px;white-space:nowrap">{{ p.badge }}</span>
@@ -1021,8 +996,11 @@
                     <button onClick="{{ p.onNoShow }}" title="Mark as no show" style="padding:6px 12px;border:0;border-left:1px solid #D1D3D4;background:{{ p.noBg }};color:{{ p.noFg }};cursor:pointer;font-weight:bold;font-size:11.5px">No show</button>
                   </div>
                 </sc-if>
+                <sc-if value="{{ p.canReject }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ p.onReject }}" title="Reject: a justification is required and is emailed to the employee and their manager" style="padding:6px 10px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Reject</button>
+                </sc-if>
                 <sc-if value="{{ p.canRemove }}" hint-placeholder-val="{{ false }}">
-                  <button onClick="{{ p.onRemove }}" title="Remove from this training" style="padding:6px 10px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Remove</button>
+                  <button onClick="{{ p.onRemove }}" title="Remove this external participant from the training" style="padding:6px 10px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Remove</button>
                 </sc-if>
               </div>
             </sc-for>
@@ -1079,7 +1057,7 @@
           <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:14px">
             <div style="flex:1;min-width:260px">
               <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Waitlist Queue</div>
-              <div style="font-size:13px;color:#58595B">Manager-approved requests that couldn't be registered because the class was full or registration had closed, and everyone who was registered for a session that was cancelled, so they can be offered another one.</div>
+              <div style="font-size:13px;color:#58595B">Manager-approved requests that couldn't be registered because the class was full or registration had closed, and everyone who was registered for a session that was cancelled, so they can be offered another one. People L&amp;D rejects from here move to Rejected, with the justification.</div>
             </div>
             <button onClick="{{ waitlist.onExport }}" style="padding:10px 16px;border:1px solid #2A7E4F;background:#fff;color:#2A7E4F;border-radius:4px;cursor:pointer;font-weight:bold">{{ waitlist.exportLabel }}</button>
           </div>
@@ -1121,6 +1099,10 @@
                   </sc-if>
                   <sc-if value="{{ r.isCancelled }}" hint-placeholder-val="{{ false }}">
                     <span style="font-size:11.5px;color:#58595B;line-height:1.4">Offer another session, then add them to it from Manage Trainings.</span>
+                    <button onClick="{{ r.onDecline }}" style="padding:6px 11px;border:1px solid #D1D3D4;background:#fff;color:#8A2B2B;border-radius:3px;cursor:pointer;font-weight:bold;font-size:11.5px">Reject</button>
+                  </sc-if>
+                  <sc-if value="{{ r.isRejected }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:11.5px;color:#8A2B2B;line-height:1.4;white-space:pre-wrap"><b>Justification:</b> {{ r.comment }}</span>
                   </sc-if>
                 </div>
               </div>
@@ -1159,9 +1141,9 @@
             <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
               <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
                 <div style="font-size:13px;font-weight:bold">Attendance Report</div>
-                <div style="font-size:11.5px;color:#58595B;margin-top:2px">All trainings in the period, with every participant's days present and overall result. Excel.</div>
+                <div style="font-size:11.5px;color:#58595B;margin-top:2px">All trainings in the month (or quarter, or year), with every participant's days present and overall result. Excel.</div>
               </div>
-              <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;flex:1;align-content:start">
+              <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;flex:1;align-content:start">
                 <sc-for list="{{ attReport.selects }}" as="f" hint-placeholder-count="3">
                   <div>
                     <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">{{ f.label }}</div>
@@ -1285,12 +1267,12 @@
       <sc-if value="{{ s.aCerts }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Certificates</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Certificates of completion for a training: NESR or CPVEN template, PDF to print or PowerPoint to edit.</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Certificates of completion for a training: NESR or External template, PDF to print or PowerPoint to edit.</div>
           <div style="max-width:720px">
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
             <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
               <div style="font-size:13px;font-weight:bold">Certificates of Completion</div>
-              <div style="font-size:11.5px;color:#58595B;margin-top:2px">NESR or CPVEN template, one page per person. PDF to print, or PowerPoint to edit.</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">NESR or External template, one page per person. PDF to print, or PowerPoint to edit.</div>
             </div>
             <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;flex:1">
               <sc-for list="{{ cert.selects }}" as="f" hint-placeholder-count="3">
@@ -1320,7 +1302,7 @@
               <sc-if value="{{ cert.showTyped }}" hint-placeholder-val="{{ false }}">
                 <div style="grid-column:1 / -1">
                   <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Names (one per line)</div>
-                  <textarea value="{{ cert.typedNames }}" onChange="{{ cert.onTypedNames }}" rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
+                  <textarea value="{{ cert.typedNames }}" onChange="{{ cert.onTypedNames }}" rows="4" placeholder="e.g. external participants who registered outside the portal" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
                 </div>
               </sc-if>
               <div>
@@ -1344,6 +1326,12 @@
                   </sc-if>
                   <span style="font-size:11px;color:#8A8F8C">{{ cert.sigNote }}</span>
                 </div>
+                <sc-if value="{{ cert.noSig }}" hint-placeholder-val="{{ true }}">
+                  <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-top:8px">
+                    <input type="checkbox" checked="{{ cert.signName }}" onChange="{{ cert.onSignName }}" />
+                    No signature? Write the instructor's name in the signature area
+                  </label>
+                </sc-if>
               </div>
               <label style="grid-column:1 / -1;display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;border-top:1px solid #EAEEEC;padding-top:12px">
                 <input type="checkbox" checked="{{ cert.third }}" onChange="{{ cert.onThird }}" />
@@ -1371,6 +1359,12 @@
                     </sc-if>
                     <span style="font-size:11px;color:#8A8F8C">{{ cert.thirdSigNote }}</span>
                   </div>
+                  <sc-if value="{{ cert.noThirdSig }}" hint-placeholder-val="{{ true }}">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-top:8px">
+                      <input type="checkbox" checked="{{ cert.thirdSignName }}" onChange="{{ cert.onThirdSignName }}" />
+                      No signature? Write the name in the signature area
+                    </label>
+                  </sc-if>
                 </div>
               </sc-if>
               <div style="grid-column:1 / -1;font-size:11.5px;color:#58595B">{{ cert.summary }}</div>
@@ -1387,12 +1381,12 @@
       <sc-if value="{{ s.aPlates }}" hint-placeholder-val="{{ false }}">
         <div>
           <div style="font-size:22px;font-weight:bold;margin-bottom:3px">Name Tags</div>
-          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Desk name tags for participants and the instructor, NESR or CPVEN.</div>
+          <div style="font-size:13px;color:#58595B;margin-bottom:16px">Desk name tags for participants and the instructor, NESR or External.</div>
           <div style="max-width:720px">
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
             <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
               <div style="font-size:13px;font-weight:bold">Name Tag Generator</div>
-              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Fold-in-half desk name tags as a PDF, one A4 page per person. NESR or CPVEN.</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Fold-in-half desk name tags as a PDF, one A4 page per person. NESR or External.</div>
             </div>
             <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;flex:1">
               <sc-for list="{{ plate.selects }}" as="f" hint-placeholder-count="3">
@@ -1422,7 +1416,7 @@
               <sc-if value="{{ plate.showTyped }}" hint-placeholder-val="{{ false }}">
                 <div style="grid-column:1 / -1">
                   <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Names (one per line)</div>
-                  <textarea value="{{ plate.typedNames }}" onChange="{{ plate.onTypedNames }}" rows="4" placeholder="e.g. CPVEN participants who registered outside the portal" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
+                  <textarea value="{{ plate.typedNames }}" onChange="{{ plate.onTypedNames }}" rows="4" placeholder="e.g. external participants who registered outside the portal" style="width:100%;padding:8px 10px;border:1px solid #D1D3D4;border-radius:4px;background:#fff;resize:vertical;line-height:1.5"></textarea>
                 </div>
               </sc-if>
               <div style="grid-column:1 / -1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -1473,7 +1467,7 @@
           <div style="background:#fff;border:1px solid #E1E5E3;border-radius:5px;overflow:hidden;display:flex;flex-direction:column">
             <div style="padding:13px 16px;border-bottom:1px solid #E1E5E3;border-left:4px solid #2A7E4F">
               <div style="font-size:13px;font-weight:bold">Send Training Email</div>
-              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Goes only to people registered for the selected training. Each email is personalised.</div>
+              <div style="font-size:11.5px;color:#58595B;margin-top:2px">Goes only to people linked to the selected training: a whole group, or the people you choose (e.g. a training invitation). Each email is personalised.</div>
             </div>
             <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1">
               <sc-for list="{{ mail.selects }}" as="f" hint-placeholder-count="3">
@@ -1486,6 +1480,20 @@
                   </select>
                 </div>
               </sc-for>
+              <sc-if value="{{ mail.showPick }}" hint-placeholder-val="{{ false }}">
+                <div style="grid-column:1 / -1;border:1px solid #E1E5E3;border-radius:4px;max-height:200px;overflow:auto;padding:4px 0">
+                  <sc-for list="{{ mail.people }}" as="mp" hint-placeholder-count="4">
+                    <label style="display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:12px;cursor:pointer">
+                      <input type="checkbox" checked="{{ mp.checked }}" onChange="{{ mp.onToggle }}" />
+                      <span style="flex:1">{{ mp.name }}</span>
+                      <span style="font-size:10.5px;color:#8A8F8C">{{ mp.note }}</span>
+                    </label>
+                  </sc-for>
+                  <sc-if value="{{ mail.noPeople }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:10px;font-size:12px;color:#8A8F8C">No one has applied for this training yet.</div>
+                  </sc-if>
+                </div>
+              </sc-if>
               <div style="grid-column:1 / -1;background:{{ mail.recipientBg }};border:1px solid {{ mail.recipientBorder }};border-radius:4px;padding:9px 12px;font-size:12px;font-weight:bold;color:{{ mail.recipientFg }}">{{ mail.recipientLabel }}</div>
               <div style="grid-column:1 / -1">
                 <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:4px">Subject</div>
@@ -1572,8 +1580,8 @@
               </sc-for>
             </div>
             <div style="border-top:1px solid #EAEEEC;padding-top:14px">
-              <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;margin-bottom:5px">About this session</div>
-              <div style="font-size:12.5px;line-height:1.65;color:#3E403E">{{ detail.desc }}</div>
+              <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#8A8F8C;margin-bottom:5px">Target Audience</div>
+              <div style="font-size:12.5px;line-height:1.65;color:#3E403E">{{ detail.audience }}</div>
             </div>
           </div>
 
@@ -1588,10 +1596,6 @@
                 <div style="background:#FDF2D9;border:1px solid #F0DDA8;border-radius:5px;padding:10px 12px;font-size:12px;color:#7A5400;line-height:1.5"><b>Already completed?</b> {{ detail.histWarn }}</div>
               </sc-if>
               <div style="font-size:11.5px;color:#58595B;line-height:1.5">Please review your completed <button onClick="{{ detail.onHistory }}" style="border:0;background:none;padding:0;color:#2A7E4F;font-weight:bold;cursor:pointer;font-size:11.5px;text-decoration:underline">training records</button> to avoid duplicate training registrations.</div>
-              <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#F2F7F4;border:1px solid #D9E7E0;border-radius:5px;padding:10px 12px">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2A7E4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M13 7l-2.5-2.5M13 7l-2.5 2.5M20 17H11M11 17l2.5-2.5M11 17l2.5 2.5"></path></svg>
-                <span style="font-size:12px;font-weight:bold;color:#1F5E3A">{{ detail.chainNote }}</span>
-              </div>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px">
                 <sc-for list="{{ formFields }}" as="fl" hint-placeholder-count="6">
                   <div>
@@ -1671,6 +1675,27 @@
         <div style="padding:14px 20px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;gap:10px;justify-content:flex-end">
           <button onClick="{{ closeModal }}" style="padding:10px 16px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Cancel</button>
           <button onClick="{{ saveTraining }}" style="padding:10px 20px;border:0;background:#2A7E4F;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">{{ editor.cta }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ldReject }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(31,31,29,.55);display:flex;align-items:flex-start;justify-content:center;padding:80px 20px;z-index:55;overflow:auto;animation:fadeIn .15s ease">
+      <div onClick="{{ stop }}" style="width:100%;max-width:520px;background:#fff;border-radius:6px;overflow:hidden;animation:popIn .18s ease;box-shadow:0 22px 60px rgba(0,0,0,.3)">
+        <div style="background:#8A2B2B;padding:14px 20px;display:flex;align-items:center;gap:12px">
+          <div style="color:#fff;font-size:15px;font-weight:bold;flex:1">Reject {{ ldReject.name }}</div>
+          <button onClick="{{ ldReject.onCancel }}" style="border:0;background:rgba(255,255,255,.18);color:#fff;width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:15px;font-weight:bold">&times;</button>
+        </div>
+        <div style="padding:16px 20px">
+          <div style="font-size:12px;color:#58595B;margin-bottom:12px">{{ ldReject.sub }}</div>
+          <div style="font-size:10px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#58595B;margin-bottom:5px">Justification *</div>
+          <textarea value="{{ ldReject.text }}" onChange="{{ ldReject.onText }}" rows="4" placeholder="e.g. The training is not relevant to the employee's position or grade" style="width:100%;padding:9px 10px;border:1px solid {{ ldReject.border }};border-radius:4px;resize:vertical;line-height:1.5"></textarea>
+          <div style="font-size:11px;color:#8A8F8C;margin-top:6px;line-height:1.5">Sent in one email to the employee and their manager, and kept for reporting. The person moves to Rejected and any seat is freed.</div>
+        </div>
+        <div style="padding:12px 20px;background:#F7F9F8;border-top:1px solid #EAEEEC;display:flex;justify-content:flex-end;gap:8px">
+          <button onClick="{{ ldReject.onCancel }}" style="padding:9px 15px;border:1px solid #D1D3D4;background:#fff;color:#58595B;border-radius:4px;cursor:pointer;font-weight:bold">Cancel</button>
+          <button onClick="{{ ldReject.onConfirm }}" style="padding:9px 18px;border:0;background:#8A2B2B;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold">{{ ldReject.cta }}</button>
         </div>
       </div>
     </div>

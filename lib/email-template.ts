@@ -10,8 +10,8 @@ const FONT = "Arial, Helvetica, sans-serif";
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 export type EmailParts = {
-  tag: string;               // right side of the header, e.g. "ENROLLMENT CONFIRMED"
-  eyebrow: string;           // small line above the title, e.g. "SFT-02 · Training Portal"
+  tag: string;               // template name (no longer shown in the email: L&D asked to remove it)
+  eyebrow: string;           // session code line (no longer shown in the email)
   title: string;             // big headline
   firstName: string;
   message: string;           // plain text from the template, placeholders already filled
@@ -55,9 +55,6 @@ export function trainingEmailHtml(p: EmailParts) {
                   <span style="font-size:24px;font-weight:bold;letter-spacing:.5px">NESR</span>
                   <span style="font-size:12px;letter-spacing:1px;padding-left:6px">TRAINING</span>
                 </td>
-                <td align="right" style="vertical-align:middle">
-                  <span style="display:inline-block;background:${DARK};color:#FFFFFF;font-family:${FONT};font-size:11px;font-weight:bold;letter-spacing:.6px;padding:5px 9px">${esc(p.tag)}</span>
-                </td>
               </tr>
             </table>
           </td>
@@ -65,7 +62,6 @@ export function trainingEmailHtml(p: EmailParts) {
         <!-- Body -->
         <tr>
           <td style="padding:34px 40px 10px">
-            <p style="margin:0 0 6px;font-family:${FONT};font-size:13px;color:#58595B">${esc(p.eyebrow)}</p>
             <h1 style="margin:0 0 20px;font-family:${FONT};font-size:24px;line-height:30px;font-weight:bold;color:${DARK}">${esc(p.title)}</h1>
             ${greets ? "" : `<p style="margin:0 0 14px;font-family:${FONT};font-size:15px;line-height:22px;color:${DARK}">Dear ${esc(p.firstName)},</p>`}
             ${paragraphs}

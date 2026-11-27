@@ -110,6 +110,10 @@ model TrainingRequest {
   justification String?
   /// Reason given when the request was declined (shown to the employee and in their email)
   decisionComment String? @map("decision_comment")
+  /// Who rejected the request (the manager, or someone in L&D), from which state, and when
+  rejectedById  String?   @map("rejected_by_id")
+  rejectedFrom  String?   @map("rejected_from")
+  rejectedAt    DateTime? @map("rejected_at")
   /// Registration form snapshot: nesrId, name, loc, dept, nat, mgr
   form          Json?
   submittedAt   DateTime     @default(now()) @map("submitted_at")
